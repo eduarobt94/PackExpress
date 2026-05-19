@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import * as THREE from 'three'
 import { ArrowRight, MapPin, Search, Globe, Zap, Shield } from 'lucide-react'
+import { useTheme } from '../context/ThemeContext'
 
 /* ── Three.js dot-map canvas ────────────────────────────────────── */
 function DotMap({ onReady }) {
@@ -149,8 +150,7 @@ const toSVG = (lat, lon) => ({ x: (lon + 180) / 360 * 1000, y: (90 - lat) / 180 
 const ORIGIN = toSVG(-48, -70) // Uruguay
 
 const CITIES = [
-  { id: 'new-york',   ...toSVG( 40.7,  -144.0) }, // New York
- // { id: 'madrid',     ...toSVG( 40.4,   -3.7) }, 
+  { id: 'new-york',   ...toSVG( 40.7,  -144.0) },
   { id: 'london',     ...toSVG( 51.5,    15.0) },
   { id: 'shanghai',   ...toSVG( 61.2,  111.5) },
   { id: 'tokyo',      ...toSVG( 35.7,  139.7) }, 
@@ -161,7 +161,7 @@ const CITIES = [
   { id: 'buenos-aires', ...toSVG(-64.6, -82.4) }
 ]
 
-function RoutesOverlay({ visible }) {
+function RoutesOverlay({ visible, isDark }) {
   const [vp, setVp] = useState({ ww: window.innerWidth, wh: window.innerHeight })
 
   useEffect(() => {
@@ -195,7 +195,7 @@ function RoutesOverlay({ visible }) {
     >
       <defs>
         <filter id="glow-r" x="-200%" y="-200%" width="500%" height="500%">
-          <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <feGaussianBlur stdDeviation={isDark ? 3.5 : 2} result="blur" />
           <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
         </filter>
       </defs>
@@ -230,7 +230,7 @@ function RoutesOverlay({ visible }) {
             id={`rt${i}`}
             d={r.d}
             fill="none"
-            stroke="rgba(255,107,0,0.18)"
+            stroke={isDark ? 'rgba(255,107,0,0.18)' : 'rgba(255,107,0,0.45)'}
             strokeWidth="0.8"
             initial={{ opacity: 0 }}
             animate={{ opacity: visible ? 1 : 0 }}
@@ -244,15 +244,15 @@ function RoutesOverlay({ visible }) {
             key={`box-${r.id}`}
             filter="url(#glow-r)"
             initial={{ opacity: 0 }}
-            animate={{ opacity: visible ? 0.92 : 0 }}
+            animate={{ opacity: visible ? (isDark ? 0.92 : 1) : 0 }}
             transition={{ duration: 0.8, delay: visible ? 1.8 + i * 0.08 : 0 }}
           >
             <rect x="-2.8" y="-2.5" width="5.6" height="5" rx="0.6"
-                  fill="rgba(255,107,0,0.88)" stroke="rgba(255,160,60,0.7)" strokeWidth="0.4" />
+                  fill="#FF6B00" stroke="#FF8C3A" strokeWidth="0.4" />
             <line x1="-2.8" y1="0.3" x2="2.8" y2="0.3"
-                  stroke="rgba(255,210,120,0.75)" strokeWidth="0.4" />
+                  stroke="rgba(255,255,255,0.7)" strokeWidth="0.4" />
             <line x1="0" y1="-2.5" x2="0" y2="0.3"
-                  stroke="rgba(255,210,120,0.75)" strokeWidth="0.4" />
+                  stroke="rgba(255,255,255,0.7)" strokeWidth="0.4" />
             <animateMotion dur={`${r.dur}s`} repeatCount="indefinite" begin={`${r.begin}s`} rotate="auto">
               <mpath href={`#rt${i}`} />
             </animateMotion>
@@ -268,6 +268,14 @@ function RoutesOverlay({ visible }) {
 export default function Hero() {
   const ref = useRef(null)
   const [mapReady, setMapReady] = useState(false)
+  const [trackingValue, setTrackingValue] = useState('')
+
+  function handleHeroTrack() {
+    window.dispatchEvent(new CustomEvent('doTracking', { detail: trackingValue.trim() }))
+    document.getElementById('rastreo')?.scrollIntoView({ behavior: 'smooth' })
+  }
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start start', 'end start'],
@@ -278,7 +286,7 @@ export default function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen flex items-center overflow-hidden bg-[#060810]"
+      className="relative min-h-screen flex items-center overflow-hidden bg-[var(--bg-base)]"
     >
       <div
         className="absolute inset-0 pointer-events-none"
@@ -294,7 +302,7 @@ export default function Hero() {
       <svg className="absolute inset-0 w-full h-full pointer-events-none hidden min-[1100px]:block" aria-hidden="true">
         <defs>
           <pattern id="bg-dots" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
-            <circle cx="16" cy="16" r="0.8" fill="rgba(255,255,255,0.055)" />
+            <circle cx="16" cy="16" r="0.8" fill={isDark ? 'rgba(255,255,255,0.055)' : 'rgba(0,0,0,0.06)'} />
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="url(#bg-dots)" />
@@ -305,7 +313,7 @@ export default function Hero() {
         style={{ y}}
       >
         <DotMap onReady={() => setTimeout(() => setMapReady(true), 2500)} />
-        <RoutesOverlay visible={mapReady} />
+        <RoutesOverlay visible={mapReady} isDark={isDark} />
       </motion.div>
 
       {/* Vignette — fades only left/right/bottom edges */}
@@ -313,14 +321,14 @@ export default function Hero() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background: `
-            linear-gradient(to right,  #060810 0%, transparent 18%, transparent 82%, #060810 100%),
-            linear-gradient(to bottom, transparent 0%, transparent 60%, #060810 100%)
+            linear-gradient(to right,  var(--bg-base) 0%, transparent 18%, transparent 82%, var(--bg-base) 100%),
+            linear-gradient(to bottom, transparent 0%, transparent 60%, var(--bg-base) 100%)
           `,
         }}
       />
 
       <motion.div
-        className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-28 pb-20 w-full
+        className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-32 pb-14 sm:pb-20 w-full
                    flex justify-end"
         style={{ opacity }}
       >
@@ -332,7 +340,7 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.15 }}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-8
                        border border-[#FF6B00]/25 bg-[#FF6B00]/[0.08]
-                       text-[#FF8C3A] text-[11px] font-semibold tracking-[0.12em] uppercase"
+                       text-[#FF8C3A] text-[12px] font-semibold tracking-[0.12em] uppercase"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse" />
             Logística Nacional & Internacional · Uruguay
@@ -342,8 +350,8 @@ export default function Hero() {
             initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.85, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="font-display font-bold leading-[0.95] tracking-tight text-white mb-6
-                       text-[clamp(2.6rem,4.2vw,4.8rem)]"
+            className="font-display font-bold leading-[0.95] tracking-tight text-[var(--fg-1)] mb-6
+                       text-[clamp(2rem,6vw,4.8rem)]"
           >
             Conectamos{' '}
             <span className="text-transparent bg-clip-text
@@ -358,39 +366,29 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.38 }}
-            className="text-lg text-slate-400 leading-relaxed max-w-[480px] mb-10"
+            className="text-[15px] sm:text-lg text-[var(--fg-2)] leading-relaxed max-w-[480px] mb-10"
           >
             Logística nacional dentro de Uruguay y envíos internacionales
-            a más de 50 países. Courier, equipaje, documentos y gestión
-            aduanera con estándares de clase mundial.
+            a más de 50 países. Courier, equipaje, documentos y despacho
+            de envíos con estándares de clase mundial.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="flex flex-wrap items-center gap-3.5 mb-12"
+            className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 mb-10 sm:mb-12"
           >
-            <a
-              href="#contacto"
-              className="group flex items-center gap-2 px-6 py-3.5 rounded-xl
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('openCotizar'))}
+              className="group flex items-center gap-2 px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
                          bg-[#FF6B00] hover:bg-[#FF8C3A] text-white font-semibold text-sm
                          transition-all duration-300
                          hover:shadow-[0_0_32px_rgba(255,107,0,0.30)]"
             >
               Cotizar envío
               <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-200" />
-            </a>
-            <a
-              href="#rastreo"
-              className="flex items-center gap-2 px-6 py-3.5 rounded-xl
-                         border border-white/10 hover:border-white/20
-                         text-slate-300 hover:text-white font-medium text-sm
-                         transition-all duration-300 hover:bg-white/[0.04]"
-            >
-              <MapPin size={15} />
-              Rastrear envío
-            </a>
+            </button>
           </motion.div>
 
           <motion.div
@@ -398,22 +396,28 @@ export default function Hero() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.62 }}
-            className="flex items-center gap-2 max-w-[440px]
-                       p-1.5 bg-[#0C1018] border border-white/[0.07] rounded-2xl"
+            className="flex items-center gap-2 max-w-full sm:max-w-[560px]
+                       p-1.5 bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl"
           >
-            <div className="flex items-center gap-2 flex-1 pl-3">
-              <Search size={14} className="text-slate-600 shrink-0" />
+            <div className="flex items-center flex-1 pl-4">
+              <label htmlFor="hero-tracking" className="sr-only">Número de seguimiento</label>
               <input
+                id="hero-tracking"
                 type="text"
+                value={trackingValue}
+                onChange={e => setTrackingValue(e.target.value.toUpperCase())}
+                onKeyDown={e => e.key === 'Enter' && handleHeroTrack()}
                 placeholder="Número de seguimiento..."
-                className="flex-1 bg-transparent text-sm text-white placeholder-slate-600
+                className="flex-1 bg-transparent text-sm text-[var(--fg-1)] placeholder-[var(--fg-4)]
                            outline-none py-2.5 min-w-0"
               />
             </div>
             <button
-              className="px-5 py-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-sm
+              onClick={handleHeroTrack}
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-sm
                          font-semibold rounded-xl transition-colors duration-200 whitespace-nowrap"
             >
+              <MapPin size={13} />
               Rastrear
             </button>
           </motion.div>
@@ -432,10 +436,10 @@ export default function Hero() {
               <div
                 key={label}
                 className="flex items-center gap-2 px-3.5 py-2
-                           bg-white/[0.03] border border-white/[0.06] rounded-lg
-                           text-xs text-slate-500"
+                           bg-[var(--bd-1)] border border-[var(--bd-2)] rounded-lg
+                           text-[12px] text-[var(--fg-3)]"
               >
-                <Icon size={12} className="text-slate-600" />
+                <Icon size={12} className="text-[var(--fg-4)]" />
                 {label}
               </div>
             ))}
@@ -449,7 +453,7 @@ export default function Hero() {
         transition={{ delay: 1.8 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
       >
-        <span className="text-[9px] tracking-[0.22em] text-slate-700 uppercase">Scroll</span>
+        <span className="text-[10px] tracking-[0.22em] text-[var(--fg-5)] uppercase">Scroll</span>
         <motion.div
           animate={{ y: [0, 7, 0] }}
           transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}

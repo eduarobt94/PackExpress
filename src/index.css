@@ -2,55 +2,147 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans:    'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, sans-serif;
 
-  --color-brand:        #FF6B00;
-  --color-brand-light:  #FF8C3A;
-  --color-brand-dim:    rgba(255, 107, 0, 0.12);
+  /* ── Brand orange ── */
+  --color-brand:       #FF6B00;
+  --color-brand-hover: #FF8C3A;
+  --color-brand-dim:   rgba(255, 107, 0, 0.10);
+  --color-brand-glow:  rgba(255, 107, 0, 0.14);
 
-  --color-surface:      #0C1018;
-  --color-elevated:     #111828;
-  --color-border:       rgba(255, 255, 255, 0.06);
-  --color-border-light: rgba(255, 255, 255, 0.10);
+  /* ── Surfaces ── */
+  --color-bg:       #060810;
+  --color-bg-alt:   #07080F;
+  --color-surface:  #0C1018;
+  --color-elevated: #0F1520;
+
+  /* ── Borders ── */
+  --color-border:       rgba(255, 255, 255, 0.055);
+  --color-border-hover: rgba(255, 255, 255, 0.10);
+
+  /* ── Semantic ── */
+  --color-success: #22C55E;
+  --color-error:   #EF4444;
+}
+
+/* ── Theme tokens ── */
+:root {
+  --shadow-navbar: 0 1px 32px rgba(0,0,0,0.40);
+  --shadow-modal:  0 40px 90px rgba(0,0,0,0.80), 0 0 0 1px rgba(255,255,255,0.14), 0 0 60px rgba(255,107,0,0.08), inset 0 1px 0 rgba(255,255,255,0.10);
+  --shadow-card:   0 0 0 transparent;
+  --shadow-hover:  0 0 28px rgba(0,0,0,0.20);
+
+  --bg-base:     #060810;
+  --bg-alt:      #07080F;
+  --bg-card:     #0C1018;
+  --bg-deep:     #03040A;
+  --bg-elevated: #0F1520;
+  --bg-input:    #060810;
+
+  --fg-1: #F8F8F8;
+  --fg-2: #94A3B8;
+  --fg-3: #64748B;
+  --fg-4: #64748B;
+  --fg-5: #475569;
+
+  --bd-1: rgba(255,255,255,0.055);
+  --bd-2: rgba(255,255,255,0.08);
+  --bd-3: rgba(255,255,255,0.12);
+  --bd-4: rgba(255,255,255,0.20);
+}
+
+[data-theme="light"] {
+  --shadow-navbar: 0 1px 10px rgba(0,0,0,0.07);
+  --shadow-modal:  0 8px 32px rgba(0,0,0,0.09), 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-card:   0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+  --shadow-hover:  0 4px 20px rgba(0,0,0,0.09);
+
+  --bg-base:     #F5F3EF;
+  --bg-alt:      #F0EDE8;
+  --bg-card:     #FFFFFF;
+  --bg-deep:     #E8E5DF;
+  --bg-elevated: #FAFAF8;
+  --bg-input:    #EEEBE6;
+
+  --fg-1: #0D0F14;
+  --fg-2: #374151;
+  --fg-3: #536070;
+  --fg-4: #6B7A8D;
+  --fg-5: #8694A4;
+
+  --bd-1: rgba(0,0,0,0.07);
+  --bd-2: rgba(0,0,0,0.11);
+  --bd-3: rgba(0,0,0,0.18);
+  --bd-4: rgba(0,0,0,0.26);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html {
-  color-scheme: dark;
-}
+html { color-scheme: dark; }
+[data-theme="light"] { color-scheme: light; }
 
 body {
   margin: 0;
-  background-color: #060810;
-  color: #F1F5F9;
+  background-color: var(--bg-base);
+  color: var(--fg-1);
   font-family: var(--font-sans);
   overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
+  -webkit-font-smoothing:  antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.35s ease, color 0.2s ease;
 }
 
 ::selection {
-  background: rgba(255, 107, 0, 0.25);
+  background: rgba(255, 107, 0, 0.22);
   color: #fff;
 }
 
-::-webkit-scrollbar        { width: 5px; }
-::-webkit-scrollbar-track  { background: #060810; }
-::-webkit-scrollbar-thumb  { background: #1A2436; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #FF6B00; }
+/* ── Focus visible — keyboard navigation ── */
+:focus-visible {
+  outline: 2px solid rgba(255, 107, 0, 0.45);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+::-webkit-scrollbar        { width: 4px; }
+::-webkit-scrollbar-track  { background: var(--bg-base); }
+::-webkit-scrollbar-thumb  { background: var(--bd-3); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,107,0,0.5); }
 
 #root {
   width: 100%;
   min-height: 100svh;
 }
 
+/* ── Smooth theme transitions ── */
+[data-theme="light"] section,
+[data-theme="light"] nav,
+[data-theme="light"] footer,
+[data-theme="light"] div,
+[data-theme="light"] header {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ── Light mode — soften decorative radial glows on sections ── */
+[data-theme="light"] section > div.absolute.inset-0.pointer-events-none {
+  opacity: 0.25;
+}
+
+/* ── Light mode — subtle card elevation instead of dark borders ── */
+[data-theme="light"] .rounded-2xl,
+[data-theme="light"] .rounded-xl {
+  box-shadow: var(--shadow-card);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
+    scroll-behavior:           auto   !important;
   }
 }

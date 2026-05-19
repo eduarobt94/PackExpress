@@ -1,91 +1,204 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { Package, Briefcase, FileText, Box, Globe2, Shield } from 'lucide-react'
+import { Package, Briefcase, FileText, Box, Globe2 } from 'lucide-react'
 
 const SERVICES = [
   {
+    id:    'courier',
     Icon:  Package,
     title: 'Paquetería Courier',
     desc:  'Enviamos a cualquier punto de Uruguay y a más de 50 países. Seguimiento en tiempo real y entrega puntual garantizada.',
-    badge: 'Nacional & Internacional',
-    color: 'rgba(255,107,0,0.12)',
-    borderColor: 'rgba(255,107,0,0.2)',
-    iconColor: '#FF6B00',
+    tag:   'Nacional & Internacional',
+    featured: true,
+    stats: [
+      { value: '50+',  label: 'países destino' },
+      { value: '24 h', label: 'entrega express' },
+    ],
   },
   {
+    id:    'equipaje',
     Icon:  Briefcase,
     title: 'Equipaje No Acompañado',
-    desc:  'Transporte seguro de equipaje personal sin límites de peso, tanto dentro de Uruguay como hacia el exterior.',
-    badge: 'Sin límites',
-    color: 'rgba(139,92,246,0.12)',
-    borderColor: 'rgba(139,92,246,0.2)',
-    iconColor: '#A78BFA',
+    desc:  'Transporte seguro de equipaje personal sin límites de peso, dentro de Uruguay y hacia el exterior.',
+    tag:   'Sin límites de peso',
   },
   {
+    id:    'documentos',
     Icon:  FileText,
     title: 'Envío de Documentos',
     desc:  'Gestión segura de documentación oficial, contratos y correspondencia con cadena de custodia certificada.',
-    badge: 'Certificado',
-    color: 'rgba(34,197,94,0.12)',
-    borderColor: 'rgba(34,197,94,0.2)',
-    iconColor: '#22C55E',
+    tag:   'Custodia certificada',
   },
   {
+    id:    'embalaje',
     Icon:  Box,
     title: 'Embalaje Profesional',
     desc:  'Empaque especializado con materiales de primera calidad para proteger tu envío en cualquier trayecto.',
-    badge: 'Premium',
-    color: 'rgba(251,191,36,0.12)',
-    borderColor: 'rgba(251,191,36,0.2)',
-    iconColor: '#FBBF24',
+    tag:   'Materiales premium',
   },
   {
+    id:    'distribucion',
     Icon:  Globe2,
     title: 'Distribución Nacional',
     desc:  'Cobertura en todo el territorio uruguayo con logística local eficiente, recolección a domicilio y confirmación de entrega.',
-    badge: 'Todo Uruguay',
-    color: 'rgba(56,189,248,0.12)',
-    borderColor: 'rgba(56,189,248,0.2)',
-    iconColor: '#38BDF8',
-  },
-  {
-    Icon:  Shield,
-    title: 'Gestión Aduanera',
-    desc:  'Trámites aduaneros completos y documentación oficial conforme a la Resolución N°148/2023 de URSEC. Sin burocracia de tu parte.',
-    badge: 'Oficial',
-    color: 'rgba(255,107,0,0.12)',
-    borderColor: 'rgba(255,107,0,0.2)',
-    iconColor: '#FF6B00',
+    tag:   'Todo Uruguay',
   },
 ]
 
+function DotCorner({ size = 88, spacing = 11 }) {
+  const dots = []
+  const cols = Math.ceil(size / spacing)
+  const rows = Math.ceil(size / spacing)
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = size - c * spacing - spacing / 2
+      const y = r * spacing + spacing / 2
+      if (x < 0 || y > size) continue
+      const dist = Math.sqrt((size - x) ** 2 + y ** 2)
+      const opacity = Math.max(0, (1 - dist / (size * 0.88)) * 0.22)
+      if (opacity > 0.005)
+        dots.push(<circle key={`${r}-${c}`} cx={x} cy={y} r="0.9" fill="white" opacity={+opacity.toFixed(3)} />)
+    }
+  }
+  return (
+    <div className="absolute top-0 right-0 pointer-events-none overflow-hidden rounded-tr-2xl"
+         style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {dots}
+      </svg>
+    </div>
+  )
+}
+
 const container = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
+  hidden:  {},
+  visible: { transition: { staggerChildren: 0.07 } },
 }
 const item = {
-  hidden:  { opacity: 0, y: 32 },
+  hidden:  { opacity: 0, y: 28 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
+}
+
+function FeaturedCard({ service, inView }) {
+  const { Icon, title, desc, tag, stats } = service
+  return (
+    <motion.div
+      variants={item}
+      whileHover={{ y: -3, transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] } }}
+      className="lg:col-span-2 group relative bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl
+                 p-6 sm:p-8 lg:p-10 overflow-hidden cursor-default
+                 hover:border-[var(--bd-2)] hover:shadow-[0_0_50px_rgba(255,107,0,0.07)]
+                 transition-[border-color,box-shadow] duration-300"
+    >
+      {/* Top accent line */}
+      <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl opacity-0 group-hover:opacity-100
+                      transition-opacity duration-500"
+           style={{ background: 'linear-gradient(90deg, transparent, rgba(255,107,0,0.5), transparent)' }} />
+
+      <DotCorner size={110} spacing={12} />
+
+      <div className="relative flex flex-col lg:flex-row lg:items-start gap-5 lg:gap-8">
+        {/* Icon */}
+        <div className="shrink-0 w-14 h-14 rounded-2xl bg-[#FF6B00]/[0.10] border border-[#FF6B00]/20
+                        flex items-center justify-center
+                        group-hover:bg-[#FF6B00]/[0.15] transition-colors duration-300">
+          <Icon size={24} color="#FF6B00" />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          {/* Tag */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-5 h-px bg-[#FF6B00]/40" />
+            <span className="text-[var(--fg-3)] text-[11px] tracking-[0.12em] uppercase">{tag}</span>
+          </div>
+
+          <h3 className="font-display font-bold text-[var(--fg-1)] text-[1.5rem] leading-snug mb-3">
+            {title}
+          </h3>
+          <p className="text-[var(--fg-2)] text-sm leading-relaxed max-w-md mb-8">
+            {desc}
+          </p>
+
+          {/* Stats */}
+          <div className="flex flex-wrap items-center gap-6">
+            {stats.map((s, i) => (
+              <div key={s.label} className="flex items-center gap-6">
+                {i > 0 && <div className="w-px h-8 bg-[var(--bd-2)]" />}
+                <div>
+                  <div className="font-display font-bold text-[var(--fg-1)] text-2xl leading-none mb-1">
+                    {s.value}
+                  </div>
+                  <div className="text-[var(--fg-3)] text-[11px] tracking-wide">{s.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function ServiceCard({ service }) {
+  const { Icon, title, desc, tag } = service
+  return (
+    <motion.div
+      variants={item}
+      whileHover={{ y: -3, transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] } }}
+      className="group relative bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl p-5 sm:p-7
+                 overflow-hidden cursor-default
+                 hover:border-[var(--bd-2)] hover:shadow-[0_0_30px_rgba(255,107,0,0.06)]
+                 transition-[border-color,box-shadow] duration-300"
+    >
+      {/* Top accent line */}
+      <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl opacity-0 group-hover:opacity-100
+                      transition-opacity duration-500"
+           style={{ background: 'linear-gradient(90deg, transparent, rgba(255,107,0,0.4), transparent)' }} />
+
+      <DotCorner />
+
+      {/* Icon */}
+      <div className="w-11 h-11 rounded-xl bg-[#FF6B00]/[0.08] border border-[#FF6B00]/[0.15]
+                      flex items-center justify-center mb-5
+                      group-hover:bg-[#FF6B00]/[0.12] transition-colors duration-300">
+        <Icon size={19} color="#FF6B00" />
+      </div>
+
+      <h3 className="font-display font-semibold text-[var(--fg-1)] text-[15px] leading-snug mb-2.5">
+        {title}
+      </h3>
+      <p className="text-[var(--fg-3)] text-[13px] leading-relaxed mb-6">
+        {desc}
+      </p>
+
+      {/* Bottom tag */}
+      <div className="flex items-center gap-2">
+        <div className="w-1 h-1 rounded-full bg-[#FF6B00]/50" />
+        <span className="text-[var(--fg-4)] text-[11px] tracking-wide">{tag}</span>
+      </div>
+    </motion.div>
+  )
 }
 
 export default function Services() {
   const ref    = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-70px' })
 
+  const [featured, ...rest] = SERVICES
+
   return (
-    <section id="servicios" className="relative py-24 lg:py-32 bg-[#07080F]">
-      {/* Radial gradient background accent */}
+    <section id="servicios" className="relative py-20 lg:py-32 bg-[var(--bg-alt)]">
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,107,0,0.05) 0%, transparent 60%)',
+          background: 'radial-gradient(ellipse 70% 40% at 50% 0%, rgba(255,107,0,0.04) 0%, transparent 60%)',
         }}
       />
 
       <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
 
         {/* Header */}
-        <div className="mb-16 lg:mb-20" ref={ref}>
+        <div className="mb-12 lg:mb-20" ref={ref}>
           <motion.p
             initial={{ opacity: 0, y: 8 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -99,20 +212,21 @@ export default function Services() {
               initial={{ opacity: 0, y: 24 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.75, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-              className="font-display font-bold text-white leading-[1.05]
+              className="font-display font-bold text-[var(--fg-1)] leading-[1.05]
                          text-[clamp(2rem,5vw,3.25rem)] max-w-xl"
             >
               Todo lo que necesitás,
               <br />
-              <span className="text-slate-500">en un solo lugar.</span>
+              <span className="text-[var(--fg-3)]">en un solo lugar.</span>
             </motion.h2>
             <motion.p
               initial={{ opacity: 0 }}
               animate={inView ? { opacity: 1 } : {}}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-slate-500 text-sm leading-relaxed max-w-xs"
+              className="text-[var(--fg-3)] text-sm leading-relaxed max-w-xs"
             >
-              Logística nacional dentro de Uruguay e internacional a más de 50 países, con atención personalizada desde Montevideo.
+              Logística nacional dentro de Uruguay e internacional a más de 50 países,
+              con atención personalizada desde Montevideo.
             </motion.p>
           </div>
         </div>
@@ -124,57 +238,10 @@ export default function Services() {
           animate={inView ? 'visible' : 'hidden'}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          {SERVICES.map(({ Icon, title, desc, badge, color, borderColor, iconColor }) => (
-            <motion.div
-              key={title}
-              variants={item}
-              whileHover={{ y: -4, transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] } }}
-              className="group relative bg-[#0C1018] border border-white/[0.06] rounded-2xl p-6
-                         hover:border-white/[0.10] cursor-default
-                         transition-[border-color,box-shadow] duration-300
-                         hover:shadow-[0_0_30px_rgba(255,107,0,0.08)]"
-            >
-              {/* Top micro-line hover accent */}
-              <div
-                className="absolute top-0 inset-x-0 h-px rounded-t-2xl opacity-0 group-hover:opacity-100
-                           transition-opacity duration-500"
-                style={{
-                  background: `linear-gradient(90deg, transparent, ${iconColor}40, transparent)`,
-                }}
-              />
-
-              {/* Icon box */}
-              <div
-                className="inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4
-                           transition-all duration-300 group-hover:scale-105"
-                style={{
-                  backgroundColor: color,
-                  border: `1px solid ${borderColor}`,
-                }}
-              >
-                <Icon size={20} style={{ color: iconColor }} />
-              </div>
-
-              {/* Badge */}
-              <div
-                className="inline-flex items-center px-2.5 py-0.5 rounded-md mb-3
-                           text-[10px] font-semibold tracking-wide"
-                style={{
-                  backgroundColor: `${iconColor}15`,
-                  border: `1px solid ${iconColor}30`,
-                  color: iconColor,
-                }}
-              >
-                {badge}
-              </div>
-
-              <h3 className="font-display font-semibold text-[15px] text-white mb-2 leading-snug">
-                {title}
-              </h3>
-              <p className="text-[13px] text-slate-500 leading-relaxed">{desc}</p>
-            </motion.div>
-          ))}
+          <FeaturedCard service={featured} inView={inView} />
+          {rest.map(s => <ServiceCard key={s.id} service={s} />)}
         </motion.div>
+
       </div>
     </section>
   )

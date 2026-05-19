@@ -1,31 +1,52 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Download, FileText, AlertTriangle, Phone, Mail, MapPin, MessageCircle, Send, CheckCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Download, FileText, AlertTriangle, Phone, Mail, MapPin, MessageCircle, Send, CheckCircle, ArrowUpRight, UserRound, Plane, Briefcase, X } from 'lucide-react'
+import { useTheme } from '../context/ThemeContext'
+
+const MAP_EMBED = 'https://maps.google.com/maps?q=-34.907382,-56.188793&z=15&output=embed'
+const MAP_FULL  = 'https://maps.google.com/maps?q=-34.907382,-56.188793&z=16&output=embed'
 
 const DOCS = [
   {
     Icon:   Download,
+    label:  '01',
     title:  'Declaración Jurada',
     desc:   'Formulario oficial requerido para todos los envíos internacionales',
     href:   '/declaracion-jurada.xlsx',
     action: 'Descargar',
-    color:  '#FF6B00',
   },
   {
     Icon:   FileText,
+    label:  '02',
     title:  'Resolución N° 148/2023',
     desc:   'Normativa oficial de servicios postales en Uruguay — URSEC',
     href:   '/Gaceta Oficial.pdf',
     action: 'Ver documento',
-    color:  '#3B82F6',
+  },
+  {
+    Icon:   Plane,
+    label:  '03',
+    title:  'Requisitos Courier',
+    desc:   'Políticas, documentación requerida y tiempos de entrega',
+    modal:  'courier',
+    action: 'Ver requisitos',
+  },
+  {
+    Icon:   Briefcase,
+    label:  '04',
+    title:  'Equipaje No Acompañado',
+    desc:   'Tarifas, condiciones y peso máximo permitido',
+    modal:  'equipaje',
+    action: 'Ver tarifas',
   },
   {
     Icon:   AlertTriangle,
+    label:  '05',
     title:  'Artículos Prohibidos',
     desc:   'Lista completa de objetos restringidos para envíos internacionales',
-    href:   '#restringidos',
+    modal:  'prohibidos',
     action: 'Consultar',
-    color:  '#EAB308',
+    alert:  true,
   },
 ]
 
@@ -35,17 +56,92 @@ const SUBJECTS = [
   'Distribución nacional (Uruguay)',
   'Envío internacional',
   'Rastreo de paquete',
-  'Gestión aduanera',
+  'Despacho de envíos',
   'Documentación',
   'Reclamo / incidencia',
   'Otro',
 ]
 
+const HOURS = [
+  { days: 'Lunes – Viernes', hours: '10:00 – 18:00', open: true },
+  { days: 'Sábados',         hours: '10:00 – 14:00', open: true },
+  { days: 'Domingos',        hours: 'Cerrado',       open: false },
+]
+
+function Field({ label, error, children, htmlFor }) {
+  return (
+    <div>
+      <label htmlFor={htmlFor} className="block text-[12px] font-semibold text-[var(--fg-3)] uppercase tracking-[0.12em] mb-1.5">
+        {label}
+      </label>
+      {children}
+      {error && <p className="text-red-400 text-[11px] mt-1">{error}</p>}
+    </div>
+  )
+}
+
+function DocRow({ doc, delay = 0 }) {
+  const { label, title, desc, action, href, modal, alert } = doc
+
+  const sharedCls = `group flex items-center gap-4 px-5 py-4 w-full
+    bg-[var(--bg-card)] border rounded-xl cursor-pointer
+    hover:border-[#FF6B00]/40 transition-all duration-200
+    ${alert ? 'border-[#FF6B00]/20' : 'border-[var(--bd-1)]'}`
+
+  const motionProps = {
+    initial: { opacity: 0, y: 12 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.5, delay },
+  }
+
+  const inner = (
+    <>
+      <span className={`text-[11px] font-bold tracking-[0.12em] shrink-0 w-6 text-center
+                        ${alert ? 'text-[#FF6B00]' : 'text-[var(--fg-5)]'}`}>
+        {label}
+      </span>
+      <div className={`min-w-0 flex-1 ${!alert ? 'text-left' : ''}`}>
+        <p className="text-[13px] font-semibold text-[var(--fg-1)] truncate">{title}</p>
+        <p className="text-[11px] text-[var(--fg-4)] truncate mt-0.5">{desc}</p>
+      </div>
+      <span className={`text-[11px] font-semibold shrink-0 flex items-center gap-1
+                        transition-colors duration-200
+                        ${alert ? 'text-[#FF6B00]' : 'text-[var(--fg-3)] group-hover:text-[#FF6B00]'}`}>
+        {action}
+        <ArrowUpRight size={11} />
+      </span>
+    </>
+  )
+
+  if (href) {
+    return (
+      <motion.a href={href} target="_blank" rel="noopener noreferrer" className={sharedCls} {...motionProps}>
+        {inner}
+      </motion.a>
+    )
+  }
+
+  return (
+    <motion.button
+      type="button"
+      onClick={() => window.dispatchEvent(new CustomEvent('openLegal', { detail: modal }))}
+      className={sharedCls}
+      {...motionProps}
+    >
+      {inner}
+    </motion.button>
+  )
+}
+
 export default function Docs() {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
   const [form, setForm]       = useState({ nombre: '', email: '', telefono: '', asunto: '', mensaje: '' })
   const [errors, setErrors]   = useState({})
   const [sent, setSent]       = useState(false)
   const [sending, setSending] = useState(false)
+  const [mapOpen, setMapOpen] = useState(false)
 
   const validate = () => {
     const e = {}
@@ -71,251 +167,313 @@ export default function Docs() {
   }
 
   const inputCls = (field) =>
-    `w-full bg-[#060810] border rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-600
-     outline-none transition-colors duration-200 focus:border-[#FF6B00]/60
-     ${errors[field] ? 'border-red-500/60' : 'border-white/[0.07]'}`
+    `w-full bg-[var(--bg-input)] border rounded-xl px-4 py-3 text-sm text-[var(--fg-1)] placeholder-[var(--fg-4)]
+     outline-none transition-all duration-200
+     focus:border-[#FF6B00]/50 focus:shadow-[0_0_0_3px_rgba(255,107,0,0.07)]
+     ${errors[field] ? 'border-red-500/50' : 'border-[var(--bd-1)]'}`
 
   return (
-    <section id="contacto" className="py-24 lg:py-32 bg-[#07080F]">
+    <section id="contacto" className="py-24 lg:py-32 bg-[var(--bg-base)]">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row gap-14 items-start">
 
-          {/* Left — documents */}
-          <div className="flex-1 min-w-0">
+        {/* ── Section header ── */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-16">
+          <div>
             <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-[#FF6B00] text-[11px] font-semibold tracking-[0.2em] uppercase mb-4"
+              className="text-[#FF6B00] text-[11px] font-semibold tracking-[0.22em] uppercase mb-4"
             >
-              Documentación
+              Contacto
             </motion.p>
             <motion.h2
               initial={{ opacity: 0, y: 22 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-              className="font-display font-bold text-white text-[clamp(2rem,4.5vw,3rem)]
-                         leading-[1.05] mb-8"
+              className="font-display font-bold text-[var(--fg-1)] text-[clamp(2.2rem,4.5vw,3.2rem)] leading-[1.05]"
             >
-              Todo lo que necesitás
+              Hablemos.
               <br />
-              <span className="text-slate-500">para enviar sin complicaciones.</span>
+              <span className="text-[var(--fg-3)]">Estamos para ayudarte.</span>
             </motion.h2>
+          </div>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.15 }}
+            className="text-[13px] text-[var(--fg-3)] leading-relaxed max-w-xs lg:text-right"
+          >
+            Respondemos en menos de 24 horas hábiles.
+            <br />Consultas, cotizaciones o reclamos.
+          </motion.p>
+        </div>
 
-            <div className="space-y-3 mb-12">
-              {DOCS.map(({ Icon, title, desc, href, action, color }, i) => (
-                <motion.a
-                  key={title}
-                  href={href}
-                  download={action === 'Descargar' ? true : undefined}
-                  initial={{ opacity: 0, x: -18 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.55, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-                  className="group flex items-center gap-4 p-4 rounded-xl
-                             bg-[#0C1018] hover:bg-[#111828]
-                             border border-white/[0.05] hover:border-white/10
-                             transition-all duration-300"
-                >
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                    style={{ background: `${color}12`, border: `1px solid ${color}22` }}
-                  >
-                    <Icon size={17} style={{ color }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white mb-0.5">{title}</p>
-                    <p className="text-[12px] text-slate-500 truncate">{desc}</p>
-                  </div>
-                  <span className="text-[12px] text-slate-600 group-hover:text-slate-300
-                                   transition-colors shrink-0 whitespace-nowrap">
-                    {action} →
-                  </span>
-                </motion.a>
-              ))}
+        {/* ── Docs label ── */}
+        <p className="text-[11px] font-semibold text-[var(--fg-4)] uppercase tracking-[0.15em] mb-4">
+          Documentación
+        </p>
+
+        {/* ── Main 2-column grid: left = docs + form, right = contact card ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[8fr_3fr] gap-8 items-stretch">
+
+          {/* Left column: docs + form */}
+          <div className="space-y-3">
+
+            {/* Doc rows: 2-col grid, 05 spans full width */}
+            <div className="grid grid-cols-2 gap-2">
+              {DOCS.slice(0, 4).map((doc, i) => <DocRow key={doc.title} doc={doc} delay={i * 0.06} />)}
+              <div className="col-span-2">
+                <DocRow doc={DOCS[4]} delay={0.24} />
+              </div>
             </div>
 
-            {/* Contact form */}
-            <motion.div
-              initial={{ opacity: 0, y: 22 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.15 }}
-              className="bg-[#0C1018] border border-white/[0.05] rounded-2xl p-6"
-            >
-              <h3 className="font-display font-bold text-lg text-white mb-1">Escribinos un mensaje</h3>
-              <p className="text-[13px] text-slate-500 mb-6">Respondemos en menos de 24 horas hábiles.</p>
-
-              {sent ? (
-                <div className="flex flex-col items-center gap-3 py-8 text-center">
-                  <CheckCircle size={40} className="text-[#22C55E]" />
-                  <p className="text-white font-semibold">¡Mensaje enviado!</p>
-                  <p className="text-slate-400 text-sm">Nos pondremos en contacto pronto.</p>
-                  <button
-                    onClick={() => { setSent(false); setForm({ nombre: '', email: '', telefono: '', asunto: '', mensaje: '' }) }}
-                    className="mt-2 text-[12px] text-[#FF6B00] hover:underline"
-                  >
-                    Enviar otro mensaje
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <input
-                        value={form.nombre}
-                        onChange={e => handleChange('nombre', e.target.value)}
-                        placeholder="Nombre completo *"
-                        className={inputCls('nombre')}
-                      />
-                      {errors.nombre && <p className="text-red-400 text-[11px] mt-1">{errors.nombre}</p>}
-                    </div>
-                    <div>
-                      <input
-                        type="email"
-                        value={form.email}
-                        onChange={e => handleChange('email', e.target.value)}
-                        placeholder="Email *"
-                        className={inputCls('email')}
-                      />
-                      {errors.email && <p className="text-red-400 text-[11px] mt-1">{errors.email}</p>}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <input
-                        value={form.telefono}
-                        onChange={e => handleChange('telefono', e.target.value)}
-                        placeholder="Teléfono *"
-                        className={inputCls('telefono')}
-                      />
-                      {errors.telefono && <p className="text-red-400 text-[11px] mt-1">{errors.telefono}</p>}
-                    </div>
-                    <div>
-                      <select
-                        value={form.asunto}
-                        onChange={e => handleChange('asunto', e.target.value)}
-                        className={`${inputCls('asunto')} appearance-none`}
-                      >
-                        <option value="">Asunto *</option>
-                        {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      {errors.asunto && <p className="text-red-400 text-[11px] mt-1">{errors.asunto}</p>}
-                    </div>
-                  </div>
-
-                  <div>
-                    <textarea
-                      rows={4}
-                      value={form.mensaje}
-                      onChange={e => handleChange('mensaje', e.target.value)}
-                      placeholder="Tu mensaje *"
-                      className={`${inputCls('mensaje')} resize-none`}
-                    />
-                    {errors.mensaje && <p className="text-red-400 text-[11px] mt-1">{errors.mensaje}</p>}
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={sending}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl
-                               bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-sm font-semibold
-                               transition-colors duration-200 disabled:opacity-60"
-                  >
-                    {sending ? 'Enviando…' : <><Send size={14} /> Enviar mensaje</>}
-                  </button>
-                </form>
-              )}
-            </motion.div>
-          </div>
-
-          {/* Right — contact card */}
-          <div className="w-full lg:w-[320px] shrink-0 space-y-4">
+            {/* Form */}
             <motion.div
               initial={{ opacity: 0, y: 22 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.7, delay: 0.1 }}
-              className="relative bg-gradient-to-br from-[#FF6B00]/10 to-[#FF6B00]/[0.04]
-                         border border-[#FF6B00]/20 rounded-2xl p-7 overflow-hidden"
+              className="bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl p-7 mt-2"
             >
-              <div className="absolute -top-10 -right-10 w-48 h-48
-                              bg-[#FF6B00]/10 rounded-full blur-3xl pointer-events-none" />
-              <div className="relative">
-                <div className="w-12 h-12 bg-[#FF6B00] rounded-xl flex items-center justify-center mb-5">
-                  <Phone size={19} className="text-white" />
-                </div>
-                <h3 className="font-display font-bold text-xl text-white mb-2">¿Necesitás asesoramiento?</h3>
-                <p className="text-[13px] text-slate-400 leading-relaxed mb-6">
-                  Nuestro equipo está disponible para guiarte en cada paso de tu envío, nacional o internacional.
-                </p>
-                <div className="space-y-4 mb-7">
-                  <div className="flex items-start gap-2.5">
-                    <Phone size={13} className="text-slate-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-white font-medium text-sm">(+598) 2902 7227</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Lunes a viernes · 9:00 – 18:00</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <Mail size={13} className="text-slate-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-white font-medium text-sm">packexpress2021@gmail.com</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Respuesta en menos de 24 h</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2.5">
-                    <MapPin size={13} className="text-slate-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-white font-medium text-sm">Carlos Quijano 1258</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">Montevideo, Uruguay</p>
-                    </div>
-                  </div>
-                </div>
-                <a
-                  href="https://wa.me/59829027227"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3
-                             bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-sm font-semibold
-                             rounded-xl transition-colors duration-200"
-                >
-                  <MessageCircle size={15} />
-                  Contactar por WhatsApp
-                </a>
+            <div className="flex items-center justify-between mb-7">
+              <h3 className="font-display font-bold text-[17px] text-[var(--fg-1)]">Escribinos un mensaje</h3>
+              <div className="flex gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]/40" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--bd-2)]" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--bd-2)]" />
               </div>
-            </motion.div>
+            </div>
 
-            {/* Hours card */}
-            <motion.div
-              initial={{ opacity: 0, y: 22 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="bg-[#0C1018] border border-white/[0.05] rounded-2xl p-5"
-            >
-              <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-[0.15em] mb-4">
-                Horario de atención
-              </p>
+            {sent ? (
+              <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <div className="w-14 h-14 rounded-full bg-[#22C55E]/10 border border-[#22C55E]/20
+                                flex items-center justify-center mb-2">
+                  <CheckCircle size={26} className="text-[#22C55E]" />
+                </div>
+                <p className="text-[var(--fg-1)] font-semibold text-lg">¡Mensaje enviado!</p>
+                <p className="text-[var(--fg-3)] text-[13px]">Nos pondremos en contacto en menos de 24 h.</p>
+                <button
+                  onClick={() => { setSent(false); setForm({ nombre: '', email: '', telefono: '', asunto: '', mensaje: '' }) }}
+                  className="mt-3 text-[12px] text-[#FF6B00] hover:underline"
+                >
+                  Enviar otro mensaje
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid grid-cols-2 gap-5">
+                  <Field label="Nombre completo" error={errors.nombre} htmlFor="nombre">
+                    <input id="nombre" value={form.nombre} onChange={e => handleChange('nombre', e.target.value)} placeholder="Juan Pérez" className={inputCls('nombre')} />
+                  </Field>
+                  <Field label="Email" error={errors.email} htmlFor="email">
+                    <input id="email" type="email" value={form.email} onChange={e => handleChange('email', e.target.value)} placeholder="juan@empresa.com" className={inputCls('email')} />
+                  </Field>
+                  <Field label="Teléfono" error={errors.telefono} htmlFor="telefono">
+                    <input id="telefono" value={form.telefono} onChange={e => handleChange('telefono', e.target.value)} placeholder="+598 9x xxx xxx" className={inputCls('telefono')} />
+                  </Field>
+                  <Field label="Asunto" error={errors.asunto} htmlFor="asunto">
+                    <select id="asunto" value={form.asunto} onChange={e => handleChange('asunto', e.target.value)} className={`${inputCls('asunto')} appearance-none`}>
+                      <option value="">Seleccioná</option>
+                      {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </Field>
+                </div>
+                <Field label="Mensaje" error={errors.mensaje} htmlFor="mensaje">
+                  <textarea id="mensaje" rows={7} value={form.mensaje} onChange={e => handleChange('mensaje', e.target.value)} placeholder="Contanos en qué podemos ayudarte…" className={`${inputCls('mensaje')} resize-none`} />
+                </Field>
+                <button type="submit" disabled={sending}
+                  className="flex items-center justify-center gap-2 rounded-xl mx-auto
+                             bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-[14px] font-semibold
+                             transition-colors duration-200 disabled:opacity-60 tracking-wide"
+                  style={{ width: 280, height: 49 }}>
+                  {sending ? (
+                    <span className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Enviando…
+                    </span>
+                  ) : <><Send size={13} /> Enviar mensaje</>}
+                </button>
+              </form>
+            )}
+          </motion.div>
+          </div>{/* end left column */}
+
+          {/* Contact card */}
+          <motion.div
+            initial={{ opacity: 0, y: 22 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.15 }}
+            className="bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl overflow-hidden h-full flex flex-col"
+          >
+            <div className="relative px-7 pt-7 pb-8 overflow-hidden border-b border-[var(--bd-1)]"
+                 style={{ background: 'linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-card) 100%)' }}>
+              <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full"
+                   style={{ backgroundColor: isDark ? 'rgba(255,107,0,0.10)' : 'rgba(255,107,0,0.05)' }} />
+              <div className="absolute top-6 right-6 w-20 h-20 rounded-full"
+                   style={{ backgroundColor: isDark ? 'rgba(255,107,0,0.07)' : 'rgba(255,107,0,0.03)' }} />
+              <div className="relative">
+                <div className="w-11 h-11 rounded-xl border border-[#FF6B00]/50 hover:border-[#FF6B00]
+                                flex items-center justify-center mb-5 transition-colors duration-200">
+                  <UserRound size={18} className="text-[#FF6B00]" />
+                </div>
+                <h3 className="font-display font-bold text-xl text-[var(--fg-1)] leading-tight mb-1.5">
+                  ¿Necesitás asesoramiento?
+                </h3>
+                <p className="text-[12px] text-[var(--fg-2)] leading-relaxed">
+                  Nuestro equipo te guía en cada paso del envío.
+                </p>
+              </div>
+            </div>
+            <div className="px-7 py-6 space-y-5 flex-1">
               {[
-                { days: 'Lunes – Viernes', hours: '9:00 – 18:00' },
-                { days: 'Sábados',         hours: '9:00 – 13:00' },
-                { days: 'Domingos',        hours: 'Cerrado' },
-              ].map(({ days, hours }) => (
-                <div key={days} className="flex justify-between items-center py-2.5 border-b border-white/[0.04] last:border-0">
-                  <span className="text-[13px] text-slate-400">{days}</span>
-                  <span className={`text-[13px] font-medium ${hours === 'Cerrado' ? 'text-slate-600' : 'text-white'}`}>
-                    {hours}
-                  </span>
+                { Icon: Phone,  value: '(+598) 2902 7227',         sub: 'Lunes a viernes · 9:00 – 18:00' },
+                { Icon: Mail,   value: 'packexpress2021@gmail.com', sub: 'Respuesta en menos de 24 h' },
+                { Icon: MapPin, value: 'Carlos Quijano 1258',       sub: 'Montevideo, Uruguay' },
+              ].map(({ Icon, value, sub }) => (
+                <div key={value} className="flex items-start gap-3.5">
+                  <div className="w-8 h-8 rounded-lg border border-[#FF6B00]/[0.30] flex items-center justify-center shrink-0 mt-0.5">
+                    <Icon size={13} className="text-[#FF6B00]" />
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-medium text-[var(--fg-1)]">{value}</p>
+                    <p className="text-[11px] text-[var(--fg-4)] mt-0.5">{sub}</p>
+                  </div>
                 </div>
               ))}
-            </motion.div>
-          </div>
+
+              {/* Map thumbnail */}
+              <button
+                onClick={() => setMapOpen(true)}
+                className="w-full rounded-xl overflow-hidden border border-[var(--bd-1)]
+                           hover:border-[#FF6B00]/40 transition-colors duration-200 relative group"
+                style={{ height: 140 }}
+                aria-label="Ver ubicación en mapa"
+              >
+                <iframe
+                  src={MAP_EMBED}
+                  className="w-full h-full pointer-events-none"
+                  title="Ubicación Pack Express"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200
+                                flex items-center justify-center">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                                   bg-black/60 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg">
+                    Ver mapa completo
+                  </span>
+                </div>
+              </button>
+            </div>
+            <div className="px-7 pb-6">
+              <div className="border-t border-[var(--bd-1)] pt-5">
+                <p className="text-[10px] font-semibold text-[var(--fg-4)] uppercase tracking-[0.15em] mb-3.5">
+                  Horario de atención
+                </p>
+                {HOURS.map(({ days, hours, open }) => (
+                  <div key={days} className="flex justify-between items-center py-2 border-b border-[var(--bd-1)] last:border-0">
+                    <span className="text-[12px] text-[var(--fg-3)]">{days}</span>
+                    <span className={`text-[12px] font-medium ${open ? 'text-[var(--fg-1)]' : 'text-[var(--fg-5)]'}`}>{hours}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="px-5 pb-5">
+              <a href="https://wa.me/59829027227" target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2.5 w-full py-3.5
+                           border border-[#FF6B00]/60 hover:border-[#FF6B00]
+                           text-[#FF6B00] hover:text-[#FF8C3A] text-[13px] font-semibold
+                           rounded-xl transition-all duration-200 tracking-wide">
+                <MessageCircle size={14} />
+                Contactar por WhatsApp
+              </a>
+            </div>
+          </motion.div>
 
         </div>
       </div>
+
+      {/* Map modal */}
+      <AnimatePresence>
+        {mapOpen && (
+          <motion.div
+            key="map-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-8"
+          >
+            <div className="absolute inset-0 bg-[var(--bg-base)]/70 backdrop-blur-xl" onClick={() => setMapOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98, y: 10 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="relative w-full max-w-2xl bg-[var(--bg-alt)] border border-[var(--bd-1)]
+                         rounded-2xl overflow-hidden shadow-[var(--shadow-modal)]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--bd-1)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg border border-[#FF6B00]/50 flex items-center justify-center">
+                    <MapPin size={14} className="text-[#FF6B00]" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-[#FF6B00] font-semibold tracking-[0.15em] uppercase">Ubicación</p>
+                    <p className="text-[13px] font-semibold text-[var(--fg-1)]">Carlos Quijano 1258, Montevideo</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMapOpen(false)}
+                  className="w-8 h-8 rounded-lg border border-[var(--bd-2)] flex items-center justify-center
+                             text-[var(--fg-4)] hover:text-[var(--fg-1)] hover:border-[var(--bd-3)]
+                             transition-all duration-200"
+                  aria-label="Cerrar mapa"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              {/* Map */}
+              <div style={{ height: 420 }}>
+                <iframe
+                  src={MAP_FULL}
+                  className="w-full h-full"
+                  title="Mapa Pack Express Uruguay"
+                  loading="lazy"
+                />
+              </div>
+              {/* Footer */}
+              <div className="px-6 py-3 border-t border-[var(--bd-1)] flex items-center justify-between gap-3">
+                <p className="text-[11px] text-[var(--fg-5)]">Pack Express Uruguay S.A.S.</p>
+                <div className="flex items-center gap-4">
+                  <a
+                    href="https://maps.google.com/maps?daddr=-34.907382,-56.188793"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-semibold text-white bg-[#FF6B00] hover:bg-[#FF8C3A]
+                               px-3 py-1.5 rounded-lg transition-colors duration-200 whitespace-nowrap"
+                  >
+                    Cómo llegar ↗
+                  </a>
+                  <a
+                    href="https://maps.google.com/maps?q=-34.907382,-56.188793"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-[#FF6B00] hover:text-[#FF8C3A] transition-colors duration-200 whitespace-nowrap"
+                  >
+                    Abrir en Google Maps ↗
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   )
 }

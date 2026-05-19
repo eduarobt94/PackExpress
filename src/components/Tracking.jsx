@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Package,
@@ -44,7 +44,7 @@ const MOCK_RESULT = {
 function getStepColor(status) {
   if (status === 'completed')  return '#22C55E'
   if (status === 'in-progress') return '#FF6B00'
-  return '#334155'
+  return 'var(--fg-5)'
 }
 
 function StepNode({ step, status, index }) {
@@ -60,10 +60,7 @@ function StepNode({ step, status, index }) {
         className="relative flex items-center justify-center w-11 h-11 rounded-full border-2"
         style={{
           borderColor: color,
-          backgroundColor:
-            status === 'completed'   ? 'rgba(34,197,94,0.12)'  :
-            status === 'in-progress' ? 'rgba(255,107,0,0.12)'  :
-                                       'rgba(30,41,59,0.6)',
+          backgroundColor: 'var(--bg-card)',
           boxShadow:
             status === 'in-progress' ? '0 0 0 4px rgba(255,107,0,0.14)' : 'none',
         }}
@@ -88,7 +85,7 @@ function Timeline({ steps }) {
       {/* Desktop: horizontal */}
       <div className="hidden md:flex items-start justify-between w-full relative">
         {/* Background track */}
-        <div className="absolute top-[21px] left-5 right-5 h-px bg-white/[0.06]" style={{ zIndex: 0 }} />
+        <div className="absolute top-[21px] left-5 right-5 h-px bg-[var(--bd-1)]" style={{ zIndex: 0 }} />
 
         {/* Animated progress fill */}
         {(() => {
@@ -153,10 +150,7 @@ function Timeline({ steps }) {
                   className="flex items-center justify-center w-9 h-9 rounded-full border-2 relative flex-shrink-0"
                   style={{
                     borderColor: color,
-                    backgroundColor:
-                      status === 'completed'   ? 'rgba(34,197,94,0.12)'  :
-                      status === 'in-progress' ? 'rgba(255,107,0,0.12)'  :
-                                                 'rgba(30,41,59,0.6)',
+                    backgroundColor: 'var(--bg-card)',
                   }}
                 >
                   {status === 'in-progress' && (
@@ -231,13 +225,13 @@ function PackageDetails({ result }) {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, delay: 0.2 + i * 0.07 }}
-              className="bg-[#060810] border border-white/[0.06] rounded-xl p-4
-                         hover:border-white/[0.10] transition-colors duration-200"
+              className="bg-[var(--bg-input)] border border-[var(--bd-1)] rounded-xl p-4
+                         hover:border-[var(--bd-2)] transition-colors duration-200"
             >
-              <p className="text-[10px] uppercase tracking-[0.15em] text-slate-600 mb-1.5">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-[var(--fg-4)] mb-1.5">
                 {det.label}
               </p>
-              <p className="text-sm font-semibold text-white break-all leading-snug">
+              <p className="text-sm font-semibold text-[var(--fg-1)] break-all leading-snug">
                 {det.value}
               </p>
             </motion.div>
@@ -264,7 +258,7 @@ function PackageDetails({ result }) {
           <p className="text-[10px] uppercase tracking-[0.15em] text-[#FF6B00]/70 mb-0.5">
             Entrega estimada
           </p>
-          <p className="text-sm font-semibold text-white">{result.estimatedDelivery}</p>
+          <p className="text-sm font-semibold text-[var(--fg-1)]">{result.estimatedDelivery}</p>
         </div>
       </motion.div>
     </motion.div>
@@ -276,6 +270,24 @@ export default function Tracking() {
   const [result, setResult]         = useState(null)
   const [error, setError]           = useState('')
   const hasSearched = useRef(false)
+
+  useEffect(() => {
+    const handler = (e) => {
+      const val = (e.detail || '').toUpperCase()
+      setInputValue(val)
+      hasSearched.current = true
+      if (!val) { setError('Ingresá un número de rastreo.'); return }
+      if (!TRACKING_FORMAT.test(val)) {
+        setError('No encontramos resultados para ese número. Verificá que esté bien escrito.')
+        setResult(null)
+        return
+      }
+      setError('')
+      setResult({ ...MOCK_RESULT, trackingNumber: val })
+    }
+    window.addEventListener('doTracking', handler)
+    return () => window.removeEventListener('doTracking', handler)
+  }, [])
 
   const isValidFormat = TRACKING_FORMAT.test(inputValue.trim())
 
@@ -295,7 +307,7 @@ export default function Tracking() {
     }
 
     if (!TRACKING_FORMAT.test(trimmed)) {
-      setError('Formato inválido. El número debe tener el formato CMXXXXXXXUY.')
+      setError('No encontramos resultados para ese número. Verificá que esté bien escrito.')
       setResult(null)
       return
     }
@@ -318,7 +330,7 @@ export default function Tracking() {
   return (
     <section
       id="rastreo"
-      className="relative py-24 lg:py-32 bg-[#07080F]"
+      className="relative py-20 lg:py-32 bg-[var(--bg-alt)]"
     >
       {/* Radial glow */}
       <div
@@ -345,7 +357,7 @@ export default function Tracking() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display font-bold text-white leading-[1.05] mb-3
+          className="font-display font-bold text-[var(--fg-1)] leading-[1.05] mb-3
                      text-[clamp(2rem,5vw,3.25rem)]"
         >
           Sabé siempre dónde
@@ -357,10 +369,10 @@ export default function Tracking() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.15 }}
-          className="text-slate-500 text-sm leading-relaxed mb-10 max-w-lg"
+          className="text-[var(--fg-3)] text-sm leading-relaxed mb-10 max-w-lg"
         >
           Rastreo en tiempo real para envíos nacionales e internacionales.
-          Ingresá tu número de guía o probá con <span className="font-mono text-slate-400">CM1234567UY</span>.
+          Ingresá tu número de guía o probá con <span className="font-mono text-[var(--fg-2)]">CM1234567UY</span>.
         </motion.p>
 
         {/* Search card */}
@@ -369,7 +381,7 @@ export default function Tracking() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-[#0C1018] border border-white/[0.07] rounded-2xl p-6 md:p-8
+          className="bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl p-5 sm:p-6 md:p-8
                      backdrop-blur-sm"
         >
           {/* Input row */}
@@ -377,7 +389,7 @@ export default function Tracking() {
             <div className="relative flex-1">
               <Search
                 size={16}
-                className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-600"
+                className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--fg-4)]"
               />
               <input
                 type="text"
@@ -387,24 +399,25 @@ export default function Tracking() {
                 placeholder="CM1234567UY"
                 maxLength={12}
                 spellCheck={false}
-                className="w-full rounded-xl py-3.5 pl-11 pr-10 text-white
-                           placeholder:text-slate-700 outline-none font-mono text-sm
-                           bg-[#060810] border transition-all duration-200
+                className="w-full rounded-xl py-3.5 pl-11 pr-10 text-[var(--fg-1)]
+                           placeholder:text-[var(--fg-4)] outline-none font-mono text-sm
+                           bg-[var(--bg-input)] border transition-all duration-200
                            focus:shadow-[0_0_0_3px_rgba(255,107,0,0.12)]"
                 style={{
                   borderColor: error
                     ? 'rgba(239,68,68,0.5)'
                     : isValidFormat && inputValue
                     ? 'rgba(255,107,0,0.5)'
-                    : 'rgba(255,255,255,0.08)',
+                    : 'var(--bd-2)',
                 }}
+                id="tracking-input"
                 aria-label="Número de rastreo"
               />
               {inputValue && (
                 <button
                   onClick={handleClear}
                   className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full
-                             text-slate-600 hover:text-slate-400 transition-colors"
+                             text-[var(--fg-4)] hover:text-[var(--fg-2)] transition-colors"
                   aria-label="Limpiar"
                 >
                   <X size={13} />
@@ -428,11 +441,6 @@ export default function Tracking() {
             </motion.button>
           </div>
 
-          {/* Format hint */}
-          <p className="mt-2.5 text-[11px] text-slate-700">
-            Formato:{' '}
-            <span className="font-mono text-slate-600">CMXXXXXXXUY</span>
-          </p>
 
           {/* Validation error */}
           <AnimatePresence>
@@ -442,6 +450,8 @@ export default function Tracking() {
                 animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
                 exit={{ opacity: 0, height: 0, marginTop: 0 }}
                 transition={{ duration: 0.25 }}
+                role="status"
+                aria-live="polite"
                 className="flex items-center gap-2.5 rounded-xl px-4 py-3 border overflow-hidden"
                 style={{
                   backgroundColor: 'rgba(239,68,68,0.07)',
@@ -458,6 +468,8 @@ export default function Tracking() {
           <AnimatePresence>
             {result && (
               <motion.div
+                role="status"
+                aria-live="polite"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -465,9 +477,9 @@ export default function Tracking() {
                 className="mt-8"
               >
                 {/* Result header */}
-                <div className="flex items-start justify-between mb-6 gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:justify-between mb-6 gap-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.15em] text-slate-600 mb-1">
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-[var(--fg-4)] mb-1">
                       Número de guía
                     </p>
                     <p className="font-mono font-bold text-lg text-[#FF8C3A] leading-none">
@@ -492,7 +504,7 @@ export default function Tracking() {
                 </div>
 
                 {/* Divider */}
-                <div className="h-px w-full bg-white/[0.05] mb-8" />
+                <div className="h-px w-full mb-8" style={{ background: 'var(--bd-1)' }} />
 
                 {/* Timeline */}
                 <Timeline steps={result.steps} />
