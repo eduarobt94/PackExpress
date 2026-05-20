@@ -114,7 +114,7 @@ export default function App() {
               onClick={() => setCotizarOpen(false)}
             />
             <div className="fixed inset-0 z-[91] overflow-y-auto" data-lenis-prevent>
-              <div className="min-h-full flex items-start justify-center p-4 sm:p-6 lg:p-10 pt-14 sm:pt-16">
+              <div className="min-h-full flex items-center justify-center p-4 sm:p-6 lg:p-8 py-16">
                 <motion.div
                   key="cot-modal"
                   initial={{ opacity: 0, y: 40, scale: 0.97 }}

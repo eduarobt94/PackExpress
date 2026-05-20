@@ -1,31 +1,57 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Zap, Package, Clock, Truck,
   CheckCircle, Calculator, MapPin, Weight, Ruler,
-  ChevronDown, X,
+  ChevronDown, X, Search,
 } from 'lucide-react'
 
 const REGIONS = {
   'América del Sur': {
     multiplier: 1.0,
-    countries: ['Argentina', 'Brasil', 'Chile', 'Paraguay', 'Bolivia', 'Perú', 'Colombia'],
+    countries: [
+      'Argentina', 'Bolivia', 'Brasil', 'Chile', 'Colombia',
+      'Ecuador', 'Guyana', 'Paraguay', 'Perú', 'Surinam', 'Venezuela',
+    ],
+  },
+  'América Central y Caribe': {
+    multiplier: 1.25,
+    countries: [
+      'Costa Rica', 'Cuba', 'El Salvador', 'Guatemala', 'Haití',
+      'Honduras', 'Jamaica', 'Nicaragua', 'Panamá', 'Puerto Rico',
+      'República Dominicana', 'Trinidad y Tobago',
+    ],
   },
   'América del Norte': {
     multiplier: 1.3,
-    countries: ['Estados Unidos', 'Canadá', 'México'],
+    countries: ['Canadá', 'Estados Unidos', 'México'],
   },
-  Europa: {
+  'Europa': {
     multiplier: 1.4,
-    countries: ['España', 'Francia', 'Italia', 'Alemania', 'Portugal', 'Reino Unido'],
+    countries: [
+      'Alemania', 'Austria', 'Bélgica', 'Croacia', 'Dinamarca',
+      'España', 'Finlandia', 'Francia', 'Grecia', 'Hungría',
+      'Irlanda', 'Italia', 'Noruega', 'Países Bajos', 'Polonia',
+      'Portugal', 'Reino Unido', 'República Checa', 'Rumanía',
+      'Suecia', 'Suiza', 'Ucrania',
+    ],
   },
-  'Asia/Oceanía': {
+  'Asia': {
     multiplier: 1.6,
-    countries: ['China', 'Japón', 'Australia', 'Emiratos Árabes'],
+    countries: [
+      'Arabia Saudita', 'China', 'Corea del Sur', 'Emiratos Árabes Unidos',
+      'Filipinas', 'India', 'Indonesia', 'Israel', 'Japón',
+      'Malasia', 'Qatar', 'Singapur', 'Tailandia', 'Taiwán',
+      'Turquía', 'Vietnam',
+    ],
   },
-  África: {
+  'Oceanía': {
+    multiplier: 1.6,
+    countries: ['Australia', 'Nueva Zelanda'],
+  },
+  'África': {
     multiplier: 1.5,
-    countries: ['Sudáfrica', 'Nigeria'],
+    countries: ['Egipto', 'Ghana', 'Kenia', 'Marruecos', 'Nigeria', 'Sudáfrica', 'Tanzania'],
   },
 }
 
@@ -35,38 +61,10 @@ const COUNTRY_TO_REGION = Object.entries(REGIONS).reduce((acc, [region, { countr
 }, {})
 
 const SERVICES = [
-  {
-    id:          'economico',
-    label:       'Económico',
-    days:        '12–18 días',
-    ratePerKg:   6,
-    icon:        Clock,
-    description: 'Tarifa más baja',
-  },
-  {
-    id:          'estandar',
-    label:       'Estándar',
-    days:        '7–10 días',
-    ratePerKg:   10,
-    icon:        Package,
-    description: 'Precio y plazo',
-  },
-  {
-    id:          'expres',
-    label:       'Exprés',
-    days:        '3–5 días',
-    ratePerKg:   16,
-    icon:        Zap,
-    description: 'Entrega prioritaria',
-  },
-  {
-    id:          'carga',
-    label:       'Carga',
-    days:        '15–25 días',
-    ratePerKg:   4,
-    icon:        Truck,
-    description: 'Grandes volúmenes',
-  },
+  { id: 'economico', label: 'Económico', days: '12–18 días', ratePerKg: 6,  icon: Clock,    description: 'Tarifa más baja' },
+  { id: 'estandar',  label: 'Estándar',  days: '7–10 días',  ratePerKg: 10, icon: Package,  description: 'Precio y plazo' },
+  { id: 'expres',    label: 'Exprés',    days: '3–5 días',   ratePerKg: 16, icon: Zap,      description: 'Entrega prioritaria' },
+  { id: 'carga',     label: 'Carga',     days: '15–25 días', ratePerKg: 4,  icon: Truck,    description: 'Grandes volúmenes' },
 ]
 
 const FUEL_SURCHARGE = 0.08
@@ -89,17 +87,13 @@ function calculatePrice({ weight, largo, ancho, alto, country, serviceId }) {
   const region = COUNTRY_TO_REGION[country]
   if (!region) return null
 
-  const multiplier    = REGIONS[region].multiplier
-  const dimWeight     = (l * a * h) / 5000
+  const multiplier      = REGIONS[region].multiplier
+  const dimWeight       = (l * a * h) / 5000
   const effectiveWeight = Math.max(w, dimWeight)
-
-  const base  = Math.max(effectiveWeight * service.ratePerKg * multiplier, MIN_CHARGE)
-  const fuel  = base * FUEL_SURCHARGE
-  const total = base + fuel
+  const base            = Math.max(effectiveWeight * service.ratePerKg * multiplier, MIN_CHARGE)
+  const total           = base + base * FUEL_SURCHARGE
 
   return {
-    base:            base.toFixed(2),
-    fuel:            fuel.toFixed(2),
     total:           total.toFixed(2),
     effectiveWeight: effectiveWeight.toFixed(2),
     dimWeight:       dimWeight.toFixed(2),
@@ -113,7 +107,6 @@ const priceVariants = {
   exit:    { opacity: 0, y: 8,  scale: 0.96, transition: { duration: 0.18 } },
 }
 
-// ─── Input Field ──────────────────────────────────────────────────────────────
 function Field({ label, icon: Icon, children }) {
   return (
     <div>
@@ -133,18 +126,144 @@ const inputCls = `
   transition-all duration-200
 `
 
+// ─── Custom country selector ───────────────────────────────────────────────────
+function CountrySelect({ value, onChange }) {
+  const [open, setOpen]       = useState(false)
+  const [search, setSearch]   = useState('')
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0 })
+  const btnRef                = useRef(null)
+  const searchRef             = useRef(null)
+
+  useEffect(() => {
+    const handler = e => { if (btnRef.current && !btnRef.current.closest('[data-country-select]').contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  useEffect(() => {
+    if (open) {
+      const rect = btnRef.current?.getBoundingClientRect()
+      if (rect) {
+        const dropH   = 340
+        const spaceBelow = window.innerHeight - rect.bottom - 8
+        const top = spaceBelow >= dropH ? rect.bottom + 6 : rect.top - dropH - 6
+        setDropPos({ top, left: rect.left, width: rect.width })
+      }
+      setTimeout(() => searchRef.current?.focus(), 50)
+    } else {
+      setSearch('')
+    }
+  }, [open])
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim()
+    if (!q) return REGIONS
+    return Object.fromEntries(
+      Object.entries(REGIONS)
+        .map(([region, data]) => [region, { ...data, countries: data.countries.filter(c => c.toLowerCase().includes(q)) }])
+        .filter(([, data]) => data.countries.length > 0)
+    )
+  }, [search])
+
+  return (
+    <div data-country-select>
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className={`${inputCls} flex items-center justify-between cursor-pointer`}
+        style={{ color: value ? 'var(--fg-1)' : 'var(--fg-4)' }}
+      >
+        <span>{value || 'Seleccioná un país'}</span>
+        <ChevronDown
+          size={14}
+          className={`text-[var(--fg-4)] transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{    opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
+            style={{
+              position: 'fixed',
+              top:      dropPos.top,
+              left:     dropPos.left,
+              width:    dropPos.width,
+              zIndex:   9999,
+            }}
+            className="rounded-xl overflow-hidden border border-[var(--bd-2)] bg-[var(--bg-elevated)]
+                       shadow-[0_20px_60px_rgba(0,0,0,0.65)]"
+          >
+            {/* Search bar */}
+            <div className="p-2 border-b border-[var(--bd-1)]">
+              <div className="relative">
+                <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--fg-4)] pointer-events-none" />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  placeholder="Buscar país..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  onKeyDown={e => e.key === 'Escape' && setOpen(false)}
+                  className="w-full pl-8 pr-3 py-2 text-[13px] bg-[var(--bg-input)] border border-[var(--bd-1)]
+                             rounded-lg outline-none text-[var(--fg-1)] placeholder-[var(--fg-4)]
+                             focus:border-[#FF6B00]/40 transition-colors duration-150"
+                />
+              </div>
+            </div>
+
+            {/* Countries list */}
+            <div className="max-h-[272px] overflow-y-auto py-1">
+              {Object.entries(filtered).map(([region, { countries }]) => (
+                <div key={region}>
+                  <div className="px-4 pt-2.5 pb-1 text-[10px] font-semibold tracking-[0.20em] uppercase text-[#FF6B00]">
+                    {region}
+                  </div>
+                  {countries.map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => { onChange(c); setOpen(false) }}
+                      className={`w-full text-left px-5 py-2 text-[13px] transition-colors duration-100 ${
+                        c === value
+                          ? 'text-[#FF6B00] bg-[rgba(255,107,0,0.08)]'
+                          : 'text-[var(--fg-2)] hover:text-[var(--fg-1)] hover:bg-[var(--bd-1)]'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              ))}
+              {Object.keys(filtered).length === 0 && (
+                <p className="text-center text-[13px] text-[var(--fg-4)] py-8">Sin resultados</p>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
 export default function Cotizacion({ onClose }) {
   const [weight,    setWeight]    = useState('')
   const [largo,     setLargo]     = useState('')
   const [ancho,     setAncho]     = useState('')
   const [alto,      setAlto]      = useState('')
   const [country,   setCountry]   = useState('')
-  const [serviceId, setServiceId] = useState('estandar')
   const [submitted, setSubmitted] = useState(false)
+
+  const serviceId = 'estandar'
 
   const pricing = useMemo(
     () => calculatePrice({ weight, largo, ancho, alto, country, serviceId }),
-    [weight, largo, ancho, alto, country, serviceId]
+    [weight, largo, ancho, alto, country]
   )
 
   const isValid = Boolean(
@@ -152,7 +271,7 @@ export default function Cotizacion({ onClose }) {
     largo  && parseFloat(largo)  > 0 &&
     ancho  && parseFloat(ancho)  > 0 &&
     alto   && parseFloat(alto)   > 0 &&
-    country && serviceId
+    country
   )
 
   const handleSubmit = e => {
@@ -168,14 +287,13 @@ export default function Cotizacion({ onClose }) {
     setAncho('')
     setAlto('')
     setCountry('')
-    setServiceId('estandar')
   }
 
   return (
-    <div className="bg-[var(--bg-alt)] border border-[var(--bd-1)] rounded-2xl overflow-hidden
+    <div className="bg-[var(--bg-alt)] border border-[var(--bd-1)] rounded-2xl
                     shadow-[var(--shadow-modal)]">
 
-      {/* Modal header */}
+      {/* Header */}
       <div className="relative flex items-center justify-between px-8 py-6 border-b border-[var(--bd-1)] overflow-hidden">
         <div className="absolute inset-0 pointer-events-none"
              style={{ background: 'radial-gradient(ellipse 60% 100% at 0% 50%, rgba(255,107,0,0.06) 0%, transparent 70%)' }} />
@@ -297,97 +415,7 @@ export default function Cotizacion({ onClose }) {
 
                   {/* País de destino */}
                   <Field label="País de destino" icon={MapPin}>
-                    <div className="relative">
-                      <select
-                        value={country}
-                        onChange={e => setCountry(e.target.value)}
-                        className={inputCls + ' appearance-none pr-10 cursor-pointer'}
-                        style={{ color: country ? 'var(--fg-1)' : 'var(--fg-4)' }}
-                      >
-                        <option value="" disabled style={{ backgroundColor: 'var(--bg-card)' }}>
-                          Seleccioná un país
-                        </option>
-                        {Object.entries(REGIONS).map(([region, { countries }]) => (
-                          <optgroup
-                            key={region}
-                            label={region}
-                            style={{ backgroundColor: 'var(--bg-card)', color: '#FF8C3A' }}
-                          >
-                            {countries.map(c => (
-                              <option
-                                key={c}
-                                value={c}
-                                style={{ backgroundColor: 'var(--bg-card)', color: 'white' }}
-                              >
-                                {c}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </select>
-                      <ChevronDown
-                        size={14}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--fg-4)] pointer-events-none"
-                      />
-                    </div>
-                  </Field>
-
-                  {/* Tipo de servicio */}
-                  <Field label="Tipo de servicio" icon={Calculator}>
-                    <div className="grid grid-cols-2 gap-3">
-                      {SERVICES.map(service => {
-                        const Icon     = service.icon
-                        const selected = serviceId === service.id
-                        return (
-                          <motion.button
-                            key={service.id}
-                            type="button"
-                            onClick={() => setServiceId(service.id)}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            transition={{ duration: 0.15 }}
-                            className="relative rounded-xl p-4 text-left cursor-pointer
-                                       transition-all duration-200"
-                            style={{
-                              backgroundColor: selected ? 'rgba(255,107,0,0.08)' : 'var(--bg-input)',
-                              border:          selected ? '1.5px solid rgba(255,107,0,0.45)' : '1.5px solid var(--bd-1)',
-                              boxShadow:       selected ? '0 0 20px rgba(255,107,0,0.10)' : 'none',
-                            }}
-                          >
-                            {selected && (
-                              <motion.div
-                                layoutId="service-glow"
-                                className="absolute inset-0 rounded-xl pointer-events-none"
-                                style={{ boxShadow: '0 0 24px rgba(255,107,0,0.12)' }}
-                              />
-                            )}
-                            <Icon
-                              size={16}
-                              className="mb-2"
-                              style={{ color: selected ? '#FF6B00' : 'rgb(71 85 105)' }}
-                            />
-                            <p
-                              className="text-[13px] font-semibold leading-none mb-1"
-                              style={{ color: selected ? 'var(--fg-1)' : 'var(--fg-3)' }}
-                            >
-                              {service.label}
-                            </p>
-                            <p
-                              className="text-[11px]"
-                              style={{ color: selected ? 'var(--fg-3)' : 'var(--fg-5)' }}
-                            >
-                              {service.days}
-                            </p>
-                            <p
-                              className="text-[11px] mt-1 font-medium"
-                              style={{ color: selected ? '#FF8C3A' : 'var(--fg-5)' }}
-                            >
-                              ${service.ratePerKg}/kg
-                            </p>
-                          </motion.button>
-                        )
-                      })}
-                    </div>
+                    <CountrySelect value={country} onChange={setCountry} />
                   </Field>
                 </motion.form>
               )}
@@ -412,20 +440,6 @@ export default function Cotizacion({ onClose }) {
               </div>
 
               <div className="px-7 py-6 space-y-5">
-                {/* Selected service badge */}
-                {serviceId && (() => {
-                  const s    = SERVICES.find(x => x.id === serviceId)
-                  const Icon = s.icon
-                  return (
-                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl
-                                    bg-[#FF6B00]/[0.07] border border-[#FF6B00]/15">
-                      <Icon size={15} className="text-[#FF6B00] shrink-0" />
-                      <span className="text-[13px] font-medium text-[var(--fg-1)]">{s.label}</span>
-                      <span className="text-[11px] text-[var(--fg-4)] ml-auto">{s.days}</span>
-                    </div>
-                  )
-                })()}
-
                 {/* Weight info */}
                 <AnimatePresence mode="wait">
                   {pricing && (
@@ -437,19 +451,12 @@ export default function Cotizacion({ onClose }) {
                       transition={{ duration: 0.3 }}
                       className="space-y-2 overflow-hidden"
                     >
-                      {(country
-                        ? [
-                            { label: 'Peso real',        value: `${parseFloat(weight).toFixed(2)} kg` },
-                            { label: 'Peso dimensional',  value: `${pricing.dimWeight} kg` },
-                            { label: 'Peso efectivo',     value: `${pricing.effectiveWeight} kg`, bold: true },
-                            { label: 'Región',            value: pricing.region },
-                          ]
-                        : [
-                            { label: 'Peso real',        value: `${parseFloat(weight).toFixed(2)} kg` },
-                            { label: 'Peso dimensional',  value: `${pricing.dimWeight} kg` },
-                            { label: 'Peso efectivo',     value: `${pricing.effectiveWeight} kg`, bold: true },
-                          ]
-                      ).map(row => (
+                      {[
+                        { label: 'Peso real',       value: `${parseFloat(weight).toFixed(2)} kg` },
+                        { label: 'Peso dimensional', value: `${pricing.dimWeight} kg` },
+                        { label: 'Peso efectivo',    value: `${pricing.effectiveWeight} kg`, bold: true },
+                        { label: 'Región',           value: pricing.region },
+                      ].map(row => (
                         <div key={row.label} className="flex justify-between text-[12px]">
                           <span className="text-[var(--fg-4)]">{row.label}</span>
                           <span className={row.bold ? 'text-[var(--fg-1)] font-medium' : 'text-[var(--fg-3)]'}>
@@ -460,34 +467,6 @@ export default function Cotizacion({ onClose }) {
                     </motion.div>
                   )}
                 </AnimatePresence>
-
-                {/* Divider */}
-                <div className="h-px" style={{ background: 'var(--bd-1)' }} />
-
-                {/* Price breakdown */}
-                <div className="space-y-3">
-                  {[
-                    { label: 'Tarifa base',              key: pricing?.base,    val: pricing ? `$${pricing.base}`  : '—' },
-                    { label: 'Recargo combustible (8%)', key: pricing?.fuel,    val: pricing ? `$${pricing.fuel}`  : '—' },
-                  ].map(row => (
-                    <div key={row.label} className="flex justify-between items-center">
-                      <span className="text-[13px] text-[var(--fg-3)]">{row.label}</span>
-                      <AnimatePresence mode="wait">
-                        <motion.span
-                          key={row.key ?? 'empty'}
-                          variants={priceVariants}
-                          initial="initial"
-                          animate="animate"
-                          exit="exit"
-                          className="text-[13px] font-semibold"
-                          style={{ color: pricing ? 'var(--fg-1)' : 'var(--fg-5)' }}
-                        >
-                          {row.val}
-                        </motion.span>
-                      </AnimatePresence>
-                    </div>
-                  ))}
-                </div>
 
                 {/* Divider */}
                 <div className="h-px" style={{ background: 'var(--bd-1)' }} />
@@ -527,9 +506,7 @@ export default function Cotizacion({ onClose }) {
                                  bg-[#22C55E]/10 border border-[#22C55E]/25"
                     >
                       <CheckCircle size={16} className="text-[#22C55E]" />
-                      <span className="text-sm font-semibold text-[#22C55E]">
-                        ¡Cotización enviada!
-                      </span>
+                      <span className="text-sm font-semibold text-[#22C55E]">¡Cotización enviada!</span>
                     </motion.div>
                   ) : (
                     <motion.button
