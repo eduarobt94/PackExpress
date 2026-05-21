@@ -11,9 +11,18 @@ import {
 } from './seo/schemas'
 
 // Above-fold — eager
-import Navbar     from './components/Navbar'
-import Hero       from './components/Hero'
+import Navbar    from './components/Navbar'
+import Hero      from './components/Hero'
 import LegalModal from './components/LegalModal'
+import NotFound  from './components/NotFound'
+
+// Rutas válidas del SPA — cualquier otra devuelve 404
+const VALID_PATHS = new Set(['/', '/index.html'])
+const pathname    = window.location.pathname
+// Permite pack-sistema y otras rutas PHP existentes pasar sin 404
+const isKnownSystem = ['/pack-sistema', '/pages', '/tienda', '/assets', '/_pe']
+  .some(p => pathname.startsWith(p))
+const is404 = !VALID_PATHS.has(pathname) && !isKnownSystem && pathname !== '/'
 
 // Below-fold — lazy loaded
 const Metrics      = lazy(() => import('./components/Metrics'))
@@ -51,6 +60,9 @@ export default function App() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [cotizarOpen])
+
+  // Renderizar 404 fuera del ThemeProvider para mantenerlo liviano
+  if (is404) return <NotFound />
 
   return (
     <ThemeProvider>

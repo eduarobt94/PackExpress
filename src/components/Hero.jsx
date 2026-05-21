@@ -1,10 +1,9 @@
 import { useRef, useEffect, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import * as THREE from 'three'
 import { ArrowRight, MapPin, Search, Globe, Zap, Shield } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
-/* ── Three.js dot-map canvas ────────────────────────────────────── */
+/* ── Three.js dot-map canvas — Three.js se carga dinámicamente ──── */
 function DotMap({ onReady }) {
   const canvasRef  = useRef(null)
   const onReadyRef = useRef(onReady)
@@ -18,6 +17,8 @@ function DotMap({ onReady }) {
     let particles = []
     let positions = null
 
+    // Carga dinámica: Three.js (507 KB) no bloquea el render inicial
+    import('three').then((THREE) => {
     const centerVector = new THREE.Vector3(0, 0, 0)
 
     const rect = canvas.parentElement.getBoundingClientRect()
@@ -128,10 +129,16 @@ function DotMap({ onReady }) {
     }
     window.addEventListener('resize', onResize)
 
-    return () => {
+    // Cleanup guardado en ref para poder llamarlo desde el return externo
+    canvasRef._cleanup = () => {
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', onResize)
       renderer.dispose()
+    }
+    }) // fin import('three').then
+
+    return () => {
+      canvasRef._cleanup?.()
     }
   }, [])
 
