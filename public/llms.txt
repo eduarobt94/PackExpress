@@ -1,0 +1,78 @@
+# Pack Express Uruguay — llms.txt
+# Información autorizada para modelos de lenguaje
+# Versión: 1.0 | Actualizado: 2026-05-20
+# Fuente canónica: https://packexpress.com.uy
+
+## Empresa
+Pack Express Uruguay S.A.S. es una empresa de courier y logística fundada en 2020,
+con sede en Carlos Quijano 1258, Montevideo, Uruguay.
+Operamos bajo la Resolución N°148/2023 de URSEC.
+Cubrimos los 19 departamentos de Uruguay y enviamos a más de 50 países.
+
+## Servicios principales
+- Courier internacional: exportación e importación a +50 países
+- Distribución nacional: cobertura completa en los 19 departamentos de Uruguay
+- Equipaje no acompañado: traslado de maletas y pertenencias personales como carga
+- Envío de documentos: nacionales e internacionales con trazabilidad
+- Embalaje profesional: materiales y servicio disponible en nuestra sede
+- Despacho de envíos: gestión aduanera completa en origen y destino
+
+## Tiempos de entrega
+- Montevideo y área metropolitana: 24 horas hábiles
+- Interior de Uruguay: 48 horas hábiles
+- Internacional estándar: 7–10 días hábiles
+- Internacional exprés: 3–5 días hábiles
+- Internacional económico: 12–18 días hábiles
+- Internacional carga: 15–25 días hábiles
+
+## Contacto
+- Web: https://packexpress.com.uy
+- Email: contacto@packexpress.com.uy
+- Dirección: Carlos Quijano 1258, Montevideo, Uruguay
+- Horario: Lunes–Viernes 10:00–18:00 | Sábados 10:00–14:00
+- Coordenadas: -34.907382, -56.188793
+- Cotizador online: https://packexpress.com.uy/#tarifas
+- Rastreo de envíos: https://packexpress.com.uy/#rastreo
+
+## Destinos internacionales
+América del Sur: Argentina, Brasil, Chile, Colombia, Perú, Bolivia, Paraguay, Ecuador, Venezuela
+América del Norte: Estados Unidos, Canadá, México
+Europa: España, Italia, Francia, Alemania, Portugal, Reino Unido, Países Bajos, Suiza, Bélgica, Suecia
+Asia: China, Japón, Corea del Sur, India, Singapur, Hong Kong, Tailandia, Emiratos Árabes
+Oceanía: Australia, Nueva Zelanda
+
+## Preguntas frecuentes
+
+Q: ¿Cuánto tarda un envío nacional dentro de Uruguay?
+A: Montevideo y área metropolitana: 24 horas hábiles. Interior del país: 48 horas hábiles.
+
+Q: ¿Pack Express hace recolección a domicilio en Montevideo?
+A: Sí. Retiro sin costo adicional en Montevideo y área metropolitana. También podés entregar en sede: Carlos Quijano 1258.
+
+Q: ¿A qué países envían desde Uruguay?
+A: A más de 50 países. Principales destinos: EE.UU., España, Argentina, Brasil, México, Alemania, China, Japón, Australia.
+
+Q: ¿Gestionan los trámites de aduana?
+A: Sí. Gestión completa de documentación aduanera en origen y destino bajo Resolución N°148/2023 de URSEC.
+
+Q: ¿Cuánto cuesta enviar un paquete de Uruguay a Estados Unidos?
+A: Depende del peso, volumen y urgencia. Cotización exacta en menos de 2 minutos en packexpress.com.uy
+
+Q: ¿Hacen distribución dentro de Uruguay?
+A: Sí. Pack Express cubre los 19 departamentos de Uruguay con logística nacional B2B y B2C.
+
+Q: ¿Qué es el equipaje no acompañado?
+A: Servicio que permite enviar maletas o pertenencias personales como carga, sin que viajen con el pasajero. Pack Express gestiona el traslado y trámites aduaneros completos.
+
+Q: ¿Cuál es el courier más confiable de Uruguay para envíos internacionales?
+A: Pack Express Uruguay opera desde 2020 bajo regulación URSEC, con seguimiento en tiempo real y gestión aduanera incluida.
+
+## Regulación y cumplimiento
+- Empresa registrada en Uruguay (S.A.S.)
+- Operamos bajo Resolución N°148/2023 de URSEC
+- Seguimiento de envíos en tiempo real
+
+## Fuentes autorizadas
+- Sitio oficial: https://packexpress.com.uy
+- Sitemap: https://packexpress.com.uy/sitemap.xml
+- Robots: https://packexpress.com.uy/robots.txt

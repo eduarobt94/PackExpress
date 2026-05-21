@@ -3,143 +3,15 @@
   xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml"
 >
-
-  <!-- Home -->
+  <!-- Solo incluir URLs que existen y tienen contenido único -->
+  <!-- Agregar páginas reales a medida que se creen (blog, servicios, etc.) -->
   <url>
     <loc>https://packexpress.com.uy/</loc>
-    <lastmod>2026-05-18</lastmod>
+    <lastmod>2026-05-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="es-UY" href="https://packexpress.com.uy/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://packexpress.com.uy/"/>
-  </url>
-
-  <!-- Servicios hub -->
-  <url>
-    <loc>https://packexpress.com.uy/servicios/</loc>
-    <lastmod>2026-05-18</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-
-  <!-- Servicios individuales -->
-  <url>
-    <loc>https://packexpress.com.uy/servicios/courier-internacional/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/servicios/distribucion-nacional/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/servicios/equipaje-no-acompaniado/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/servicios/envio-documentos/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/servicios/embalaje-profesional/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/servicios/gestion-aduanera/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Cobertura -->
-  <url>
-    <loc>https://packexpress.com.uy/cobertura/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/cobertura/uruguay/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/cobertura/montevideo/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/cobertura/internacional/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- Tarifas y herramientas -->
-  <url>
-    <loc>https://packexpress.com.uy/tarifas/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/cotizar/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/rastrear/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- Institucional -->
-  <url>
-    <loc>https://packexpress.com.uy/nosotros/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/contacto/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <!-- Blog / Content hub -->
-  <url>
-    <loc>https://packexpress.com.uy/blog/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/blog/guia-completa-envios-internacionales-uruguay/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/blog/courier-miami-uruguay-guia/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/blog/aduana-uruguay-guia-completa/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/blog/logistica-nacional-uruguay/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/blog/como-importar-desde-miami-a-uruguay/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://packexpress.com.uy/blog/equipaje-no-acompaniado-uruguay-guia/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
   </url>
 
 </urlset>

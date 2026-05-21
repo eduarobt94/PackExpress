@@ -25,10 +25,10 @@ export const organizationSchema = {
   },
   geo: {
     '@type': 'GeoCoordinates',
-    latitude: -34.9011,
-    longitude: -56.1645,
+    latitude: -34.907382,
+    longitude: -56.188793,
   },
-  telephone: '+598-2XXX-XXXX',
+  telephone: '+598-2XXX-XXXX', // ⚠️ reemplazar con número real antes de producción
   email: 'contacto@packexpress.com.uy',
   foundingDate: '2020',
   numberOfEmployees: { '@type': 'QuantitativeValue', value: 20 },
@@ -36,8 +36,14 @@ export const organizationSchema = {
     {
       '@type': 'OpeningHoursSpecification',
       dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-      opens: '09:00',
+      opens: '10:00',
       closes: '18:00',
+    },
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Saturday'],
+      opens: '10:00',
+      closes: '14:00',
     },
   ],
   areaServed: [
@@ -61,7 +67,7 @@ export const localBusinessSchema = {
   currenciesAccepted: 'UYU, USD',
   paymentAccepted: 'Cash, Credit Card, Bank Transfer',
   url: BASE_URL,
-  telephone: '+598-2XXX-XXXX',
+  telephone: '+598-2XXX-XXXX', // ⚠️ reemplazar con número real
   address: {
     '@type': 'PostalAddress',
     streetAddress: 'Carlos Quijano 1258',
@@ -72,23 +78,30 @@ export const localBusinessSchema = {
   },
   geo: {
     '@type': 'GeoCoordinates',
-    latitude: -34.9011,
-    longitude: -56.1645,
+    latitude: -34.907382,
+    longitude: -56.188793,
   },
-  hasMap: 'https://maps.google.com/?q=Carlos+Quijano+1258+Montevideo+Uruguay',
+  hasMap: 'https://maps.google.com/maps?q=-34.907382,-56.188793',
   openingHoursSpecification: [
     {
       '@type': 'OpeningHoursSpecification',
       dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
-      opens: '09:00',
+      opens: '10:00',
       closes: '18:00',
     },
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Saturday'],
+      opens: '10:00',
+      closes: '14:00',
+    },
   ],
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.8',
-    reviewCount: '127',
-  },
+  // ⚠️ Descomentar solo cuando haya reviews reales verificables en Google Business u otra plataforma
+  // aggregateRating: {
+  //   '@type': 'AggregateRating',
+  //   ratingValue: '4.8',
+  //   reviewCount: '127',
+  // },
 }
 
 export const websiteSchema = {
@@ -102,7 +115,7 @@ export const websiteSchema = {
   publisher: { '@id': `${BASE_URL}/#organization` },
   potentialAction: {
     '@type': 'SearchAction',
-    target: `${BASE_URL}/rastrear?n={tracking_number}`,
+    target: `${BASE_URL}/#rastreo?n={tracking_number}`,
     'query-input': 'required name=tracking_number',
   },
 }
@@ -124,7 +137,7 @@ export const faqSchema = {
       name: '¿Pack Express realiza recolección a domicilio en Montevideo?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Sí. Retiramos en tu domicilio sin costo adicional en Montevideo y el área metropolitana. También podés acercarte a nuestra sede en Carlos Quijano 1258, Montevideo.',
+        text: 'Sí. Retiramos en tu domicilio sin costo adicional en Montevideo y el área metropolitana. También podés acercarte a nuestra sede en Carlos Quijano 1258, Montevideo, de lunes a viernes de 10:00 a 18:00 y sábados de 10:00 a 14:00.',
       },
     },
     {
@@ -132,7 +145,7 @@ export const faqSchema = {
       name: '¿A qué países envían desde Uruguay?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Realizamos envíos internacionales a más de 50 países incluyendo Estados Unidos, España, Argentina, Brasil, México, Alemania, China, Japón y Australia. Consultá tarifas según destino.',
+        text: 'Realizamos envíos internacionales a más de 50 países incluyendo Estados Unidos, España, Argentina, Brasil, México, Alemania, China, Japón y Australia. Consultá tarifas según destino en nuestro cotizador online.',
       },
     },
     {
@@ -148,7 +161,7 @@ export const faqSchema = {
       name: '¿Cuánto cuesta enviar un paquete de Uruguay a Estados Unidos?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'El costo depende del peso, volumen y urgencia del envío. Podés obtener una cotización exacta en menos de 2 minutos usando nuestro formulario en línea o contactándonos directamente por WhatsApp.',
+        text: 'El costo depende del peso, volumen y urgencia del envío. Podés obtener una cotización exacta en menos de 2 minutos usando nuestro cotizador en línea o contactándonos directamente por WhatsApp.',
       },
     },
     {
@@ -156,7 +169,7 @@ export const faqSchema = {
       name: '¿Hacen distribución dentro de Uruguay?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Sí. Pack Express ofrece distribución logística en los 19 departamentos de Uruguay. No solo hacemos envíos internacionales; la logística nacional es uno de nuestros servicios principales.',
+        text: 'Sí. Pack Express ofrece distribución logística en los 19 departamentos de Uruguay. La logística nacional es uno de nuestros servicios principales, con entrega estándar en 48 horas hábiles.',
       },
     },
     {
@@ -165,6 +178,22 @@ export const faqSchema = {
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'El equipaje no acompañado es el servicio que permite enviar tu maleta o equipaje personal como carga, sin que viaje contigo en el avión. Pack Express gestiona el traslado completo con trámites aduaneros incluidos.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '¿Cuál es el mejor courier para enviar desde Uruguay a España?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Pack Express Uruguay ofrece servicio courier a España con tiempos de entrega de 7–10 días en modalidad estándar y 3–5 días en modalidad exprés, con gestión aduanera y seguimiento en tiempo real incluidos.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '¿Qué courier cubre todos los departamentos de Uruguay?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Pack Express Uruguay tiene cobertura nacional completa en los 19 departamentos, incluyendo Artigas, Rivera, Tacuarembó, Treinta y Tres y todas las zonas del interior. Entrega estándar en 48 horas hábiles.',
       },
     },
   ],

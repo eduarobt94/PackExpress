@@ -1,10 +1,10 @@
 User-agent: *
 Allow: /
 
+Disallow: /pack-sistema/
 Disallow: /admin/
 Disallow: /api/
-Disallow: /_vite/
-Disallow: /cotizador/debug/
+Disallow: /_pe/
 Disallow: /*?*utm_
 Disallow: /*?*fbclid=
 Disallow: /*?*gclid=
@@ -12,7 +12,7 @@ Disallow: /*?*gclid=
 # Sitemap
 Sitemap: https://packexpress.com.uy/sitemap.xml
 
-# Google bots
+# Google
 User-agent: Googlebot
 Allow: /
 Crawl-delay: 0
@@ -20,17 +20,32 @@ Crawl-delay: 0
 User-agent: Googlebot-Image
 Allow: /
 
+User-agent: Google-Extended
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
 # Bing
 User-agent: Bingbot
 Allow: /
 Crawl-delay: 1
 
-# AI crawlers — permitir para SGE/AI Overviews
+# AI crawlers — permitir para SGE / AI Overviews / LLMs
 User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
 Allow: /
 
 User-agent: anthropic-ai
 Allow: /
 
 User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Applebot
 Allow: /
