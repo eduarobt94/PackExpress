@@ -1,0 +1,119 @@
+Options -MultiViews
+RewriteEngine On
+
+# ── Preservar rutas del sistema existente ──────────────────────────────────────
+RewriteRule ^pack-sistema(/.*)?$  - [L]
+RewriteRule ^pages(/.*)?$         - [L]
+RewriteRule ^PHPMailer(/.*)?$     - [L]
+RewriteRule ^tienda(/.*)?$        - [L]
+RewriteRule ^assets(/.*)?$        - [L]
+
+# ── Archivos y carpetas físicas pasan directo ─────────────────────────────────
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# ── Todo lo demás va al SPA ───────────────────────────────────────────────────
+RewriteRule ^ /index.html [L]
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECURITY HEADERS
+# ══════════════════════════════════════════════════════════════════════════════
+<IfModule mod_headers.c>
+
+  # ── Clickjacking — impide que el sitio sea embebido en iframes externos ──────
+  Header always set X-Frame-Options "SAMEORIGIN"
+
+  # ── MIME sniffing — el browser respeta el Content-Type declarado ─────────────
+  Header always set X-Content-Type-Options "nosniff"
+
+  # ── XSS Protection (browsers legacy) ────────────────────────────────────────
+  Header always set X-XSS-Protection "1; mode=block"
+
+  # ── Referrer Policy — no expone la URL completa en requests a terceros ───────
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # ── Permissions Policy — deshabilita features del browser no usadas ──────────
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+
+  # ── HSTS — fuerza HTTPS por 1 año (solo activar si el SSL está bien configurado)
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+  # ── Content Security Policy ──────────────────────────────────────────────────
+  # Permite: self + Google Fonts + S3 CDN (Three.js texture) + Google Maps iframe
+  Header always set Content-Security-Policy "\
+    default-src 'self'; \
+    script-src 'self' 'unsafe-inline' 'unsafe-eval'; \
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; \
+    font-src 'self' https://fonts.gstatic.com; \
+    img-src 'self' data: https: blob:; \
+    connect-src 'self' https://s3-us-west-2.amazonaws.com https://maps.googleapis.com; \
+    frame-src https://maps.google.com https://www.google.com; \
+    object-src 'none'; \
+    base-uri 'self'; \
+    form-action 'self'; \
+    upgrade-insecure-requests;"
+
+</IfModule>
+
+# ══════════════════════════════════════════════════════════════════════════════
+# COMPRESIÓN BROTLI / GZIP
+# ══════════════════════════════════════════════════════════════════════════════
+<IfModule mod_brotli.c>
+  AddOutputFilterByType BROTLI_COMPRESS text/html text/css application/javascript
+  AddOutputFilterByType BROTLI_COMPRESS application/json image/svg+xml text/xml
+  AddOutputFilterByType BROTLI_COMPRESS font/woff2 font/woff application/font-woff2
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript
+  AddOutputFilterByType DEFLATE application/json image/svg+xml text/xml
+  AddOutputFilterByType DEFLATE font/woff2 font/woff application/font-woff2
+</IfModule>
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CACHE HEADERS
+# ══════════════════════════════════════════════════════════════════════════════
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # HTML — sin caché (siempre fresco)
+  ExpiresByType text/html                  "access plus 0 seconds"
+
+  # Assets con hash en el nombre — caché agresivo 1 año
+  ExpiresByType application/javascript     "access plus 1 year"
+  ExpiresByType text/css                   "access plus 1 year"
+
+  # Fuentes
+  ExpiresByType font/woff2                 "access plus 1 year"
+  ExpiresByType font/woff                  "access plus 1 year"
+  ExpiresByType application/font-woff2     "access plus 1 year"
+
+  # Imágenes
+  ExpiresByType image/svg+xml              "access plus 1 year"
+  ExpiresByType image/png                  "access plus 1 month"
+  ExpiresByType image/jpeg                 "access plus 1 month"
+  ExpiresByType image/webp                 "access plus 1 month"
+
+  # Manifesto y SEO
+  ExpiresByType application/manifest+json  "access plus 1 week"
+  ExpiresByType application/json           "access plus 0 seconds"
+  ExpiresByType text/xml                   "access plus 1 day"
+</IfModule>
+
+# Cache-Control headers adicionales para assets con hash
+<FilesMatch "\.(js|css|woff2|woff|svg)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</FilesMatch>
+
+# HTML nunca se cachea
+<FilesMatch "\.html$">
+  Header set Cache-Control "no-cache, no-store, must-revalidate"
+  Header set Pragma "no-cache"
+  Header set Expires "0"
+</FilesMatch>
+
+# Sitemap, robots, llms — caché corto
+<FilesMatch "(sitemap\.xml|robots\.txt|llms\.txt)$">
+  Header set Cache-Control "public, max-age=86400"
+</FilesMatch>
