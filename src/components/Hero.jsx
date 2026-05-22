@@ -83,6 +83,9 @@ function DotMap({ onReady }) {
               destY: (-y + imagedata.height / 2) * scaleY,
               destZ: 0,
               speed: Math.random() / 80 + 0.04,
+              // Coordenadas normalizadas para recalcular al redimensionar
+              normX: (x - imagedata.width  / 2) / imagedata.width,
+              normY: (-y + imagedata.height / 2) / imagedata.height,
             })
           }
         }
@@ -126,6 +129,20 @@ function DotMap({ onReady }) {
       renderer.setSize(w, h, false)
       camera.aspect = w / h
       camera.updateProjectionMatrix()
+
+      // Recalcular destX/destY para el nuevo aspect ratio y factor.
+      // Sin esto las partículas quedan en coordenadas mundiales del aspect
+      // inicial y el marcador SVG (que sí escala con el viewport) se desalinea.
+      if (particles.length > 0) {
+        const fovRad  = 50 * Math.PI / 180
+        const yVisR   = 2 * 200 * Math.tan(fovRad / 2)
+        const xVisR   = yVisR * (w / h)
+        const factorR = w > 1600 ? 0.89 : 0.88
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].destX = particles[i].normX * xVisR * factorR
+          particles[i].destY = particles[i].normY * yVisR * factorR
+        }
+      }
     }
     window.addEventListener('resize', onResize)
 
