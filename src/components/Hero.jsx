@@ -45,6 +45,7 @@ function DotMap({ onReady }) {
       return ctx.getImageData(0, 0, image.width, image.height)
     }
 
+    const SNAP = 0.4 // umbral para snap limpio — evita arrastre infinito al final
     const render = () => {
       animId = requestAnimationFrame(render)
       if (!points) return
@@ -52,9 +53,12 @@ function DotMap({ onReady }) {
       const posAttr = points.geometry.getAttribute('position')
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i]
-        p.x += (p.destX - p.x) * p.speed
-        p.y += (p.destY - p.y) * p.speed
-        p.z += (p.destZ - p.z) * p.speed
+        const dx = p.destX - p.x
+        const dy = p.destY - p.y
+        const dz = p.destZ - p.z
+        p.x = Math.abs(dx) < SNAP ? p.destX : p.x + dx * p.speed
+        p.y = Math.abs(dy) < SNAP ? p.destY : p.y + dy * p.speed
+        p.z = Math.abs(dz) < SNAP ? p.destZ : p.z + dz * p.speed
         positions[i * 3]     = p.x
         positions[i * 3 + 1] = p.y
         positions[i * 3 + 2] = p.z
@@ -118,7 +122,8 @@ function DotMap({ onReady }) {
       (texture) => {
         const imagedata = getImageData(texture.image)
         drawTheMap(imagedata)
-        onReadyRef.current?.()
+        // 1500 ms: mapa ya ~97 % posicionado, sin pausa muerta perceptible
+        setTimeout(() => onReadyRef.current?.(), 1500)
       }
     )
 
@@ -336,7 +341,7 @@ export default function Hero() {
         className="absolute inset-0 pointer-events-none hidden min-[1100px]:block"
         style={{ y}}
       >
-        <DotMap onReady={() => setTimeout(() => setMapReady(true), 2500)} />
+        <DotMap onReady={() => setMapReady(true)} />
         <RoutesOverlay visible={mapReady} isDark={isDark} />
       </motion.div>
 
