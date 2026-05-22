@@ -2,18 +2,44 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Package manager
+**Siempre usar pnpm** — nunca npm ni yarn.
+
 ## Commands
 
-Always use **pnpm** (never npm or yarn):
-
 ```bash
-pnpm dev          # Dev server with HMR
-pnpm build        # Production build → dist/
-pnpm preview      # Preview the production build locally
-pnpm lint         # ESLint (react-hooks + react-refresh rules)
+pnpm dev          # Dev server con HMR
+pnpm build        # Build producción → dist/
+pnpm preview      # Preview del build localmente
+pnpm lint         # ESLint (react-hooks + react-refresh)
 ```
 
-There are no tests in this project.
+No hay tests en este proyecto.
+
+## Contexto del proyecto
+Landing page pública de Pack Express Uruguay. Vive en la raíz de `public_html/` en Hostinger, coexistiendo con el sistema PHP legacy:
+- `/pack-sistema/` — panel de gestión PHP (NO tocar)
+- `/tienda/`       — tienda PHP (NO tocar)
+- `/pages/`        — páginas PHP (NO tocar)
+- `/assets/`       — assets legacy PHP (NO tocar — por eso `assetsDir: '_pe'` en Vite)
+
+## Hero.jsx — Three.js dot-map (cambios recientes)
+El componente más complejo. Estado actual tras las últimas correcciones:
+
+**Problema resuelto: drift del punto de origen en resize**
+- Cada partícula guarda `normX` / `normY` (valor 0–1 relativo al canvas)
+- En resize, `destX/destY` se recalculan: `normX * xVisR * factorR`
+- Snap threshold en render loop: `Math.abs(dx) < 0.4 ? p.destX : p.x + dx * p.speed`
+  — evita decelerar infinito sin llegar nunca al destino
+
+**Problema resuelto: delay en animación inicial**
+- El `setTimeout(1500)` está dentro del callback de carga de textura del DotMap
+- No empieza a contar hasta que la textura cargó
+
+**Problema resuelto: re-animación completa en resize**
+- Hero-level resize handler: `setMapReady(false)` → espera 1500ms → `setMapReady(true)`
+- Esto oculta el overlay, espera que las partículas reposicionen, y relanza la secuencia completa
+- Fade out: 0.2–0.25s / Fade in: 0.8–0.9s con stagger entre capas
 
 ## Architecture Overview
 
@@ -80,6 +106,15 @@ Key intentional settings — do not change without understanding why:
 | `sourcemap: false` | Never expose source maps in production |
 | `modulePreload: { polyfill: false }` | Prevents Vite from injecting an inline script, which would require `unsafe-inline` in the CSP |
 | Manual chunks for `three`, `framer-motion`, `lenis`, `react` | Prevents oversized bundles; each vendor stays below the 600 KB warning |
+
+## .htaccess — regla crítica (NO romper)
+Las CSP estrictas están envueltas en `<If>` para excluir las rutas PHP legacy:
+```apache
+<If "! %{REQUEST_URI} =~ m#^/(pack-sistema|pages|tienda|PHPMailer|assets)(/|$)#">
+  Header always set Content-Security-Policy "..."
+</If>
+```
+Sin esto, el panel PHP legacy se rompe por bloqueo de inline scripts y CDNs externos.
 
 ## Security Headers
 
