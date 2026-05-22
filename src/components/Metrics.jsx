@@ -2,10 +2,10 @@ import { useRef, useEffect, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 
 const STATS = [
-  { end: 50000, suffix: '+',  label: 'Envíos completados',        prefix: '' },
-  { end: 50,    suffix: '+',  label: 'Destinos internacionales',  prefix: '' },
-  { end: 5,     suffix: '',   label: 'Años operando',             prefix: '' },
-  { end: 98,    suffix: '%',  label: 'Índice de satisfacción',    prefix: '' },
+  { end: 50000, suffix: '+',  label: 'Envíos completados',       prefix: '', blue: false },
+  { end: 50,    suffix: '+',  label: 'Destinos internacionales', prefix: '', blue: true  },
+  { end: 5,     suffix: '',   label: 'Años operando',            prefix: '', blue: false },
+  { end: 98,    suffix: '%',  label: 'Ándice de satisfacción',   prefix: '', blue: false },
 ]
 
 function Counter({ end, suffix, prefix, active }) {
@@ -42,9 +42,9 @@ export default function Metrics() {
   return (
     <section className="relative bg-[var(--bg-base)] border-y border-[var(--bd-1)]">
       {/* Top subtle gradient accent */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF6B00]/20 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#F07232]/20 to-transparent" />
 
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 lg:py-28" ref={ref}>
+      <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8 py-16 lg:py-28" ref={ref}>
         <div className="grid grid-cols-2 lg:grid-cols-4">
           {STATS.map((s, i) => (
             <motion.div
@@ -63,11 +63,13 @@ export default function Metrics() {
                 initial={{ scaleX: 0 }}
                 animate={inView ? { scaleX: 1 } : {}}
                 transition={{ duration: 0.6, delay: i * 0.12 + 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="w-8 h-0.5 bg-[#FF6B00] rounded-full mb-5 origin-left"
+                className="w-8 h-0.5 rounded-full mb-5 origin-left"
+                style={{ backgroundColor: s.blue ? '#527ED8' : '#F07232' }}
               />
 
-              <div className="font-display font-bold text-[var(--fg-1)] mb-3
-                              text-[clamp(2rem,5vw,4rem)] leading-none tracking-tight">
+              <div className="font-display font-bold mb-3
+                              text-[clamp(2rem,5vw,4rem)] leading-none tracking-tight"
+                   style={{ color: s.blue ? '#527ED8' : 'var(--fg-1)' }}>
                 <Counter {...s} active={inView} />
               </div>
 
@@ -84,3 +86,4 @@ export default function Metrics() {
     </section>
   )
 }
+

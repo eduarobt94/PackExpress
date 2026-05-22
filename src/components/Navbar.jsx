@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Package, Menu, X, MapPin, Search, ChevronRight } from 'lucide-react'
+import { Menu, X, MapPin, Search, ChevronRight } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
+import { useTheme } from '../context/ThemeContext'
 
 const LINKS = [
   { label: 'Servicios',   href: '#servicios' },
@@ -14,6 +15,8 @@ const LINKS = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen]         = useState(false)
+  const { theme } = useTheme()
+  const logo = theme === 'dark' ? '/logoDark.png' : '/logoLight.png'
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -34,27 +37,16 @@ export default function Navbar() {
         }`}
         style={{ backgroundColor: scrolled ? 'color-mix(in srgb, var(--bg-base) 82%, transparent)' : 'transparent' }}
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-[68px]">
 
             {/* Logo */}
-            <a href="#" className="flex items-center gap-2.5 group shrink-0">
-              <div className="w-8 h-8 rounded-lg bg-[#FF6B00] flex items-center justify-center
-                              group-hover:bg-[#FF8C3A] transition-colors duration-200">
-                <Package size={15} className="text-white" />
-              </div>
-              <div className="leading-none">
-                <div className="text-[var(--fg-1)] font-bold text-sm tracking-wide font-display">
-                  PACK EXPRESS
-                </div>
-                <div className="text-[var(--fg-4)] text-[9px] tracking-[0.18em] uppercase mt-0.5">
-                  Uruguay S.A.S.
-                </div>
-              </div>
+            <a href="/" className="shrink-0 group opacity-100 hover:opacity-90 transition-opacity duration-200">
+              <img src={logo} alt="Pack Express Uruguay" className="h-12 w-auto block" />
             </a>
 
             {/* Desktop links */}
-            <div className="hidden lg:flex items-center gap-7">
+            <div className="hidden min-[860px]:flex items-center gap-5 lg:gap-7">
               {LINKS.map(({ label, href }) =>
                 label === 'Tarifas' ? (
                   <button
@@ -63,7 +55,7 @@ export default function Navbar() {
                     className="relative text-sm text-[var(--fg-3)] hover:text-[var(--fg-1)] transition-colors duration-200 group py-1"
                   >
                     Tarifas
-                    <span className="absolute bottom-0 left-0 w-0 h-px bg-[#FF6B00] group-hover:w-full transition-all duration-300" />
+                    <span className="absolute bottom-0 left-0 w-0 h-px bg-[#F07232] group-hover:w-full transition-all duration-300" />
                   </button>
                 ) : (
                   <a
@@ -72,7 +64,7 @@ export default function Navbar() {
                     className="relative text-sm text-[var(--fg-3)] hover:text-[var(--fg-1)] transition-colors duration-200 group py-1"
                   >
                     {label}
-                    <span className="absolute bottom-0 left-0 w-0 h-px bg-[#FF6B00]
+                    <span className="absolute bottom-0 left-0 w-0 h-px bg-[#F07232]
                                      group-hover:w-full transition-all duration-300" />
                   </a>
                 )
@@ -80,7 +72,7 @@ export default function Navbar() {
             </div>
 
             {/* Desktop CTAs */}
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden min-[860px]:flex items-center gap-2 lg:gap-3">
               <ThemeToggle />
               <a
                 href="#rastreo"
@@ -91,12 +83,12 @@ export default function Navbar() {
                 <MapPin size={13} />
                 Rastrear
               </a>
-              <button
+<button
                 onClick={() => window.dispatchEvent(new CustomEvent('openCotizar'))}
                 className="flex items-center gap-1.5 text-sm font-semibold text-white
-                           bg-[#FF6B00] hover:bg-[#FF8C3A] px-4 py-2 rounded-lg
+                           bg-[#F07232] hover:bg-[#E8823C] px-4 py-2 rounded-lg
                            transition-all duration-200 hover:shadow-[0_0_20px_rgba(255,107,0,0.25)]
-                           focus-visible:ring-2 focus-visible:ring-[#FF6B00]/50"
+                           focus-visible:ring-2 focus-visible:ring-[#F07232]/50"
               >
                 Cotizar
                 <ChevronRight size={13} />
@@ -106,7 +98,7 @@ export default function Navbar() {
             {/* Mobile toggle */}
             <button
               onClick={() => setOpen(v => !v)}
-              className="lg:hidden text-[var(--fg-3)] hover:text-[var(--fg-1)] transition-colors p-2 -mr-2 rounded-lg"
+              className="min-[860px]:hidden text-[var(--fg-3)] hover:text-[var(--fg-1)] transition-colors p-2 -mr-2 rounded-lg"
               aria-label="Menu"
             >
               {open ? <X size={22} /> : <Menu size={22} />}
@@ -123,27 +115,13 @@ export default function Navbar() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-40 lg:hidden flex flex-col"
+            className="fixed inset-0 z-40 min-[860px]:hidden flex flex-col"
           >
             {/* Backdrop */}
             <div className="absolute inset-0 bg-[var(--bg-alt)]/97 backdrop-blur-2xl -z-10" />
 
             {/* Header row */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--bd-1)]">
-              <a href="#" className="flex items-center gap-2.5 group shrink-0">
-                <div className="w-8 h-8 rounded-lg bg-[#FF6B00] flex items-center justify-center
-                                group-hover:bg-[#FF8C3A] transition-colors duration-200">
-                  <Package size={15} className="text-white" />
-                </div>
-                <div className="leading-none">
-                  <div className="text-[var(--fg-1)] font-bold text-sm tracking-wide font-display">
-                    PACK EXPRESS
-                  </div>
-                  <div className="text-[var(--fg-4)] text-[9px] tracking-[0.18em] uppercase mt-0.5">
-                    Uruguay S.A.S.
-                  </div>
-                </div>
-              </a>
+            <div className="flex items-center justify-end px-6 py-4 border-b border-[var(--bd-1)]">
               <button
                 onClick={() => setOpen(false)}
                 className="text-[var(--fg-3)] hover:text-[var(--fg-1)] transition-colors p-1"
@@ -199,10 +177,10 @@ export default function Navbar() {
                 <Search size={14} />
                 Rastrear envío
               </a>
-              <button
+<button
                 onClick={() => { setOpen(false); window.dispatchEvent(new CustomEvent('openCotizar')) }}
                 className="flex items-center justify-center w-full text-sm font-semibold text-white
-                           bg-[#FF6B00] hover:bg-[#FF8C3A] px-4 py-3 rounded-xl transition-colors"
+                           bg-[#F07232] hover:bg-[#E8823C] px-4 py-3 rounded-xl transition-colors"
               >
                 Cotizar envío
               </button>
@@ -213,3 +191,4 @@ export default function Navbar() {
     </>
   )
 }
+

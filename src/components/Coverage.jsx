@@ -2,7 +2,7 @@ import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
 import { ArrowRight, Globe2 } from 'lucide-react'
 
-/* ── Dot corner accent (same pattern as Services) ───────────────── */
+/* â”€â”€ Dot corner accent (same pattern as Services) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function DotCorner({ size = 88, spacing = 11 }) {
   const dots = []
   const cols = Math.ceil(size / spacing)
@@ -26,7 +26,7 @@ function DotCorner({ size = 88, spacing = 11 }) {
   )
 }
 
-/* ── Data ───────────────────────────────────────────────────────── */
+/* â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const DEPARTMENTS = [
   'Montevideo', 'Canelones', 'Maldonado',
   'Colonia',    'San José',  'Soriano',
@@ -50,13 +50,13 @@ const NAT_FEATURES = [
 ]
 
 const INTL_REGIONS = [
-  { label: 'Américas',        count: 12, cities: ['Nueva York','Miami','Los Ángeles','Buenos Aires','São Paulo','Santiago','Lima','Bogotá'] },
-  { label: 'Europa',          count: 8,  cities: ['Madrid','Lisboa','París','Roma','Berlín','Ámsterdam'] },
+  { label: 'Américas',        count: 12, cities: ['Nueva York','Miami','Los Ángeles','Buenos Aires','SÁ£o Paulo','Santiago','Lima','Bogotá'] },
+  { label: 'Europa',          count: 8,  cities: ['Madrid','Lisboa','París','Roma','Berlín','Ámsterdam'] },
   { label: 'Asia & Oriente',  count: 18, cities: ['Dubai','Tokio','Shanghái','Seúl','Singapur','Hong Kong'] },
   { label: 'Oceanía',         count: 3,  cities: ['Sídney','Melbourne','Auckland'] },
 ]
 
-/* ── Component ──────────────────────────────────────────────────── */
+/* â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export default function Coverage() {
   const ref        = useRef(null)
   const headerRef  = useRef(null)
@@ -70,16 +70,16 @@ export default function Coverage() {
         style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(255,107,0,0.03) 0%, transparent 65%)' }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="relative max-w-7xl mx-auto px-6 md:px-10 lg:px-8">
 
-        {/* ── Header ── */}
-        <div ref={headerRef} className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 mb-10 lg:mb-14">
+        {/* â”€â”€ Header â”€â”€ */}
+        <div ref={headerRef} className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-10 lg:mb-14">
           <div>
             <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={headerInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5 }}
-              className="text-[#FF6B00] text-[11px] font-semibold tracking-[0.22em] uppercase mb-4"
+              className="text-[#F07232] text-[11px] font-semibold tracking-[0.22em] uppercase mb-4"
             >
               Cobertura
             </motion.p>
@@ -101,12 +101,12 @@ export default function Coverage() {
             className="flex flex-col gap-3 lg:items-end"
           >
             <p className="text-[var(--fg-3)] text-sm leading-relaxed max-w-xs lg:text-right">
-              Distribución en todo Uruguay y red activa en más de 50 países, con acuerdos directos con aerolíneas y agentes aduanales.
+              Distribución en los 19 departamentos de Uruguay, courier a +50 países y casillero internacional desde EE.UU.
             </p>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('openCotizar'))}
-              className="inline-flex items-center gap-1.5 text-[#FF6B00] text-sm font-semibold
-                         hover:text-[#FF8C3A] transition-colors duration-200 group"
+              className="inline-flex items-center gap-1.5 text-[#F07232] text-sm font-semibold
+                         hover:text-[#E8823C] transition-colors duration-200 group"
             >
               Cotizar envío
               <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform duration-200" />
@@ -114,7 +114,7 @@ export default function Coverage() {
           </motion.div>
         </div>
 
-        {/* ── National featured card ── */}
+        {/* â”€â”€ National featured card â”€â”€ */}
         <motion.div
           ref={ref}
           initial={{ opacity: 0, y: 28 }}
@@ -130,15 +130,15 @@ export default function Coverage() {
           />
           <DotCorner size={120} spacing={13} />
 
-          <div className="flex flex-col lg:flex-row lg:items-start gap-8 lg:gap-14">
+          <div className="flex flex-col md:flex-row md:items-start gap-8 md:gap-10 lg:gap-14">
 
             {/* Left: headline + stats + features */}
             <div className="lg:w-[38%] shrink-0">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6
-                             bg-[#FF6B00]/10 border border-[#FF6B00]/20">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse" />
-                <span className="text-[#FF6B00] text-[10px] font-bold tracking-[0.18em] uppercase">
+                             bg-[#F07232]/10 border border-[#F07232]/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#F07232] animate-pulse" />
+                <span className="text-[#F07232] text-[10px] font-bold tracking-[0.18em] uppercase">
                   Cobertura Nacional
                 </span>
               </div>
@@ -170,7 +170,7 @@ export default function Coverage() {
                 ))}
               </div>
 
-              {/* Feature list — verde = feature confirmada/disponible */}
+              {/* Feature list "” verde = feature confirmada/disponible */}
               <div className="space-y-2.5">
                 {NAT_FEATURES.map(f => (
                   <div key={f} className="flex items-center gap-3">
@@ -188,7 +188,7 @@ export default function Coverage() {
             <div className="flex-1">
               <p className="text-[11px] text-[var(--fg-4)] tracking-[0.2em] uppercase mb-5 flex items-center gap-2">
                 <span className="w-3 h-px bg-slate-700 inline-block" />
-                Cobertura completa — todos los departamentos
+                Cobertura completa "” todos los departamentos
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2.5">
                 {DEPARTMENTS.map((dep, i) => (
@@ -201,7 +201,7 @@ export default function Coverage() {
                   >
                     <div
                       className="w-1 h-1 rounded-full shrink-0"
-                      style={{ backgroundColor: dep === 'Montevideo' ? '#FF6B00' : 'rgba(255,107,0,0.3)' }}
+                      style={{ backgroundColor: dep === 'Montevideo' ? '#F07232' : 'rgba(255,107,0,0.3)' }}
                     />
                     <span
                       className="text-[13px] leading-none"
@@ -218,7 +218,7 @@ export default function Coverage() {
                 <Globe2 size={13} className="text-[var(--fg-4)] shrink-0" />
                 <span className="text-[var(--fg-4)] text-[12px]">
                   Y conectado con más de{' '}
-                  <span className="text-[var(--fg-2)] font-semibold">50 países</span>{' '}
+                  <span className="font-semibold" style={{ color: '#527ED8' }}>50 países</span>{' '}
                   a través de nuestra red internacional.
                 </span>
               </div>
@@ -226,7 +226,7 @@ export default function Coverage() {
           </div>
         </motion.div>
 
-        {/* ── International region cards ── */}
+        {/* â”€â”€ International region cards â”€â”€ */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
           {INTL_REGIONS.map((region, i) => (
             <motion.div
@@ -237,7 +237,7 @@ export default function Coverage() {
               whileHover={{ y: -3, transition: { duration: 0.2 } }}
               className="relative flex flex-col justify-between bg-[var(--bg-card)] border border-[var(--bd-1)]
                          rounded-2xl p-5 overflow-hidden min-h-[120px] sm:min-h-[140px]
-                         hover:border-[var(--bd-2)] hover:shadow-[0_0_24px_rgba(255,107,0,0.06)]
+                         hover:border-[#527ED8]/20 hover:shadow-[0_0_24px_rgba(59,126,248,0.08)]
                          transition-[border-color,box-shadow] duration-300 cursor-default"
             >
               {/* Ghost number */}
@@ -256,7 +256,7 @@ export default function Coverage() {
 
               {/* Bottom: country count */}
               <div className="relative pt-4 border-t border-[var(--bd-1)] mt-6">
-                <span className="font-display font-bold text-[#FF6B00] text-base leading-none">
+                <span className="font-display font-bold text-base leading-none" style={{ color: '#527ED8' }}>
                   {region.count}
                 </span>
                 <span className="text-[12px] text-[var(--fg-4)] ml-1.5">países</span>
@@ -269,3 +269,4 @@ export default function Coverage() {
     </section>
   )
 }
+

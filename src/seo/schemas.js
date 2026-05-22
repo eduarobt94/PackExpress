@@ -196,6 +196,22 @@ export const faqSchema = {
         text: 'Pack Express Uruguay tiene cobertura nacional completa en los 19 departamentos, incluyendo Artigas, Rivera, Tacuarembó, Treinta y Tres y todas las zonas del interior. Entrega estándar en 48 horas hábiles.',
       },
     },
+    {
+      '@type': 'Question',
+      name: '¿Qué es el casillero internacional de Pack Express?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'El casillero internacional de Pack Express te permite comprar en tiendas de EE.UU., Europa, Asia y más, usando nuestra dirección como destino de envío y recibir tus compras en Uruguay. Gestionamos la recepción, consolidación y despacho con trámites aduaneros incluidos.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: '¿Cómo funciona el casillero internacional para comprar en el exterior desde Uruguay?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Solicitás tu dirección de casillero, realizás tus compras en tiendas extranjeras indicando esa dirección como destino, Pack Express recibe tus paquetes, los consolida si son varios y los despacha hacia Uruguay con gestión aduanera completa.',
+      },
+    },
   ],
 }
 

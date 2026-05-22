@@ -4,19 +4,19 @@ import { Star } from 'lucide-react'
 
 const TESTIMONIALS = [
   {
-    quote:    'Enviamos productos de nuestra empresa a España y Europa con Pack Express. La documentación aduanera es impecable y el seguimiento en tiempo real nos da total tranquilidad.',
+    quote:    'Enviamos productos a España y el resto de Europa con total tranquilidad. La documentación aduanera es impecable y el seguimiento en tiempo real nos da confianza en cada despacho.',
     name:     'María González',
     role:     'Emprendedora exportadora',
     initials: 'MG',
   },
   {
-    quote:    'Para mis traslados frecuentes al exterior, confío en Pack Express para mover mi equipaje. Precios competitivos, atención ágil y siempre puntual. Muy recomendable.',
+    quote:    'Uso el casillero para comprar en tiendas que no envían a Uruguay. Los paquetes llegan en perfecto estado y los trámites de aduana los resuelve Pack Express sin que yo tenga que hacer nada.',
     name:     'Carlos Rodríguez',
-    role:     'Viajero frecuente',
+    role:     'Cliente de casillero',
     initials: 'CR',
   },
   {
-    quote:    'El despacho de envíos y la distribución dentro de Uruguay son excepcionales. Documentación en orden, tiempos cumplidos. Una empresa seria y de primer nivel.',
+    quote:    'La distribución a nuestros puntos de venta en todo Uruguay es confiable y puntual. Documentación en orden, tiempos cumplidos. Una empresa seria y de primer nivel.',
     name:     'Ana Martínez',
     role:     'Importadora comercial',
     initials: 'AM',
@@ -39,7 +39,7 @@ export default function Testimonials() {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="relative max-w-7xl mx-auto px-6 md:px-10 lg:px-8">
 
         {/* Header */}
         <div ref={headerRef} className="text-center mb-16">
@@ -47,7 +47,7 @@ export default function Testimonials() {
             initial={{ opacity: 0, y: 8 }}
             animate={headerInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5 }}
-            className="text-[#FF6B00] text-[11px] font-semibold tracking-[0.22em] uppercase mb-4"
+            className="text-[#F07232] text-[11px] font-semibold tracking-[0.22em] uppercase mb-4"
           >
             Testimonios
           </motion.p>
@@ -57,8 +57,8 @@ export default function Testimonials() {
             transition={{ duration: 0.75, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
             className="font-display font-bold text-[var(--fg-1)] text-[clamp(2rem,5vw,3.25rem)] leading-[1.05]"
           >
-            Más de 50,000 envíos respaldan
-            <br />nuestra reputación.
+            La confianza de miles de clientes,
+            <br />envío a envío.
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
@@ -66,14 +66,19 @@ export default function Testimonials() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-[var(--fg-3)] text-[13px] leading-relaxed mt-4 max-w-md mx-auto"
           >
-            Clientes de todo Uruguay y el mundo confían en Pack Express
-            para sus envíos nacionales e internacionales.
+            Courier nacional, envíos internacionales y casillero:
+            clientes de todo Uruguay eligen Pack Express.
           </motion.p>
         </div>
 
         {/* Cards */}
         <div ref={ref} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {TESTIMONIALS.map((t, i) => (
+          {TESTIMONIALS.map((t, i) => {
+            const isBlue = t.role === 'Cliente de casillero'
+            const accent = isBlue
+              ? { hex: '#527ED8', tint: 'rgba(59,126,248,0.08)', ring: 'rgba(59,126,248,0.18)', glow: 'rgba(59,126,248,0.35)' }
+              : { hex: '#F07232', tint: 'rgba(255,107,0,0.08)',  ring: 'rgba(255,107,0,0.18)',  glow: 'rgba(255,107,0,0.35)' }
+            return (
             <motion.div
               key={t.name}
               initial={{ opacity: 0, y: 32 }}
@@ -85,17 +90,17 @@ export default function Testimonials() {
                          transition-[border-color,box-shadow] duration-300
                          hover:shadow-[0_8px_48px_rgba(0,0,0,0.35)] cursor-default"
             >
-              {/* Top accent line — all same brand orange */}
+              {/* Top accent line */}
               <div
                 className="absolute inset-x-0 top-0 h-px rounded-t-2xl
                            opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(255,107,0,0.35), transparent)' }}
+                style={{ background: `linear-gradient(90deg, transparent, ${accent.glow}, transparent)` }}
               />
 
               {/* Stars */}
               <div className="flex gap-0.5 mb-6">
                 {Array.from({ length: 5 }).map((_, j) => (
-                  <Star key={j} size={12} className="fill-[#FF6B00] text-[#FF6B00] opacity-90" />
+                  <Star key={j} size={12} style={{ fill: accent.hex, color: accent.hex, opacity: 0.9 }} />
                 ))}
               </div>
 
@@ -109,9 +114,9 @@ export default function Testimonials() {
 
               {/* Author */}
               <div className="flex items-center gap-3">
-                <div className="relative w-9 h-9 rounded-full bg-[#FF6B00]/[0.08]
-                                border border-[#FF6B00]/[0.18] flex items-center justify-center shrink-0">
-                  <span className="text-[10px] font-bold font-display text-[#FF6B00]/80">
+                <div className="relative w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                     style={{ backgroundColor: accent.tint, border: `1px solid ${accent.ring}` }}>
+                  <span className="text-[10px] font-bold font-display" style={{ color: `${accent.hex}cc` }}>
                     {t.initials}
                   </span>
                 </div>
@@ -121,7 +126,8 @@ export default function Testimonials() {
                 </div>
               </div>
             </motion.div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Trust bar */}
@@ -133,15 +139,20 @@ export default function Testimonials() {
                      pt-8 border-t border-[var(--bd-1)]"
         >
           {[
-            { val: '50,000+', label: 'Envíos completados' },
-            { val: '98%',     label: 'Clientes satisfechos' },
-            { val: '50+',     label: 'Países destino' },
+            { val: '50,000+', label: 'Envíos completados',  blue: false },
+            { val: '98%',     label: 'Clientes satisfechos', blue: false },
+            { val: '50+',     label: 'Países destino',       blue: true  },
           ].map((stat, i) => (
             <div
               key={stat.label}
               className={`flex items-center gap-3 ${i > 0 ? 'sm:pl-6 sm:border-l sm:border-[var(--bd-1)]' : ''}`}
             >
-              <span className="font-display font-bold text-xl text-[var(--fg-1)]">{stat.val}</span>
+              <span
+                className="font-display font-bold text-xl"
+                style={{ color: stat.blue ? '#527ED8' : 'var(--fg-1)' }}
+              >
+                {stat.val}
+              </span>
               <span className="text-[12px] text-[var(--fg-4)]">{stat.label}</span>
             </div>
           ))}
@@ -151,3 +162,4 @@ export default function Testimonials() {
     </section>
   )
 }
+

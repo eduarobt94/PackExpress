@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'framer-motion'
-import { Package, Briefcase, FileText, Box, Globe2 } from 'lucide-react'
+import { Package, Briefcase, FileText, Globe2, ShoppingBag } from 'lucide-react'
 
 const SERVICES = [
   {
@@ -16,11 +16,19 @@ const SERVICES = [
     ],
   },
   {
+    id:    'casillero',
+    Icon:  ShoppingBag,
+    title: 'Casillero Internacional',
+    desc:  'Comprás en tiendas de EE.UU. "” nosotros recibimos, consolidamos y te lo enviamos a Uruguay con aduanas incluidas.',
+    tag:   'Compras en el exterior',
+    blue:  true,
+  },
+  {
     id:    'equipaje',
     Icon:  Briefcase,
     title: 'Equipaje No Acompañado',
-    desc:  'Transporte seguro de equipaje personal sin límites de peso, dentro de Uruguay y hacia el exterior.',
-    tag:   'Sin límites de peso',
+    desc:  'Transporte seguro de equipaje personal dentro de Uruguay y hacia el exterior, con trámites aduaneros gestionados.',
+    tag:   'Aéreo & Terrestre',
   },
   {
     id:    'documentos',
@@ -28,13 +36,6 @@ const SERVICES = [
     title: 'Envío de Documentos',
     desc:  'Gestión segura de documentación oficial, contratos y correspondencia con cadena de custodia certificada.',
     tag:   'Custodia certificada',
-  },
-  {
-    id:    'embalaje',
-    Icon:  Box,
-    title: 'Embalaje Profesional',
-    desc:  'Empaque especializado con materiales de primera calidad para proteger tu envío en cualquier trayecto.',
-    tag:   'Materiales premium',
   },
   {
     id:    'distribucion',
@@ -85,7 +86,7 @@ function FeaturedCard({ service, inView }) {
     <motion.div
       variants={item}
       whileHover={{ y: -3, transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] } }}
-      className="lg:col-span-2 group relative bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl
+      className="md:col-span-2 lg:col-span-2 group relative bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl
                  p-6 sm:p-8 lg:p-10 overflow-hidden cursor-default
                  hover:border-[var(--bd-2)] hover:shadow-[0_0_50px_rgba(255,107,0,0.07)]
                  transition-[border-color,box-shadow] duration-300"
@@ -97,18 +98,18 @@ function FeaturedCard({ service, inView }) {
 
       <DotCorner size={110} spacing={12} />
 
-      <div className="relative flex flex-col lg:flex-row lg:items-start gap-5 lg:gap-8">
+      <div className="relative flex flex-col md:flex-row md:items-start gap-5 md:gap-8">
         {/* Icon */}
-        <div className="shrink-0 w-14 h-14 rounded-2xl bg-[#FF6B00]/[0.10] border border-[#FF6B00]/20
+        <div className="shrink-0 w-14 h-14 rounded-2xl bg-[#F07232]/[0.10] border border-[#F07232]/20
                         flex items-center justify-center
-                        group-hover:bg-[#FF6B00]/[0.15] transition-colors duration-300">
-          <Icon size={24} color="#FF6B00" />
+                        group-hover:bg-[#F07232]/[0.15] transition-colors duration-300">
+          <Icon size={24} color="#F07232" />
         </div>
 
         <div className="flex-1 min-w-0">
           {/* Tag */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-5 h-px bg-[#FF6B00]/40" />
+            <div className="w-5 h-px bg-[#F07232]/40" />
             <span className="text-[var(--fg-3)] text-[11px] tracking-[0.12em] uppercase">{tag}</span>
           </div>
 
@@ -140,28 +141,33 @@ function FeaturedCard({ service, inView }) {
 }
 
 function ServiceCard({ service }) {
-  const { Icon, title, desc, tag } = service
+  const { Icon, title, desc, tag, blue } = service
+
+  const accent = blue
+    ? { bg: 'bg-[#527ED8]/[0.08]', border: 'border-[#527ED8]/[0.15]', hoverBg: 'group-hover:bg-[#527ED8]/[0.12]', color: '#527ED8', dot: 'bg-[#527ED8]/50', line: 'rgba(59,126,248,0.4)', hoverCard: '0_0_30px_rgba(59,126,248,0.08)', hoverBorder: 'hover:border-[#527ED8]/20' }
+    : { bg: 'bg-[#F07232]/[0.08]', border: 'border-[#F07232]/[0.15]', hoverBg: 'group-hover:bg-[#F07232]/[0.12]', color: '#F07232', dot: 'bg-[#F07232]/50', line: 'rgba(255,107,0,0.4)', hoverCard: '0_0_30px_rgba(255,107,0,0.06)', hoverBorder: 'hover:border-[var(--bd-2)]' }
+
   return (
     <motion.div
       variants={item}
       whileHover={{ y: -3, transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] } }}
-      className="group relative bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl p-5 sm:p-7
-                 overflow-hidden cursor-default
-                 hover:border-[var(--bd-2)] hover:shadow-[0_0_30px_rgba(255,107,0,0.06)]
-                 transition-[border-color,box-shadow] duration-300"
+      className={`group relative bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl p-5 sm:p-7
+                 overflow-hidden cursor-default ${accent.hoverBorder}
+                 transition-[border-color,box-shadow] duration-300`}
+      style={{ '--hover-shadow': accent.hoverCard }}
     >
       {/* Top accent line */}
       <div className="absolute top-0 inset-x-0 h-px rounded-t-2xl opacity-0 group-hover:opacity-100
                       transition-opacity duration-500"
-           style={{ background: 'linear-gradient(90deg, transparent, rgba(255,107,0,0.4), transparent)' }} />
+           style={{ background: `linear-gradient(90deg, transparent, ${accent.line}, transparent)` }} />
 
       <DotCorner />
 
       {/* Icon */}
-      <div className="w-11 h-11 rounded-xl bg-[#FF6B00]/[0.08] border border-[#FF6B00]/[0.15]
+      <div className={`w-11 h-11 rounded-xl ${accent.bg} border ${accent.border}
                       flex items-center justify-center mb-5
-                      group-hover:bg-[#FF6B00]/[0.12] transition-colors duration-300">
-        <Icon size={19} color="#FF6B00" />
+                      ${accent.hoverBg} transition-colors duration-300`}>
+        <Icon size={19} color={accent.color} />
       </div>
 
       <h3 className="font-display font-semibold text-[var(--fg-1)] text-[15px] leading-snug mb-2.5">
@@ -173,7 +179,7 @@ function ServiceCard({ service }) {
 
       {/* Bottom tag */}
       <div className="flex items-center gap-2">
-        <div className="w-1 h-1 rounded-full bg-[#FF6B00]/50" />
+        <div className={`w-1 h-1 rounded-full ${accent.dot}`} />
         <span className="text-[var(--fg-4)] text-[11px] tracking-wide">{tag}</span>
       </div>
     </motion.div>
@@ -195,7 +201,7 @@ export default function Services() {
         }}
       />
 
-      <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="relative max-w-7xl mx-auto px-6 md:px-10 lg:px-8">
 
         {/* Header */}
         <div className="mb-12 lg:mb-20" ref={ref}>
@@ -203,7 +209,7 @@ export default function Services() {
             initial={{ opacity: 0, y: 8 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5 }}
-            className="text-[#FF6B00] text-[11px] font-semibold tracking-[0.22em] uppercase mb-4"
+            className="text-[#F07232] text-[11px] font-semibold tracking-[0.22em] uppercase mb-4"
           >
             Soluciones
           </motion.p>
@@ -225,8 +231,8 @@ export default function Services() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-[var(--fg-3)] text-sm leading-relaxed max-w-xs"
             >
-              Logística nacional dentro de Uruguay e internacional a más de 50 países,
-              con atención personalizada desde Montevideo.
+              Desde enviar un paquete al exterior hasta recibir tus compras.
+              Operamos en ambas direcciones.
             </motion.p>
           </div>
         </div>
@@ -246,3 +252,4 @@ export default function Services() {
     </section>
   )
 }
+

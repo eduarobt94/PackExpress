@@ -1,9 +1,9 @@
 import { useRef, useEffect, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowRight, MapPin, Search, Globe, Zap, Shield } from 'lucide-react'
+import { MapPin, Search, Globe, Zap, Shield } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 
-/* ── Three.js dot-map canvas — Three.js se carga dinámicamente ──── */
+/* â”€â”€ Three.js dot-map canvas "” Three.js se carga dinámicamente â”€â”€â”€â”€ */
 function DotMap({ onReady }) {
   const canvasRef  = useRef(null)
   const onReadyRef = useRef(onReady)
@@ -111,7 +111,7 @@ function DotMap({ onReady }) {
 
     const loader = new THREE.TextureLoader()
     loader.load(
-      'https://s3-us-west-2.amazonaws.com/s.cdpn.io/127738/transparentMap.png',
+      '/textures/worldMap.png',
       (texture) => {
         const imagedata = getImageData(texture.image)
         drawTheMap(imagedata)
@@ -151,7 +151,7 @@ function DotMap({ onReady }) {
   )
 }
 
-/* ── SVG routes overlay ─────────────────────────────────────────── */
+/* â”€â”€ SVG routes overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const toSVG = (lat, lon) => ({ x: (lon + 180) / 360 * 1000, y: (90 - lat) / 180 * 580 })
 
 const ORIGIN = toSVG(-48, -70) // Uruguay
@@ -207,10 +207,10 @@ function RoutesOverlay({ visible, isDark }) {
         </filter>
       </defs>
 
-      {/* factor-scale group — matches Three.js map scaling from center */}
+      {/* factor-scale group "” matches Three.js map scaling from center */}
       <g transform={`translate(500,290) scale(${factor}) translate(-500,-290)`}>
 
-        {/* Pulsing origin — Uruguay (appears first) */}
+        {/* Pulsing origin "” Uruguay (appears first) */}
         <motion.g
           initial={{ opacity: 0 }}
           animate={{ opacity: visible ? 1 : 0 }}
@@ -218,19 +218,19 @@ function RoutesOverlay({ visible, isDark }) {
         >
           {/* circleCorrection mantiene los círculos redondos con preserveAspectRatio="none" */}
           <g transform={`translate(${ORIGIN.x},${ORIGIN.y}) scale(${circleCorrection},1) translate(${-ORIGIN.x},${-ORIGIN.y})`}>
-            <circle cx={ORIGIN.x} cy={ORIGIN.y} r="4" fill="#FF6B00" filter="url(#glow-r)" />
-            <circle cx={ORIGIN.x} cy={ORIGIN.y} r="4" fill="none" stroke="#FF6B00" strokeWidth="1.5" opacity="0.6">
+            <circle cx={ORIGIN.x} cy={ORIGIN.y} r="4" fill="#F07232" filter="url(#glow-r)" />
+            <circle cx={ORIGIN.x} cy={ORIGIN.y} r="4" fill="none" stroke="#F07232" strokeWidth="1.5" opacity="0.6">
               <animate attributeName="r"       values="4;16;4"    dur="2.4s" repeatCount="indefinite" />
               <animate attributeName="opacity" values="0.6;0;0.6" dur="2.4s" repeatCount="indefinite" />
             </circle>
-            <circle cx={ORIGIN.x} cy={ORIGIN.y} r="4" fill="none" stroke="#FF6B00" strokeWidth="1" opacity="0.3">
+            <circle cx={ORIGIN.x} cy={ORIGIN.y} r="4" fill="none" stroke="#F07232" strokeWidth="1" opacity="0.3">
               <animate attributeName="r"       values="4;26;4"    dur="2.4s" begin="0.7s" repeatCount="indefinite" />
               <animate attributeName="opacity" values="0.3;0;0.3" dur="2.4s" begin="0.7s" repeatCount="indefinite" />
             </circle>
           </g>
         </motion.g>
 
-        {/* Arc paths — always in DOM (mpath needs the IDs), staggered fade-in */}
+        {/* Arc paths "” always in DOM (mpath needs the IDs), staggered fade-in */}
         {routes.map((r, i) => (
           <motion.path
             key={r.id}
@@ -245,7 +245,7 @@ function RoutesOverlay({ visible, isDark }) {
           />
         ))}
 
-        {/* Travelling package icons — appear last, staggered */}
+        {/* Travelling package icons "” appear last, staggered */}
         {routes.map((r, i) => (
           <motion.g
             key={`box-${r.id}`}
@@ -255,7 +255,7 @@ function RoutesOverlay({ visible, isDark }) {
             transition={{ duration: 0.8, delay: visible ? 1.8 + i * 0.08 : 0 }}
           >
             <rect x="-2.8" y="-2.5" width="5.6" height="5" rx="0.6"
-                  fill="#FF6B00" stroke="#FF8C3A" strokeWidth="0.4" />
+                  fill="#F07232" stroke="#E8823C" strokeWidth="0.4" />
             <line x1="-2.8" y1="0.3" x2="2.8" y2="0.3"
                   stroke="rgba(255,255,255,0.7)" strokeWidth="0.4" />
             <line x1="0" y1="-2.5" x2="0" y2="0.3"
@@ -271,7 +271,7 @@ function RoutesOverlay({ visible, isDark }) {
   )
 }
 
-/* ── Hero ────────────────────────────────────────────────────────── */
+/* â”€â”€ Hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export default function Hero() {
   const ref = useRef(null)
   const [mapReady, setMapReady] = useState(false)
@@ -305,7 +305,7 @@ export default function Hero() {
         }}
       />
 
-      {/* Background dot grid — fills ocean/polar areas */}
+      {/* Background dot grid "” fills ocean/polar areas */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none hidden min-[1100px]:block" aria-hidden="true">
         <defs>
           <pattern id="bg-dots" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
@@ -323,7 +323,7 @@ export default function Hero() {
         <RoutesOverlay visible={mapReady} isDark={isDark} />
       </motion.div>
 
-      {/* Vignette — fades only left/right/bottom edges */}
+      {/* Vignette "” fades only left/right/bottom edges */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -335,7 +335,7 @@ export default function Hero() {
       />
 
       <motion.div
-        className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-32 pb-14 sm:pb-20 w-full
+        className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 lg:px-8 pt-20 sm:pt-24 lg:pt-32 pb-14 sm:pb-20 w-full
                    flex justify-end"
         style={{ opacity }}
       >
@@ -345,12 +345,15 @@ export default function Hero() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-8
-                       border border-[#FF6B00]/25 bg-[#FF6B00]/[0.08]
-                       text-[#FF8C3A] text-[12px] font-semibold tracking-[0.12em] uppercase"
+            className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full mb-8
+                       border border-[#F07232]/30 bg-[#F07232]/[0.06]
+                       text-[9px] sm:text-[12px] font-semibold max-[430px]:tracking-[-0.06em] tracking-[0.06em] sm:tracking-[0.10em] uppercase"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B00] animate-pulse" />
-            Logística Nacional & Internacional · Uruguay
+            <span className="text-[#E8823C] whitespace-nowrap">Courier</span>
+            <span className="text-[var(--fg-5)]">·</span>
+            <span className="text-[#6B90DC] whitespace-nowrap">Casillero Internacional</span>
+            <span className="text-[var(--fg-5)]">·</span>
+            <span className="text-[var(--fg-2)] whitespace-nowrap">Distribución Nacional</span>
           </motion.div>
 
           <motion.h1
@@ -361,12 +364,14 @@ export default function Hero() {
                        text-[clamp(2rem,6vw,4.8rem)]"
           >
             Conectamos{' '}
-            <span className="text-transparent bg-clip-text
-                             bg-gradient-to-r from-[#FF6B00] to-[#FFAB6B]">
+            <span className="text-[#527ED8]">
               Uruguay
             </span>
             <br />
-            con el mundo.
+            con el{' '}
+            <span className="text-[#F07232]">
+              mundo.
+            </span>
           </motion.h1>
 
           <motion.p
@@ -375,9 +380,9 @@ export default function Hero() {
             transition={{ duration: 0.7, delay: 0.38 }}
             className="text-[15px] sm:text-lg text-[var(--fg-2)] leading-relaxed max-w-[480px] mb-10"
           >
-            Logística nacional dentro de Uruguay y envíos internacionales
-            a más de 50 países. Courier, equipaje, documentos y despacho
-            de envíos con estándares de clase mundial.
+            Distribución en todo Uruguay, envíos internacionales a +50 países
+            y tu casillero personal para comprar donde quieras y recibir
+            en tu puerta. Todo desde un solo lugar.
           </motion.p>
 
           <motion.div
@@ -388,14 +393,24 @@ export default function Hero() {
           >
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('openCotizar'))}
-              className="group flex items-center gap-2 px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
-                         bg-[#FF6B00] hover:bg-[#FF8C3A] text-white font-semibold text-sm
+              className="px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
+                         bg-[#F07232] hover:bg-[#E8823C] text-white font-semibold text-sm
                          transition-all duration-300
                          hover:shadow-[0_0_32px_rgba(255,107,0,0.30)]"
             >
               Cotizar envío
-              <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform duration-200" />
             </button>
+            <a
+              href="#servicios"
+              className="px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
+                         border border-[#527ED8]/25 hover:border-[#527ED8]/55
+                         text-[var(--fg-2)] hover:text-[#6B90DC] font-semibold text-sm
+                         transition-all duration-300
+                         bg-[#527ED8]/[0.06] backdrop-blur-2xl hover:bg-[#527ED8]/[0.12]
+                         hover:shadow-[0_0_24px_rgba(59,126,248,0.18)]"
+            >
+              Abrir mi casillero
+            </a>
           </motion.div>
 
           <motion.div
@@ -404,9 +419,11 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.62 }}
             className="flex items-center gap-2 max-w-full sm:max-w-[560px]
-                       p-1.5 bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl"
+                       p-1.5 bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-2xl
+                       focus-within:border-[#F07232]/50 focus-within:shadow-[0_0_0_3px_rgba(240,114,50,0.12)]
+                       transition-[border-color,box-shadow] duration-200"
           >
-            <div className="flex items-center flex-1 pl-4">
+            <div className="flex items-center flex-1 pl-2">
               <label htmlFor="hero-tracking" className="sr-only">Número de seguimiento</label>
               <input
                 id="hero-tracking"
@@ -416,16 +433,17 @@ export default function Hero() {
                 onKeyDown={e => e.key === 'Enter' && handleHeroTrack()}
                 placeholder="Número de seguimiento..."
                 className="flex-1 bg-transparent text-sm text-[var(--fg-1)] placeholder-[var(--fg-4)]
-                           outline-none py-2.5 min-w-0"
+                           outline-none focus:outline-none focus-visible:outline-none focus:ring-0 py-2.5 min-w-0"
+                style={{ outline: 'none', boxShadow: 'none' }}
               />
             </div>
             <button
               onClick={handleHeroTrack}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-sm
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-[#F07232] hover:bg-[#E8823C] text-white text-sm
                          font-semibold rounded-xl transition-colors duration-200 whitespace-nowrap"
             >
               <MapPin size={13} />
-              Rastrear
+              <span className="hidden min-[400px]:inline">Rastrear</span>
             </button>
           </motion.div>
 
@@ -436,17 +454,19 @@ export default function Hero() {
             className="mt-10 flex flex-wrap gap-2.5"
           >
             {[
-              { Icon: Globe,  label: '+50 países internacionales' },
-              { Icon: Zap,    label: 'Distribución nacional' },
-              { Icon: Shield, label: 'Aduanas certificadas' },
-            ].map(({ Icon, label }) => (
+              { Icon: Globe,  label: '+50 países destino',     blue: false },
+              { Icon: Zap,    label: 'Todo Uruguay',           blue: false },
+              { Icon: Shield, label: 'Casillero Internacional', blue: true  },
+            ].map(({ Icon, label, blue }) => (
               <div
                 key={label}
-                className="flex items-center gap-2 px-3.5 py-2
-                           bg-[var(--bd-1)] border border-[var(--bd-2)] rounded-lg
-                           text-[12px] text-[var(--fg-3)]"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-[12px]"
+                style={blue
+                  ? { background: 'rgba(59,126,248,0.07)', border: '1px solid rgba(59,126,248,0.20)', color: '#6B90DC' }
+                  : { background: 'var(--bd-1)',            border: '1px solid var(--bd-2)',            color: 'var(--fg-3)' }
+                }
               >
-                <Icon size={12} className="text-[var(--fg-4)]" />
+                <Icon size={12} style={{ color: blue ? '#527ED8' : 'var(--fg-4)' }} />
                 {label}
               </div>
             ))}
@@ -470,3 +490,4 @@ export default function Hero() {
     </section>
   )
 }
+

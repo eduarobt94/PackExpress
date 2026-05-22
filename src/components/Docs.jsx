@@ -53,6 +53,7 @@ const DOCS = [
 const SUBJECTS = [
   'Consulta general',
   'Cotización de envío',
+  'Casillero Internacional',
   'Distribución nacional (Uruguay)',
   'Envío internacional',
   'Rastreo de paquete',
@@ -64,7 +65,7 @@ const SUBJECTS = [
 
 const HOURS = [
   { days: 'Lunes – Viernes', hours: '10:00 – 18:00', open: true },
-  { days: 'Sábados',         hours: '10:00 – 14:00', open: true },
+  { days: 'Sábados',        hours: '10:00 – 14:00', open: true },
   { days: 'Domingos',        hours: 'Cerrado',       open: false },
 ]
 
@@ -84,9 +85,11 @@ function DocRow({ doc, delay = 0 }) {
   const { label, title, desc, action, href, modal, alert } = doc
 
   const sharedCls = `group flex items-center gap-4 px-5 py-4 w-full
-    bg-[var(--bg-card)] border rounded-xl cursor-pointer
-    hover:border-[#FF6B00]/40 transition-all duration-200
-    ${alert ? 'border-[#FF6B00]/20' : 'border-[var(--bd-1)]'}`
+    bg-[var(--bg-card)] border rounded-xl cursor-pointer transition-all duration-200
+    ${alert
+      ? 'border-[var(--bd-1)] hover:border-[#E53535]/40 hover:bg-[#E53535]/[0.04]'
+      : 'border-[var(--bd-1)] hover:border-[#F07232]/40'
+    }`
 
   const motionProps = {
     initial: { opacity: 0, y: 12 },
@@ -98,16 +101,18 @@ function DocRow({ doc, delay = 0 }) {
   const inner = (
     <>
       <span className={`text-[11px] font-bold tracking-[0.12em] shrink-0 w-6 text-center
-                        ${alert ? 'text-[#FF6B00]' : 'text-[var(--fg-5)]'}`}>
+                        transition-colors duration-200
+                        ${alert ? 'text-[var(--fg-5)] group-hover:text-[#E53535]' : 'text-[var(--fg-5)]'}`}>
         {label}
       </span>
-      <div className={`min-w-0 flex-1 ${!alert ? 'text-left' : ''}`}>
-        <p className="text-[13px] font-semibold text-[var(--fg-1)] truncate">{title}</p>
+      <div className="min-w-0 flex-1 text-left">
+        <p className={`text-[13px] font-semibold truncate transition-colors duration-200
+                       ${alert ? 'text-[var(--fg-1)] group-hover:text-[#E53535]/80' : 'text-[var(--fg-1)]'}`}>{title}</p>
         <p className="text-[11px] text-[var(--fg-4)] truncate mt-0.5">{desc}</p>
       </div>
       <span className={`text-[11px] font-semibold shrink-0 flex items-center gap-1
                         transition-colors duration-200
-                        ${alert ? 'text-[#FF6B00]' : 'text-[var(--fg-3)] group-hover:text-[#FF6B00]'}`}>
+                        ${alert ? 'text-[var(--fg-3)] group-hover:text-[#E53535]' : 'text-[var(--fg-3)] group-hover:text-[#F07232]'}`}>
         {action}
         <ArrowUpRight size={11} />
       </span>
@@ -169,21 +174,21 @@ export default function Docs() {
   const inputCls = (field) =>
     `w-full bg-[var(--bg-input)] border rounded-xl px-4 py-3 text-sm text-[var(--fg-1)] placeholder-[var(--fg-4)]
      outline-none transition-all duration-200
-     focus:border-[#FF6B00]/50 focus:shadow-[0_0_0_3px_rgba(255,107,0,0.07)]
+     focus:border-[#F07232]/50 focus:shadow-[0_0_0_3px_rgba(255,107,0,0.07)]
      ${errors[field] ? 'border-red-500/50' : 'border-[var(--bd-1)]'}`
 
   return (
     <section id="contacto" className="py-24 lg:py-32 bg-[var(--bg-base)]">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8">
 
-        {/* ── Section header ── */}
+        {/* â”€â”€ Section header â”€â”€ */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-16">
           <div>
             <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="text-[#FF6B00] text-[11px] font-semibold tracking-[0.22em] uppercase mb-4"
+              className="text-[#F07232] text-[11px] font-semibold tracking-[0.22em] uppercase mb-4"
             >
               Contacto
             </motion.p>
@@ -211,21 +216,21 @@ export default function Docs() {
           </motion.p>
         </div>
 
-        {/* ── Docs label ── */}
+        {/* â”€â”€ Docs label â”€â”€ */}
         <p className="text-[11px] font-semibold text-[var(--fg-4)] uppercase tracking-[0.15em] mb-4">
           Documentación
         </p>
 
-        {/* ── Main 2-column grid: left = docs + form, right = contact card ── */}
+        {/* â”€â”€ Main 2-column grid: left = docs + form, right = contact card â”€â”€ */}
         <div className="grid grid-cols-1 lg:grid-cols-[8fr_3fr] gap-8 items-stretch">
 
           {/* Left column: docs + form */}
           <div className="space-y-3">
 
-            {/* Doc rows: 2-col grid, 05 spans full width */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* Doc rows: 1-col on mobile, 2-col on sm+ */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {DOCS.slice(0, 4).map((doc, i) => <DocRow key={doc.title} doc={doc} delay={i * 0.06} />)}
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <DocRow doc={DOCS[4]} delay={0.24} />
               </div>
             </div>
@@ -241,7 +246,7 @@ export default function Docs() {
             <div className="flex items-center justify-between mb-7">
               <h3 className="font-display font-bold text-[17px] text-[var(--fg-1)]">Escribinos un mensaje</h3>
               <div className="flex gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#FF6B00]/40" />
+                <div className="w-1.5 h-1.5 rounded-full bg-[#F07232]/40" />
                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--bd-2)]" />
                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--bd-2)]" />
               </div>
@@ -253,18 +258,18 @@ export default function Docs() {
                                 flex items-center justify-center mb-2">
                   <CheckCircle size={26} className="text-[#22C55E]" />
                 </div>
-                <p className="text-[var(--fg-1)] font-semibold text-lg">¡Mensaje enviado!</p>
+                <p className="text-[var(--fg-1)] font-semibold text-lg">Â¡Mensaje enviado!</p>
                 <p className="text-[var(--fg-3)] text-[13px]">Nos pondremos en contacto en menos de 24 h.</p>
                 <button
                   onClick={() => { setSent(false); setForm({ nombre: '', email: '', telefono: '', asunto: '', mensaje: '' }) }}
-                  className="mt-3 text-[12px] text-[#FF6B00] hover:underline"
+                  className="mt-3 text-[12px] text-[#F07232] hover:underline"
                 >
                   Enviar otro mensaje
                 </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <Field label="Nombre completo" error={errors.nombre} htmlFor="nombre">
                     <input id="nombre" value={form.nombre} onChange={e => handleChange('nombre', e.target.value)} placeholder="Juan Pérez" className={inputCls('nombre')} />
                   </Field>
@@ -286,8 +291,9 @@ export default function Docs() {
                 </Field>
                 <button type="submit" disabled={sending}
                   className="flex items-center justify-center gap-2 rounded-xl mx-auto
-                             bg-[#FF6B00] hover:bg-[#FF8C3A] text-white text-[14px] font-semibold
-                             transition-colors duration-200 disabled:opacity-60 tracking-wide"
+                             bg-[#527ED8] hover:bg-[#6B90DC] text-white text-[14px] font-semibold
+                             transition-all duration-200 disabled:opacity-60 tracking-wide
+                             hover:shadow-[0_0_24px_rgba(59,126,248,0.30)]"
                   style={{ width: 280, height: 49 }}>
                   {sending ? (
                     <span className="flex items-center gap-2">
@@ -312,31 +318,33 @@ export default function Docs() {
             <div className="relative px-7 pt-7 pb-8 overflow-hidden border-b border-[var(--bd-1)]"
                  style={{ background: 'linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-card) 100%)' }}>
               <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full"
-                   style={{ backgroundColor: isDark ? 'rgba(255,107,0,0.10)' : 'rgba(255,107,0,0.05)' }} />
+                   style={{ backgroundColor: isDark ? 'rgba(59,126,248,0.10)' : 'rgba(59,126,248,0.05)' }} />
               <div className="absolute top-6 right-6 w-20 h-20 rounded-full"
-                   style={{ backgroundColor: isDark ? 'rgba(255,107,0,0.07)' : 'rgba(255,107,0,0.03)' }} />
+                   style={{ backgroundColor: isDark ? 'rgba(59,126,248,0.07)' : 'rgba(59,126,248,0.03)' }} />
               <div className="relative">
-                <div className="w-11 h-11 rounded-xl border border-[#FF6B00]/50 hover:border-[#FF6B00]
-                                flex items-center justify-center mb-5 transition-colors duration-200">
-                  <UserRound size={18} className="text-[#FF6B00]" />
+                <div className="w-11 h-11 rounded-xl border border-[#527ED8]/50 hover:border-[#527ED8]
+                                flex items-center justify-center mb-5 transition-colors duration-200"
+                     style={{ backgroundColor: 'rgba(59,126,248,0.07)' }}>
+                  <UserRound size={18} className="text-[#527ED8]" />
                 </div>
                 <h3 className="font-display font-bold text-xl text-[var(--fg-1)] leading-tight mb-1.5">
                   ¿Necesitás asesoramiento?
                 </h3>
                 <p className="text-[12px] text-[var(--fg-2)] leading-relaxed">
-                  Nuestro equipo te guía en cada paso del envío.
+                  Courier, casillero o distribución "” te guiamos en cada paso.
                 </p>
               </div>
             </div>
             <div className="px-7 py-6 space-y-5 flex-1">
               {[
-                { Icon: Phone,  value: '(+598) 2902 7227',         sub: 'Lunes a viernes · 9:00 – 18:00' },
+                { Icon: Phone,  value: '(+598) 93 594 297',         sub: 'Lunes a viernes · 10:00 – 18:00' },
                 { Icon: Mail,   value: 'packexpress2021@gmail.com', sub: 'Respuesta en menos de 24 h' },
                 { Icon: MapPin, value: 'Carlos Quijano 1258',       sub: 'Montevideo, Uruguay' },
               ].map(({ Icon, value, sub }) => (
                 <div key={value} className="flex items-start gap-3.5">
-                  <div className="w-8 h-8 rounded-lg border border-[#FF6B00]/[0.30] flex items-center justify-center shrink-0 mt-0.5">
-                    <Icon size={13} className="text-[#FF6B00]" />
+                  <div className="w-8 h-8 rounded-lg border border-[#527ED8]/[0.30] flex items-center justify-center shrink-0 mt-0.5"
+                       style={{ backgroundColor: 'rgba(59,126,248,0.07)' }}>
+                    <Icon size={13} className="text-[#527ED8]" />
                   </div>
                   <div>
                     <p className="text-[13px] font-medium text-[var(--fg-1)]">{value}</p>
@@ -349,7 +357,7 @@ export default function Docs() {
               <button
                 onClick={() => setMapOpen(true)}
                 className="w-full rounded-xl overflow-hidden border border-[var(--bd-1)]
-                           hover:border-[#FF6B00]/40 transition-colors duration-200 relative group"
+                           hover:border-[#F07232]/40 transition-colors duration-200 relative group"
                 style={{ height: 140 }}
                 aria-label="Ver ubicación en mapa"
               >
@@ -382,11 +390,12 @@ export default function Docs() {
               </div>
             </div>
             <div className="px-5 pb-5">
-              <a href="https://wa.me/59829027227" target="_blank" rel="noopener noreferrer"
+              <a href="https://wa.me/59893594297" target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2.5 w-full py-3.5
-                           border border-[#FF6B00]/60 hover:border-[#FF6B00]
-                           text-[#FF6B00] hover:text-[#FF8C3A] text-[13px] font-semibold
-                           rounded-xl transition-all duration-200 tracking-wide">
+                           border border-[#527ED8]/40 hover:border-[#527ED8]/70
+                           text-[#527ED8] hover:text-[#6B90DC] text-[13px] font-semibold
+                           rounded-xl transition-all duration-200 tracking-wide
+                           hover:bg-[#527ED8]/[0.07] hover:shadow-[0_0_20px_rgba(59,126,248,0.15)]">
                 <MessageCircle size={14} />
                 Contactar por WhatsApp
               </a>
@@ -420,11 +429,11 @@ export default function Docs() {
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--bd-1)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg border border-[#FF6B00]/50 flex items-center justify-center">
-                    <MapPin size={14} className="text-[#FF6B00]" />
+                  <div className="w-8 h-8 rounded-lg border border-[#F07232]/50 flex items-center justify-center">
+                    <MapPin size={14} className="text-[#F07232]" />
                   </div>
                   <div>
-                    <p className="text-[11px] text-[#FF6B00] font-semibold tracking-[0.15em] uppercase">Ubicación</p>
+                    <p className="text-[11px] text-[#F07232] font-semibold tracking-[0.15em] uppercase">Ubicación</p>
                     <p className="text-[13px] font-semibold text-[var(--fg-1)]">Carlos Quijano 1258, Montevideo</p>
                   </div>
                 </div>
@@ -455,18 +464,18 @@ export default function Docs() {
                     href="https://maps.google.com/maps?daddr=-34.907382,-56.188793"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[11px] font-semibold text-white bg-[#FF6B00] hover:bg-[#FF8C3A]
+                    className="text-[11px] font-semibold text-white bg-[#F07232] hover:bg-[#E8823C]
                                px-3 py-1.5 rounded-lg transition-colors duration-200 whitespace-nowrap"
                   >
-                    Cómo llegar ↗
+                    Cómo llegar â†—
                   </a>
                   <a
                     href="https://maps.google.com/maps?q=-34.907382,-56.188793"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[11px] text-[#FF6B00] hover:text-[#FF8C3A] transition-colors duration-200 whitespace-nowrap"
+                    className="text-[11px] text-[#F07232] hover:text-[#E8823C] transition-colors duration-200 whitespace-nowrap"
                   >
-                    Abrir en Google Maps ↗
+                    Abrir en Google Maps â†—
                   </a>
                 </div>
               </div>
@@ -477,3 +486,4 @@ export default function Docs() {
     </section>
   )
 }
+

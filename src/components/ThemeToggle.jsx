@@ -10,7 +10,7 @@ export default function ThemeToggle() {
     <motion.button
       onClick={toggle}
       whileTap={{ scale: 0.88 }}
-      className="w-8 h-8 rounded-lg flex items-center justify-center
+      className="w-9 h-9 rounded-lg flex items-center justify-center
                  border border-[var(--bd-2)] text-[var(--fg-3)]
                  hover:text-[var(--fg-1)] hover:border-[var(--bd-3)]
                  transition-colors duration-200 shrink-0"

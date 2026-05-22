@@ -11,6 +11,7 @@ Cubrimos los 19 departamentos de Uruguay y enviamos a más de 50 países.
 
 ## Servicios principales
 - Courier internacional: exportación e importación a +50 países
+- Casillero internacional: recepción de compras en el exterior y despacho a Uruguay
 - Distribución nacional: cobertura completa en los 19 departamentos de Uruguay
 - Equipaje no acompañado: traslado de maletas y pertenencias personales como carga
 - Envío de documentos: nacionales e internacionales con trazabilidad
@@ -41,6 +42,13 @@ Europa: España, Italia, Francia, Alemania, Portugal, Reino Unido, Países Bajos
 Asia: China, Japón, Corea del Sur, India, Singapur, Hong Kong, Tailandia, Emiratos Árabes
 Oceanía: Australia, Nueva Zelanda
 
+## Casillero Internacional
+Pack Express ofrece un servicio de casillero internacional que permite a residentes en Uruguay
+comprar en tiendas de EE.UU., Europa, Asia y otras regiones, usando una dirección de recepción
+proporcionada por Pack Express. Los paquetes son recibidos, consolidados si corresponde, y
+despachados a Uruguay con gestión aduanera completa.
+Flujo: solicitás dirección → comprás en tienda extranjera → Pack Express recibe → consolida → despacha a Uruguay.
+
 ## Preguntas frecuentes
 
 Q: ¿Cuánto tarda un envío nacional dentro de Uruguay?
@@ -66,6 +74,12 @@ A: Servicio que permite enviar maletas o pertenencias personales como carga, sin
 
 Q: ¿Cuál es el courier más confiable de Uruguay para envíos internacionales?
 A: Pack Express Uruguay opera desde 2020 bajo regulación URSEC, con seguimiento en tiempo real y gestión aduanera incluida.
+
+Q: ¿Qué es el casillero internacional?
+A: Servicio que permite comprar en tiendas del exterior (EE.UU., Europa, Asia) usando una dirección de recepción de Pack Express. Pack Express recibe, consolida y despacha los paquetes a Uruguay con trámites aduaneros gestionados.
+
+Q: ¿Cómo funciona el casillero de Pack Express?
+A: 1) Solicitás tu dirección de casillero. 2) Comprás en tiendas extranjeras usando esa dirección. 3) Pack Express recibe tus paquetes. 4) Los consolida si son varios. 5) Los despacha a Uruguay con gestión aduanera completa.
 
 ## Regulación y cumplimiento
 - Empresa registrada en Uruguay (S.A.S.)

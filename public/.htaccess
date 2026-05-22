@@ -1,4 +1,4 @@
-Options -MultiViews
+﻿Options -MultiViews
 RewriteEngine On
 
 # ── Preservar rutas del sistema existente ──────────────────────────────────────
@@ -13,8 +13,9 @@ RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# ── Todo lo demás va al SPA ───────────────────────────────────────────────────
-RewriteRule ^ /index.html [L]
+# ── Sin catch-all: Apache genera 404 natural para rutas desconocidas ──────────
+# ErrorDocument lo captura y sirve el SPA manteniendo el status HTTP 404 real.
+ErrorDocument 404 /index.html
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SECURITY HEADERS
@@ -27,9 +28,6 @@ RewriteRule ^ /index.html [L]
   # ── MIME sniffing — el browser respeta el Content-Type declarado ─────────────
   Header always set X-Content-Type-Options "nosniff"
 
-  # ── XSS Protection (browsers legacy) ────────────────────────────────────────
-  Header always set X-XSS-Protection "1; mode=block"
-
   # ── Referrer Policy — no expone la URL completa en requests a terceros ───────
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
@@ -40,14 +38,15 @@ RewriteRule ^ /index.html [L]
   Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 
   # ── Content Security Policy ──────────────────────────────────────────────────
-  # Permite: self + Google Fonts + S3 CDN (Three.js texture) + Google Maps iframe
+  # Permite: self + Google Fonts + Google Maps iframe
+  # Three.js texture auto-hospedada en /textures/worldMap.png (sin deps externas)
   Header always set Content-Security-Policy "\
     default-src 'self'; \
-    script-src 'self' 'unsafe-inline' 'unsafe-eval'; \
+    script-src 'self'; \
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; \
     font-src 'self' https://fonts.gstatic.com; \
     img-src 'self' data: https: blob:; \
-    connect-src 'self' https://s3-us-west-2.amazonaws.com https://maps.googleapis.com; \
+    connect-src 'self' https://maps.googleapis.com; \
     frame-src https://maps.google.com https://www.google.com; \
     object-src 'none'; \
     base-uri 'self'; \

@@ -6,6 +6,12 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
 
   build: {
+    // Assets en carpeta propia para no pisar la carpeta assets/ existente en public_html
+    assetsDir: '_pe',
+    // Nunca generar source maps en producción (expone código fuente)
+    sourcemap: false,
+    // Evita el polyfill inline de modulepreload (permite CSP sin unsafe-inline)
+    modulePreload: { polyfill: false },
     // Chunk splitting — Three.js y Framer Motion son pesados, van en chunks separados
     rollupOptions: {
       output: {
