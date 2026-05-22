@@ -232,11 +232,11 @@ function RoutesOverlay({ visible, isDark }) {
       {/* factor-scale group "” matches Three.js map scaling from center */}
       <g transform={`translate(500,290) scale(${factor}) translate(-500,-290)`}>
 
-        {/* Pulsing origin "” Uruguay (appears first) */}
+        {/* Pulsing origin “” Uruguay (appears first) */}
         <motion.g
           initial={{ opacity: 0 }}
           animate={{ opacity: visible ? 1 : 0 }}
-          transition={{ duration: 0.9, delay: visible ? 0 : 0 }}
+          transition={{ duration: visible ? 0.9 : 0.25, delay: 0 }}
         >
           {/* circleCorrection mantiene los círculos redondos con preserveAspectRatio="none" */}
           <g transform={`translate(${ORIGIN.x},${ORIGIN.y}) scale(${circleCorrection},1) translate(${-ORIGIN.x},${-ORIGIN.y})`}>
@@ -263,7 +263,7 @@ function RoutesOverlay({ visible, isDark }) {
             strokeWidth="0.8"
             initial={{ opacity: 0 }}
             animate={{ opacity: visible ? 1 : 0 }}
-            transition={{ duration: 0.8, delay: visible ? 0.6 + i * 0.1 : 0 }}
+            transition={{ duration: visible ? 0.8 : 0.2, delay: visible ? 0.6 + i * 0.1 : 0 }}
           />
         ))}
 
@@ -274,7 +274,7 @@ function RoutesOverlay({ visible, isDark }) {
             filter="url(#glow-r)"
             initial={{ opacity: 0 }}
             animate={{ opacity: visible ? (isDark ? 0.92 : 1) : 0 }}
-            transition={{ duration: 0.8, delay: visible ? 1.8 + i * 0.08 : 0 }}
+            transition={{ duration: visible ? 0.8 : 0.2, delay: visible ? 1.8 + i * 0.08 : 0 }}
           >
             <rect x="-2.8" y="-2.5" width="5.6" height="5" rx="0.6"
                   fill="#F07232" stroke="#E8823C" strokeWidth="0.4" />
@@ -298,6 +298,22 @@ export default function Hero() {
   const ref = useRef(null)
   const [mapReady, setMapReady] = useState(false)
   const [trackingValue, setTrackingValue] = useState('')
+
+  // Al redimensionar: ocultar overlay → partículas se reposicionan →
+  // re-mostrar overlay cuando el mapa ya está re-formado (~1500 ms).
+  useEffect(() => {
+    let timer = null
+    const handleResize = () => {
+      setMapReady(false)
+      clearTimeout(timer)
+      timer = setTimeout(() => setMapReady(true), 1500)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      clearTimeout(timer)
+    }
+  }, [])
 
   function handleHeroTrack() {
     window.dispatchEvent(new CustomEvent('doTracking', { detail: trackingValue.trim() }))
