@@ -5,6 +5,16 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
 
+  // Proxy local: redirige /pack-sistema al servidor PHP durante desarrollo
+  server: {
+    proxy: {
+      '/pack-sistema': {
+        target: 'http://localhost',
+        changeOrigin: true,
+      },
+    },
+  },
+
   build: {
     // Assets en carpeta propia para no pisar la carpeta assets/ existente en public_html
     assetsDir: '_pe',
