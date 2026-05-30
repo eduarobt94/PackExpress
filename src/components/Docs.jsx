@@ -258,7 +258,7 @@ export default function Docs() {
                                 flex items-center justify-center mb-2">
                   <CheckCircle size={26} className="text-[#22C55E]" />
                 </div>
-                <p className="text-[var(--fg-1)] font-semibold text-lg">Â¡Mensaje enviado!</p>
+                <p className="text-[var(--fg-1)] font-semibold text-lg">¡Mensaje enviado!</p>
                 <p className="text-[var(--fg-3)] text-[13px]">Nos pondremos en contacto en menos de 24 h.</p>
                 <button
                   onClick={() => { setSent(false); setForm({ nombre: '', email: '', telefono: '', asunto: '', mensaje: '' }) }}
@@ -486,4 +486,5 @@ export default function Docs() {
     </section>
   )
 }
+
 

@@ -5,7 +5,7 @@ const STATS = [
   { end: 50000, suffix: '+',  label: 'Envíos completados',       prefix: '', blue: false },
   { end: 50,    suffix: '+',  label: 'Destinos internacionales', prefix: '', blue: true  },
   { end: 5,     suffix: '',   label: 'Años operando',            prefix: '', blue: false },
-  { end: 98,    suffix: '%',  label: 'Ándice de satisfacción',   prefix: '', blue: false },
+  { end: 98,    suffix: '%',  label: 'Índice de satisfacción',   prefix: '', blue: false },
 ]
 
 function Counter({ end, suffix, prefix, active }) {
@@ -86,4 +86,3 @@ export default function Metrics() {
     </section>
   )
 }
-
