@@ -19,7 +19,7 @@ const SERVICES = [
     id:    'casillero',
     Icon:  ShoppingBag,
     title: 'Casillero Internacional',
-    desc:  'Comprás en tiendas de EE.UU. "” nosotros recibimos, consolidamos y te lo enviamos a Uruguay con aduanas incluidas.',
+    desc:  'Comprás en tiendas de EE.UU. nosotros recibimos, consolidamos y te lo enviamos a Uruguay con aduanas incluidas.',
     tag:   'Compras en el exterior',
     blue:  true,
   },

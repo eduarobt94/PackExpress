@@ -316,8 +316,15 @@ export default function Hero() {
   }, [])
 
   function handleHeroTrack() {
-    window.dispatchEvent(new CustomEvent('doTracking', { detail: trackingValue.trim() }))
-    document.getElementById('rastreo')?.scrollIntoView({ behavior: 'smooth' })
+    const val = trackingValue.trim()
+    if (!val) return
+    window.dispatchEvent(new CustomEvent('doTracking', { detail: val }))
+    // Usar lenis.scrollTo para que sea compatible con el scroll suave global
+    if (window.lenis) {
+      window.lenis.scrollTo('#rastreo', { offset: -72, duration: 1.2 })
+    } else {
+      document.getElementById('rastreo')?.scrollIntoView({ behavior: 'smooth' })
+    }
   }
   const { theme } = useTheme()
   const isDark = theme === 'dark'
