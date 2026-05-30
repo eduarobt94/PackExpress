@@ -267,7 +267,9 @@ export function buildTrackingState(guiaData, syncData = null) {
   }
 
   return {
-    numero:         guia?.numero ?? '',
+    numero:         guia?.id_guia
+                    ? `CM${String(guia.id_guia).padStart(9, '0')}PK`
+                    : (guia?.numero ?? ''),
     guia,
     manifiesto,
     steps,

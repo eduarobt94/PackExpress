@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, FileText, AlertTriangle, Phone, Mail, MapPin, MessageCircle, Send, CheckCircle, ArrowUpRight, UserRound, Plane, Briefcase, X } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
@@ -222,7 +222,7 @@ export default function Docs() {
         </p>
 
         {/* â”€â”€ Main 2-column grid: left = docs + form, right = contact card â”€â”€ */}
-        <div className="grid grid-cols-1 lg:grid-cols-[8fr_3fr] gap-8 items-stretch">
+        <div className="contact-grid grid grid-cols-1 lg:grid-cols-[8fr_3fr] gap-8 items-stretch">
 
           {/* Left column: docs + form */}
           <div className="space-y-3">
@@ -331,7 +331,7 @@ export default function Docs() {
                   ¿Necesitás asesoramiento?
                 </h3>
                 <p className="text-[12px] text-[var(--fg-2)] leading-relaxed">
-                  Courier, casillero o distribución "” te guiamos en cada paso.
+                  Courier, casillero o distribución te guiamos en cada paso.
                 </p>
               </div>
             </div>

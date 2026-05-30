@@ -159,6 +159,32 @@ body {
   box-shadow: var(--shadow-card);
 }
 
+/* ── Small desktop / low-res monitors (1360×768 típico) ── */
+@media (min-width: 1025px) and (max-width: 1400px) {
+  html { font-size: 60%; }
+
+  /* Más espacio entre columnas del footer */
+  footer .grid { gap: 8rem; }
+
+  /* Sección Contacto — sidebar más ancho */
+  .contact-grid { grid-template-columns: 6fr 4fr !important; }
+}
+
+/* ── Testimonials carousel ── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+@keyframes carousel-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.carousel-track {
+  animation: carousel-scroll 32s linear infinite;
+}
+.carousel-track:hover {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration:        0.01ms !important;

@@ -1,65 +1,27 @@
+/**
+ * Tracking.jsx — v3
+ * Timeline de 10 hitos canónicos con diseño premium dark mode.
+ * buildTrackingState() del normalizer ya devuelve steps[] con status/fecha/label.
+ * PhaseCards eliminados — el scraping sigue en background y enriquece la timeline.
+ */
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, AlertCircle,
   Package, Plane, MapPin, Building2, Shield, ShieldCheck, Truck, CheckCircle2,
-  Circle, Loader2, Home,
+  Loader2, Sparkles,
 } from 'lucide-react'
 import { useTracking, TRACK_PHASE } from '../hooks/useTracking'
-import { parseGuiaInput }                    from '../lib/tracking/api'
-import { formatRawEventDate, getEventIconName } from '../lib/tracking/normalizer'
+import { parseGuiaInput }    from '../lib/tracking/api'
+import { formatDate }        from '../lib/tracking/normalizer'
 
-/* ── Mapa de íconos por nombre ───────────────────────────────────── */
+/* ── Mapa de íconos Lucide ─────────────────────────────────────────── */
 const ICON_MAP = {
   Package, Plane, MapPin, Building2,
-  Shield, ShieldCheck, Truck, CheckCircle2, Circle,
+  Shield, ShieldCheck, Truck, CheckCircle2,
 }
 
-/**
- * Eventos de Copa Courier inferidos cuando Copa no devuelve datos pero
- * Destino ZAS confirma que el paquete llegó a Cuba.
- * Se muestran sin fecha (solo el recorrido).
- */
-const COPA_INFERRED_EVENTS = [
-  { estado: 'ENVIO RECIBIDO EN ORIGEN',    lugar: 'Montevideo, Uruguay',     fecha: '', inferred: true },
-  { estado: 'PARTIENDO DE ORIGEN - MVD',   lugar: 'Montevideo → Panamá',     fecha: '', inferred: true },
-  { estado: 'RECIBIDO EN TRÁNSITO - PTY',  lugar: 'Ciudad de Panamá, PA',    fecha: '', inferred: true },
-  { estado: 'PARTIENDO DE TRÁNSITO - PTY', lugar: 'Panamá → La Habana',      fecha: '', inferred: true },
-  { estado: 'LLEGADO A DESTINO - HAV',     lugar: 'La Habana, Cuba',         fecha: '', inferred: true },
-]
-
-/* ── Configuración de las 3 fases ───────────────────────────────── */
-const PHASES = [
-  {
-    key:          'copa_courier',
-    label:        'Copa Courier',
-    subtitle:     'Tránsito internacional',
-    Icon:         Plane,
-    accent:       '#527ED8',
-    accentDim:    'rgba(82,126,216,0.11)',
-    accentBorder: 'rgba(82,126,216,0.28)',
-  },
-  {
-    key:          'correos_cuba',
-    label:        'Correos Cuba',
-    subtitle:     'Red postal cubana',
-    Icon:         Building2,
-    accent:       '#6688BE',
-    accentDim:    'rgba(102,136,190,0.10)',
-    accentBorder: 'rgba(102,136,190,0.24)',
-  },
-  {
-    key:          'destino_zas',
-    label:        'Destino ZAS',
-    subtitle:     'Distribución local',
-    Icon:         Truck,
-    accent:       '#F07232',
-    accentDim:    'rgba(240,114,50,0.10)',
-    accentBorder: 'rgba(240,114,50,0.25)',
-  },
-]
-
-/* ── Mensajes de error ───────────────────────────────────────────── */
+/* ── Mensajes de error ─────────────────────────────────────────────── */
 function getErrorMessage(code) {
   if (code === 'NOT_FOUND')     return 'No encontramos resultados para ese número de guía. Verificá que esté bien escrito.'
   if (code === 'NETWORK_ERROR') return 'No hay conexión con el servidor. Verificá tu internet e intentá de nuevo.'
@@ -70,7 +32,7 @@ function getErrorMessage(code) {
    SUBCOMPONENTES
 ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Spinner inicial ────────────────────────────────────────────── */
+/* ── Spinner de búsqueda inicial ───────────────────────────────────── */
 function SearchingSpinner() {
   return (
     <motion.div
@@ -94,339 +56,7 @@ function SearchingSpinner() {
   )
 }
 
-/* ── Fila esqueleto (placeholder de carga) ──────────────────────── */
-function SkeletonRow({ delay = 0 }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0.4, 0.7, 0.4] }}
-      transition={{ duration: 1.4, repeat: Infinity, delay }}
-      className="flex items-start gap-3"
-    >
-      <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: 'var(--bd-2)' }} />
-      <div className="flex-1 space-y-1.5">
-        <div className="h-3 rounded" style={{ background: 'var(--bd-2)', width: `${55 + delay * 15}%` }} />
-        <div className="h-2.5 rounded" style={{ background: 'var(--bd-1)', width: '38%' }} />
-      </div>
-    </motion.div>
-  )
-}
-
-/* ── Lista de eventos de una fase ───────────────────────────────── */
-function EventList({ events, accent }) {
-  // Filtrar eventos sintéticos sin fecha para mostrarlos de forma sutil
-  const withDate    = events.filter(e => e.fecha?.trim())
-  const withoutDate = events.filter(e => !e.fecha?.trim())
-  const all = [...withDate, ...withoutDate]
-
-  if (all.length === 0) {
-    return (
-      <p className="text-[12px] py-1" style={{ color: 'var(--fg-5)' }}>
-        Sin eventos detallados
-      </p>
-    )
-  }
-
-  return (
-    <div>
-      {all.map((ev, i) => {
-        const Icon       = ICON_MAP[getEventIconName(ev.estado)] ?? Package
-        const isLast     = i === all.length - 1
-        const fecha      = formatRawEventDate(ev.fecha)
-        // Evento sintético (Correos Cuba sin fecha, no inferido): italic sutil
-        const isSynth    = !ev.fecha?.trim() && !ev.inferred
-        // Evento inferido de Copa: normal pero sin fecha
-        const isInferred = Boolean(ev.inferred)
-
-        return (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.28, delay: i * 0.06 }}
-            className="flex gap-3"
-          >
-            {/* Columna izquierda: punto + línea */}
-            <div className="flex flex-col items-center flex-shrink-0">
-              <div
-                className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
-                style={{ backgroundColor: isSynth ? 'var(--fg-5)' : accent }}
-              />
-              {!isLast && (
-                <div
-                  className="w-px flex-1 my-0.5"
-                  style={{ backgroundColor: `${accent}28`, minHeight: '14px' }}
-                />
-              )}
-            </div>
-
-            {/* Contenido */}
-            <div className={`flex-1 min-w-0 ${isLast ? '' : 'pb-3'}`}>
-              <div className="flex items-start gap-1.5">
-                <Icon
-                  size={12}
-                  className="mt-0.5 flex-shrink-0"
-                  style={{
-                    color:   isSynth ? 'var(--fg-5)' : accent,
-                    opacity: isSynth ? 0.6 : isInferred ? 0.7 : 0.85,
-                  }}
-                />
-                <p
-                  className="text-[13px] leading-snug break-words"
-                  style={{
-                    color:      isSynth   ? 'var(--fg-4)' : accent,
-                    fontWeight: isSynth   ? 400 : 500,
-                    fontStyle:  isSynth   ? 'italic' : 'normal',
-                    opacity:    isInferred ? 0.75 : 1,
-                  }}
-                >
-                  {ev.estado || '—'}
-                </p>
-              </div>
-              {/* Para eventos inferidos solo mostramos el lugar, nunca la fecha */}
-              {(fecha || ev.lugar) && (
-                <p className="text-[11px] mt-0.5 ml-[18px]" style={{ color: 'var(--fg-4)', opacity: isInferred ? 0.7 : 1 }}>
-                  {isInferred
-                    ? ev.lugar                                   // solo ubicación, sin fecha
-                    : [fecha, ev.lugar].filter(Boolean).join(' · ')
-                  }
-                </p>
-              )}
-            </div>
-          </motion.div>
-        )
-      })}
-    </div>
-  )
-}
-
-/* ── Tarjeta de resumen ZAS (con peso, destino y estado) ────────── */
-function ZasSummaryCard({ phaseData, guia }) {
-  if (!phaseData?.found) return null
-
-  const estadoUp   = (phaseData.estado_actual ?? '').toUpperCase()
-  const isDelivered = estadoUp.includes('ENTREGAD') ||
-    (phaseData.events ?? []).some(e => e.estado?.toUpperCase().includes('ENTREGAD'))
-
-  const accent       = isDelivered ? '#22C55E'                : '#64748B'
-  const accentDim    = isDelivered ? 'rgba(34,197,94,0.09)'   : 'rgba(100,116,139,0.07)'
-  const accentBorder = isDelivered ? 'rgba(34,197,94,0.28)'   : 'rgba(100,116,139,0.20)'
-
-  // Destino: municipio / provincia desde la guía, fallback "Cuba"
-  const destParts  = [guia?.municipio_dest, guia?.provincia_dest].filter(Boolean)
-  const destDetail = destParts.length > 0 ? destParts.join(', ') : null
-  const peso       = guia?.peso_real ? parseFloat(guia.peso_real) : null
-  const fechaFmt   = phaseData.fecha_estado
-    ? (formatRawEventDate(phaseData.fecha_estado) ?? phaseData.fecha_estado)
-    : null
-
-  return (
-    <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--bd-1)' }}>
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="rounded-xl border overflow-hidden"
-        style={{ borderColor: accentBorder, backgroundColor: accentDim }}
-      >
-        {/* Header: destino + badge estado */}
-        <div
-          className="flex items-center justify-between px-3.5 py-2.5 border-b"
-          style={{ borderColor: accentBorder }}
-        >
-          <div className="flex items-center gap-1.5">
-            <MapPin size={11} style={{ color: accent }} />
-            <span
-              className="text-[10px] font-semibold uppercase tracking-[0.14em]"
-              style={{ color: accent }}
-            >
-              Destino final · Cuba
-            </span>
-          </div>
-
-          <span
-            className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border"
-            style={isDelivered
-              ? { backgroundColor: 'rgba(34,197,94,0.14)',   color: '#4ADE80', borderColor: 'rgba(34,197,94,0.30)'    }
-              : { backgroundColor: 'rgba(100,116,139,0.10)', color: '#94A3B8', borderColor: 'rgba(100,116,139,0.22)' }
-            }
-          >
-            {isDelivered && <CheckCircle2 size={9} />}
-            {isDelivered
-              ? 'Entregado'
-              : (phaseData.estado_actual || 'En tránsito')}
-          </span>
-        </div>
-
-        {/* Body: ícono + info + peso */}
-        <div className="flex items-center justify-between gap-3 px-3.5 py-3">
-          <div className="flex items-center gap-2.5">
-            {/* Ícono de entrega */}
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border"
-              style={{
-                backgroundColor: isDelivered ? 'rgba(34,197,94,0.14)' : 'rgba(100,116,139,0.10)',
-                borderColor:     accentBorder,
-              }}
-            >
-              <Home size={15} style={{ color: accent }} />
-            </div>
-
-            <div>
-              <p className="text-sm font-semibold leading-tight" style={{ color: isDelivered ? 'var(--fg-1)' : 'var(--fg-3)' }}>
-                Mipyme Destino ZAS
-              </p>
-              {destDetail && (
-                <p className="text-[11px] mt-0.5" style={{ color: isDelivered ? 'var(--fg-3)' : 'var(--fg-5)' }}>
-                  {destDetail}
-                </p>
-              )}
-              {fechaFmt && (
-                <p className="text-[11px] mt-0.5" style={{ color: 'var(--fg-5)' }}>{fechaFmt}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Peso */}
-          {peso != null && (
-            <div className="text-right flex-shrink-0">
-              <p
-                className="text-xl font-bold leading-none tabular-nums"
-                style={{ color: isDelivered ? '#4ADE80' : 'var(--fg-4)' }}
-              >
-                {peso % 1 === 0 ? peso : peso.toFixed(2)}
-              </p>
-              <p className="text-[10px] uppercase tracking-wide mt-0.5" style={{ color: 'var(--fg-5)' }}>
-                kg
-              </p>
-            </div>
-          )}
-        </div>
-      </motion.div>
-    </div>
-  )
-}
-
-/* ── Tarjeta de una fase (Copa / Correos / ZAS) ─────────────────── */
-function PhaseCard({ config, phaseData, loading, index, guia }) {
-  const { Icon, label, subtitle, accent, accentDim, accentBorder } = config
-  const found      = phaseData?.found
-  const isInferred = Boolean(phaseData?.inferred)
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-xl border overflow-hidden"
-      style={{
-        borderColor:     found ? accentBorder : 'var(--bd-1)',
-        backgroundColor: 'var(--bg-elevated)',
-      }}
-    >
-      {/* Header de la fase */}
-      <div
-        className="flex items-center justify-between px-4 py-3 border-b"
-        style={{
-          borderColor:     found ? accentBorder : 'var(--bd-1)',
-          backgroundColor: found ? accentDim     : 'transparent',
-        }}
-      >
-        <div className="flex items-center gap-2.5">
-          {/* Ícono de fase */}
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 border"
-            style={{
-              backgroundColor: found ? accentDim    : 'transparent',
-              borderColor:     found ? accentBorder : 'var(--bd-1)',
-            }}
-          >
-            <Icon size={14} style={{ color: found ? accent : 'var(--fg-4)' }} />
-          </div>
-
-          <div>
-            <p className="text-sm font-semibold leading-tight" style={{ color: found ? accent : 'var(--fg-3)' }}>
-              {label}
-            </p>
-            <p className="text-[10px]" style={{ color: isInferred ? accent : 'var(--fg-4)', opacity: isInferred ? 0.7 : 1 }}>
-              {isInferred ? 'Confirmado por Destino ZAS · Sin timestamps' : subtitle}
-            </p>
-          </div>
-        </div>
-
-        {/* Badge de estado / spinner */}
-        {loading ? (
-          <Loader2 size={13} className="animate-spin" style={{ color: 'var(--fg-4)' }} />
-        ) : isInferred ? (
-          /* Badge especial cuando el trayecto se infiere desde ZAS */
-          <span
-            className="text-[10px] font-semibold px-2 py-0.5 rounded-full border"
-            style={{ backgroundColor: accentDim, color: accent, borderColor: accentBorder, opacity: 0.8 }}
-          >
-            Trayecto confirmado
-          </span>
-        ) : (
-          <span
-            className="text-[10px] font-semibold px-2 py-0.5 rounded-full border"
-            style={found
-              ? { backgroundColor: accentDim, color: accent,        borderColor: accentBorder }
-              : { backgroundColor: 'transparent', color: 'var(--fg-5)', borderColor: 'var(--bd-1)' }
-            }
-          >
-            {found ? 'Encontrado' : 'Sin datos'}
-          </span>
-        )}
-      </div>
-
-      {/* Cuerpo: eventos o skeleton */}
-      <div className="px-4 py-4">
-        {loading ? (
-          <div className="space-y-3.5">
-            <SkeletonRow delay={0}   />
-            <SkeletonRow delay={0.1} />
-            <SkeletonRow delay={0.2} />
-          </div>
-        ) : !found ? (
-          <p className="text-[12px] text-center py-2" style={{ color: 'var(--fg-5)' }}>
-            Sin registros disponibles
-          </p>
-        ) : (
-          <>
-            {/* ZAS: estado actual destacado */}
-            {config.key === 'destino_zas' && phaseData.estado_actual && (
-              <div className="mb-4 pb-4 border-b" style={{ borderColor: 'var(--bd-1)' }}>
-                <p className="text-[10px] uppercase tracking-[0.14em] mb-2" style={{ color: 'var(--fg-4)' }}>
-                  Estado actual
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <CheckCircle2 size={15} style={{ color: accent }} />
-                  <span className="text-sm font-semibold" style={{ color: accent }}>
-                    {phaseData.estado_actual}
-                  </span>
-                  {phaseData.fecha_estado && (
-                    <span className="text-[11px]" style={{ color: 'var(--fg-4)' }}>
-                      {formatRawEventDate(phaseData.fecha_estado) ?? phaseData.fecha_estado}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Lista de eventos */}
-            <EventList events={phaseData.events ?? []} accent={accent} />
-
-            {/* ZAS: tarjeta resumen con peso y destino */}
-            {config.key === 'destino_zas' && (
-              <ZasSummaryCard phaseData={phaseData} guia={guia} />
-            )}
-          </>
-        )}
-      </div>
-    </motion.div>
-  )
-}
-
-/* ── Franja de información básica de la guía ────────────────────── */
+/* ── Franja de información básica de la guía ──────────────────────── */
 function GuiaInfoBand({ state }) {
   if (!state) return null
   const { guia, manifiesto, numero } = state
@@ -434,11 +64,14 @@ function GuiaInfoBand({ state }) {
     ? guia.ruta.replace('›', '→').replace('>', '→')
     : (guia?.origen && guia?.destino ? `${guia.origen} → ${guia.destino}` : null)
 
+  const destino = [guia?.municipio_dest, guia?.provincia_dest].filter(Boolean).join(', ')
+
   const details = [
-    guia?.tipo_bulto     && { label: 'Tipo',   value: guia.tipo_bulto },
-    guia?.peso_real      && { label: 'Peso',   value: `${guia.peso_real} kg` },
-    guia?.cantidad_bulto && { label: 'Bultos', value: String(guia.cantidad_bulto) },
-    manifiesto?.vuelo    && { label: 'Vuelo',  value: manifiesto.vuelo },
+    guia?.tipo_bulto     && { label: 'Tipo',    value: guia.tipo_bulto },
+    guia?.peso_real      && { label: 'Peso',    value: `${guia.peso_real} kg` },
+    guia?.cantidad_bulto && { label: 'Bultos',  value: String(guia.cantidad_bulto) },
+    manifiesto?.vuelo    && { label: 'Vuelo',   value: manifiesto.vuelo },
+    destino              && { label: 'Destino', value: destino },
   ].filter(Boolean)
 
   return (
@@ -446,25 +79,20 @@ function GuiaInfoBand({ state }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="mt-7 pb-5 mb-5 border-b"
+      className="mt-7 pb-5 mb-2 border-b"
       style={{ borderColor: 'var(--bd-1)' }}
     >
-      {/* Número de guía */}
-      <div className="mb-3">
-        <p className="text-[10px] uppercase tracking-[0.16em] mb-1" style={{ color: 'var(--fg-4)' }}>
-          Número de guía
-        </p>
-        <p className="font-mono font-bold text-xl leading-none" style={{ color: '#FB923C' }}>
-          {numero}
-        </p>
-        {route && (
-          <p className="text-xs mt-1" style={{ color: 'var(--fg-3)' }}>{route}</p>
-        )}
-      </div>
-
-      {/* Detalles del paquete */}
+      <p className="text-[10px] uppercase tracking-[0.16em] mb-1" style={{ color: 'var(--fg-4)' }}>
+        Número de guía
+      </p>
+      <p className="font-mono font-bold text-xl leading-none" style={{ color: '#FB923C' }}>
+        {numero}
+      </p>
+      {route && (
+        <p className="text-xs mt-1" style={{ color: 'var(--fg-3)' }}>{route}</p>
+      )}
       {details.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 mt-3">
           {details.map(d => (
             <div
               key={d.label}
@@ -481,15 +109,318 @@ function GuiaInfoBand({ state }) {
   )
 }
 
+/* ── Banner de estado general + barra de progreso ─────────────────── */
+function StatusHeader({ state, isSyncing }) {
+  if (!state) return null
+
+  const { statusLabel, statusVariant, completedCount, totalCount, syncSummary, isDelivered } = state
+  const pct = (completedCount / totalCount) * 100
+
+  // Verde desaturado enterprise — evita el neón eléctrico
+  const accent       = isDelivered ? '#059669' : '#F07232'
+  const accentDim    = isDelivered ? 'rgba(5,150,105,0.08)'  : 'rgba(240,114,50,0.07)'
+  const accentBorder = isDelivered ? 'rgba(5,150,105,0.22)'  : 'rgba(240,114,50,0.20)'
+  const accentText   = isDelivered ? '#34D399'               : '#FB923C'
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.32, delay: 0.05 }}
+      className="mt-5 mb-5 rounded-xl border"
+      style={{ backgroundColor: accentDim, borderColor: accentBorder, padding: '14px 16px' }}
+    >
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border"
+            style={{ backgroundColor: isDelivered ? 'rgba(5,150,105,0.12)' : 'rgba(240,114,50,0.12)', borderColor: accentBorder }}
+          >
+            {isDelivered
+              ? <CheckCircle2 size={18} style={{ color: accent }} />
+              : <Package      size={18} style={{ color: accent }} />
+            }
+          </div>
+          <div className="min-w-0">
+            <p className="text-[13px] font-bold leading-tight truncate" style={{ color: 'var(--fg-1)' }}>
+              {statusLabel}
+            </p>
+            <p className="text-[11px] mt-0.5" style={{ color: 'var(--fg-4)' }}>
+              {completedCount} de {totalCount} etapas completadas
+            </p>
+          </div>
+        </div>
+
+        {/* Contador */}
+        <span
+          className="text-[13px] font-bold tabular-nums flex-shrink-0 px-2.5 py-1 rounded-full border"
+          style={{ backgroundColor: accentDim, color: accentText, borderColor: accentBorder }}
+        >
+          {completedCount}<span style={{ opacity: 0.5 }}>/{totalCount}</span>
+        </span>
+      </div>
+
+      {/* Barra de progreso */}
+      <div
+        className="mt-3 rounded-full overflow-hidden"
+        style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.07)' }}
+      >
+        <motion.div
+          className="h-full rounded-full"
+          style={{ backgroundColor: accent }}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
+        />
+      </div>
+
+      {/* Badges de fuentes verificadas */}
+      <AnimatePresence>
+        {isSyncing && (
+          <motion.div
+            key="syncing"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: 10 }}
+            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex items-center gap-2"
+          >
+            <Loader2 size={11} className="animate-spin flex-shrink-0" style={{ color: 'var(--fg-5)' }} />
+            <p className="text-[11px]" style={{ color: 'var(--fg-5)' }}>
+              Verificando fuentes externas…
+            </p>
+          </motion.div>
+        )}
+
+        {!isSyncing && syncSummary && (
+          <motion.div
+            key="verified"
+            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+            animate={{ opacity: 1, height: 'auto', marginTop: 10 }}
+            transition={{ duration: 0.25, delay: 0.1 }}
+            className="flex items-center gap-2 flex-wrap"
+          >
+            <Sparkles size={10} style={{ color: 'var(--fg-5)', flexShrink: 0 }} />
+            <span className="text-[10.5px]" style={{ color: 'var(--fg-5)' }}>Fuentes verificadas:</span>
+            {syncSummary.copa && (
+              <span
+                className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border"
+                style={{
+                  backgroundColor: 'rgba(82,126,216,0.09)',
+                  color:           '#7BA7E8',
+                  borderColor:     'rgba(82,126,216,0.25)',
+                }}
+              >
+                <CheckCircle2 size={8} />
+                Copa Courier
+              </span>
+            )}
+            {syncSummary.correos && (
+              <span
+                className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border"
+                style={{
+                  backgroundColor: 'rgba(102,136,190,0.09)',
+                  color:           '#8AACD0',
+                  borderColor:     'rgba(102,136,190,0.24)',
+                }}
+              >
+                <CheckCircle2 size={8} />
+                Correos Cuba
+              </span>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
+
+/* ── Paso individual del timeline ──────────────────────────────────── */
+function HitoStep({ step, index, isLast }) {
+  const Icon      = ICON_MAP[step.iconName] ?? Package
+  const isDone    = step.status === 'done'
+  const isActive  = step.status === 'active'
+  const isLit     = isDone || isActive
+  const fecha     = step.fecha ? formatDate(step.fecha) : null
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.045, ease: [0.16, 1, 0.3, 1] }}
+      className="flex"
+    >
+      {/* ── Columna izquierda: dot + línea ────────────────────── */}
+      <div className="flex flex-col items-center flex-shrink-0" style={{ width: 36 }}>
+        {/* Contenedor del dot — 36px ancho para centrar el círculo de 20px */}
+        <div className="relative flex items-center justify-center" style={{ width: 36, height: 24 }}>
+          {/* Ring de pulso para el paso activo */}
+          {isActive && (
+            <motion.div
+              className="absolute rounded-full"
+              style={{ width: 28, height: 28, backgroundColor: 'rgba(240,114,50,0.15)', borderRadius: '50%' }}
+              animate={{ scale: [0.9, 1.5, 0.9], opacity: [0.4, 0, 0.4] }}
+              transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          )}
+
+          {/* Dot principal — 20px con ícono 11px claramente legible */}
+          {isLit ? (
+            <div
+              className="rounded-full flex items-center justify-center"
+              style={{
+                width:           22,
+                height:          22,
+                backgroundColor: isActive ? '#F07232' : 'rgba(240,114,50,0.13)',
+                border:          `1.5px solid ${isActive ? 'transparent' : 'rgba(240,114,50,0.45)'}`,
+                boxShadow:       isActive
+                  ? '0 0 0 3px rgba(240,114,50,0.20), 0 0 14px rgba(240,114,50,0.25)'
+                  : 'none',
+              }}
+            >
+              <Icon
+                size={13}
+                style={{ color: isActive ? 'white' : '#F07232' }}
+              />
+            </div>
+          ) : (
+            <div
+              className="rounded-full"
+              style={{ width: 10, height: 10, border: '1.5px solid var(--bd-2)' }}
+            />
+          )}
+        </div>
+
+        {/* Línea vertical */}
+        {!isLast && (
+          <div
+            style={{
+              width:           1.5,
+              flex:            1,
+              minHeight:       20,
+              backgroundColor: isDone
+                ? 'rgba(240,114,50,0.22)'
+                : isActive
+                ? 'rgba(240,114,50,0.10)'
+                : 'var(--bd-1)',
+            }}
+          />
+        )}
+      </div>
+
+      {/* ── Columna derecha: contenido ─────────────────────────── */}
+      <div
+        className={`flex-1 min-w-0 ${isLast ? 'pb-0' : 'pb-4'} pt-0.5`}
+        style={{
+          paddingLeft: 10,
+          ...(isActive ? {
+            borderRadius:  '0 10px 10px 0',
+            marginLeft:    -2,
+            paddingLeft:   12,
+            background:    'rgba(240,114,50,0.04)',
+            borderLeft:    '2px solid rgba(240,114,50,0.22)',
+          } : {}),
+        }}
+      >
+        {/* Fila 1: label + badge/fecha */}
+        <div className="flex items-start justify-between gap-2 flex-wrap">
+          <p
+            className="font-semibold leading-tight"
+            style={{
+              fontSize: isLit ? 13.5 : 12.5,
+              color:    isLit ? 'var(--fg-1)' : 'var(--fg-4)',
+            }}
+          >
+            {step.label}
+          </p>
+
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {isActive && (
+              <span
+                className="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full border"
+                style={{
+                  backgroundColor: 'rgba(240,114,50,0.10)',
+                  color:           '#F07232',
+                  borderColor:     'rgba(240,114,50,0.30)',
+                }}
+              >
+                En curso
+              </span>
+            )}
+            {fecha && (
+              <span
+                className="text-[11px] tabular-nums"
+                style={{ color: isLit ? 'rgba(251,146,60,0.85)' : 'var(--fg-5)' }}
+              >
+                {fecha}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Fila 2: sublabel + location */}
+        {(step.sublabel || step.location) && (
+          <p
+            className="text-[11.5px] mt-0.5 leading-snug"
+            style={{ color: isLit ? 'var(--fg-3)' : 'var(--fg-5)' }}
+          >
+            {step.sublabel}
+            {step.sublabel && step.location && (
+              <span style={{ opacity: 0.55 }}> · </span>
+            )}
+            {step.location && (
+              <span style={{ opacity: isLit ? 0.65 : 0.5 }}>{step.location}</span>
+            )}
+          </p>
+        )}
+
+        {/* Observación interna (ya filtrada de auto-completados) */}
+        {step.observacion && (
+          <p
+            className="text-[11px] mt-1"
+            style={{ color: 'var(--fg-4)', fontStyle: 'italic' }}
+          >
+            {step.observacion}
+          </p>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
+/* ── Timeline completo de 10 hitos ────────────────────────────────── */
+function HitosTimeline({ state }) {
+  if (!state?.steps?.length) return null
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="py-2"
+    >
+      {state.steps.map((step, i) => (
+        <HitoStep
+          key={step.hito}
+          step={step}
+          index={i}
+          isLast={i === state.steps.length - 1}
+        />
+      ))}
+    </motion.div>
+  )
+}
+
 /* ════════════════════════════════════════════════════════════════════
    COMPONENTE PRINCIPAL
 ═══════════════════════════════════════════════════════════════════ */
 export default function Tracking() {
   const [inputValue, setInputValue] = useState('')
   const [inputError, setInputError] = useState('')
-  const { phase, trackingState, rawSync, error, syncStep, track, reset } = useTracking()
+  const { phase, trackingState, error, syncStep: _syncStep, track, reset } = useTracking()
 
-  /* ── Evento externo desde el Hero ("Rastrear mi envío") ─────── */
+  /* ── Evento externo desde Hero ("Rastrear mi envío") ─────────── */
   useEffect(() => {
     const handler = (e) => {
       const val = parseGuiaInput(e.detail || '')
@@ -505,8 +436,8 @@ export default function Tracking() {
   /* ── Handlers ────────────────────────────────────────────────── */
   function handleSearch() {
     const trimmed = parseGuiaInput(inputValue)
-    if (!trimmed)          { setInputError('Ingresá el número de guía.');          return }
-    if (trimmed.length < 3){ setInputError('El número de guía es demasiado corto.'); return }
+    if (!trimmed)           { setInputError('Ingresá el número de guía.');           return }
+    if (trimmed.length < 3) { setInputError('El número de guía es demasiado corto.'); return }
     setInputError('')
     track(trimmed)
   }
@@ -522,24 +453,9 @@ export default function Tracking() {
   const isSyncing       = phase === TRACK_PHASE.SYNCING
   const isError         = phase === TRACK_PHASE.ERROR
   const hasGuia         = trackingState !== null
-  const showPhases      = hasGuia && (isSyncing || phase === TRACK_PHASE.COMPLETE)
   const activeError     = inputError || (isError ? getErrorMessage(error) : '')
 
-  /**
-   * Devuelve los datos de fase para cada tarjeta.
-   * Caso especial Copa: si Copa no devolvió datos pero ZAS confirmó la llegada,
-   * mostrar el trayecto inferido (sin fechas).
-   */
-  function getPhaseData(config) {
-    const raw      = rawSync?.phases?.[config.key] ?? null
-    const zasFound = rawSync?.phases?.destino_zas?.found
-    const copaFound = rawSync?.phases?.copa_courier?.found
-    if (config.key === 'copa_courier' && !copaFound && zasFound) {
-      return { found: true, inferred: true, events: COPA_INFERRED_EVENTS }
-    }
-    return raw
-  }
-
+  /* ── Render ──────────────────────────────────────────────────── */
   return (
     <section
       id="rastreo"
@@ -556,7 +472,7 @@ export default function Tracking() {
 
       <div className="relative max-w-3xl mx-auto px-5 sm:px-6 lg:px-8">
 
-        {/* ── Encabezado ───────────────────────────────────────── */}
+        {/* ── Encabezado de sección ────────────────────────────── */}
         <motion.p
           initial={{ opacity: 0, y: 8 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -605,7 +521,7 @@ export default function Tracking() {
             padding:         'clamp(1.25rem, 4vw, 2rem)',
           }}
         >
-          {/* ── Input row ────────────────────────────────────── */}
+          {/* ── Input + botón Rastrear ────────────────────────── */}
           <div className="flex flex-col sm:flex-row gap-2.5">
             <div className="relative flex-1">
               <Search
@@ -653,13 +569,13 @@ export default function Tracking() {
             >
               {phase === TRACK_PHASE.SEARCHING
                 ? <Loader2 size={15} className="animate-spin" />
-                : <Search size={15} />
+                : <Search   size={15} />
               }
               Rastrear
             </motion.button>
           </div>
 
-          {/* ── Error ────────────────────────────────────────── */}
+          {/* ── Error ─────────────────────────────────────────── */}
           <AnimatePresence>
             {activeError && (
               <motion.div
@@ -681,7 +597,7 @@ export default function Tracking() {
             )}
           </AnimatePresence>
 
-          {/* ── Spinner inicial ───────────────────────────────── */}
+          {/* ── Spinner de búsqueda ───────────────────────────── */}
           <AnimatePresence>
             {isSearchingOnly && <SearchingSpinner key="spinner" />}
           </AnimatePresence>
@@ -698,35 +614,51 @@ export default function Tracking() {
                 role="status"
                 aria-live="polite"
               >
-                {/* Info básica de la guía (disponible desde DB) */}
+                {/* Franja info básica de la guía */}
                 <GuiaInfoBand state={trackingState} />
 
-                {/* Fases del scraping */}
-                <AnimatePresence>
-                  {showPhases && (
-                    <motion.div
-                      key="phases"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="space-y-3"
+                {/* Header de estado + barra de progreso */}
+                <StatusHeader state={trackingState} isSyncing={isSyncing} />
+
+                {/* ── Timeline de 10 hitos ─────────────────── */}
+                <div
+                  className="rounded-xl border overflow-hidden"
+                  style={{ backgroundColor: 'var(--bg-elevated)', borderColor: 'var(--bd-1)' }}
+                >
+                  {/* Header de la tarjeta timeline */}
+                  <div
+                    className="flex items-center justify-between px-4 py-3 border-b"
+                    style={{ borderColor: 'var(--bd-1)' }}
+                  >
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-[0.18em]"
+                      style={{ color: 'var(--fg-4)' }}
                     >
-                      {PHASES.map((config, i) => (
-                        <PhaseCard
-                          key={config.key}
-                          config={config}
-                          phaseData={isSyncing ? null : getPhaseData(config)}
-                          loading={isSyncing}
-                          index={i}
-                          guia={trackingState?.guia ?? null}
-                        />
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      Recorrido del envío
+                    </p>
+                    {isSyncing ? (
+                      <div className="flex items-center gap-1.5">
+                        <Loader2 size={11} className="animate-spin" style={{ color: 'var(--fg-5)' }} />
+                        <span className="text-[10px]" style={{ color: 'var(--fg-5)' }}>Actualizando…</span>
+                      </div>
+                    ) : trackingState?.syncSummary ? (
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 size={11} style={{ color: '#22C55E' }} />
+                        <span className="text-[10px]" style={{ color: 'var(--fg-4)' }}>Verificado</span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Pasos del timeline */}
+                  <div className="px-4 py-4">
+                    <HitosTimeline state={trackingState} />
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
+
       </div>
     </section>
   )
