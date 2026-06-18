@@ -405,18 +405,14 @@ export default function Hero() {
             initial={{ opacity: 0, y: 32 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.85, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="font-display font-bold leading-[0.95] tracking-tight text-[var(--fg-1)] mb-6
-                       text-[clamp(2rem,6vw,4.8rem)]"
+            className="font-display font-bold leading-[1.15] tracking-tight text-[var(--fg-1)] mb-6
+                       text-[clamp(1.7rem,5vw,4rem)]"
           >
-            Conectamos{' '}
-            <span className="text-[#527ED8]">
-              Uruguay
-            </span>
+            Más de <span className="text-[#F07232]">5 años</span> conectando{' '}
+            <span className="text-[#527ED8]">Uruguay</span>
             <br />
             con el{' '}
-            <span className="text-[#F07232]">
-              mundo.
-            </span>
+            <span className="text-[#F07232]">mundo.</span>
           </motion.h1>
 
           <motion.p

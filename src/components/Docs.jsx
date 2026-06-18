@@ -163,12 +163,29 @@ export default function Docs() {
     if (errors[k]) setErrors(e => ({ ...e, [k]: undefined }))
   }
 
-  const handleSubmit = (ev) => {
+  const handleSubmit = async (ev) => {
     ev.preventDefault()
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
+
     setSending(true)
-    setTimeout(() => { setSending(false); setSent(true) }, 1200)
+    try {
+      const res = await fetch('/pack-sistema/api/v1/contact.php', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(form),
+      })
+      const json = await res.json()
+      if (json.ok) {
+        setSent(true)
+      } else {
+        alert('Error al enviar: ' + (json.error || 'Intentá de nuevo.'))
+      }
+    } catch {
+      alert('No se pudo conectar con el servidor. Verificá tu conexión e intentá de nuevo.')
+    } finally {
+      setSending(false)
+    }
   }
 
   const inputCls = (field) =>

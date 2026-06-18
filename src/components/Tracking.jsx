@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, X, AlertCircle,
   Package, Plane, MapPin, Building2, Shield, ShieldCheck, Truck, CheckCircle2,
-  Loader2, Sparkles,
+  Loader2, Sparkles, Receipt,
 } from 'lucide-react'
 import { useTracking, TRACK_PHASE } from '../hooks/useTracking'
 import { parseGuiaInput }    from '../lib/tracking/api'
@@ -18,7 +18,7 @@ import { formatDate }        from '../lib/tracking/normalizer'
 /* ── Mapa de íconos Lucide ─────────────────────────────────────────── */
 const ICON_MAP = {
   Package, Plane, MapPin, Building2,
-  Shield, ShieldCheck, Truck, CheckCircle2,
+  Shield, ShieldCheck, Truck, CheckCircle2, Receipt,
 }
 
 /* ── Mensajes de error ─────────────────────────────────────────────── */

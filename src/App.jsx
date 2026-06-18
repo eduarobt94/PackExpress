@@ -8,7 +8,36 @@ import {
   localBusinessSchema,
   websiteSchema,
   faqSchema,
+  serviceSchema,
 } from './seo/schemas'
+
+const servicesSchemas = [
+  serviceSchema(
+    'Courier Internacional',
+    'Envíos internacionales desde Uruguay a más de 50 países. Gestión aduanera, seguimiento en tiempo real y entrega garantizada.',
+    '/#servicios'
+  ),
+  serviceSchema(
+    'Casillero Internacional',
+    'Servicio de casillero para comprar en tiendas de EE.UU., Europa y Asia desde Uruguay. Recepción, consolidación y despacho con trámites aduaneros incluidos.',
+    '/#servicios'
+  ),
+  serviceSchema(
+    'Distribución Nacional Uruguay',
+    'Cobertura logística en los 19 departamentos de Uruguay. Entrega estándar en 48 horas hábiles y express en 24 horas en Montevideo.',
+    '/#servicios'
+  ),
+  serviceSchema(
+    'Equipaje No Acompañado',
+    'Transporte de maletas y pertenencias personales dentro de Uruguay y hacia el exterior, con gestión aduanera completa.',
+    '/#servicios'
+  ),
+  serviceSchema(
+    'Envío de Documentos',
+    'Gestión segura de documentación oficial, contratos y correspondencia con cadena de custodia certificada, nacional e internacional.',
+    '/#servicios'
+  ),
+]
 
 // Above-fold — eager
 import Navbar    from './components/Navbar'
@@ -69,7 +98,7 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <>
       <SEO
-        schemas={[organizationSchema, localBusinessSchema, websiteSchema, faqSchema]}
+        schemas={[organizationSchema, localBusinessSchema, websiteSchema, faqSchema, ...servicesSchemas]}
       />
 
       <div className="min-h-screen bg-[var(--bg-base)]">

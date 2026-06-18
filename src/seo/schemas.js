@@ -28,8 +28,8 @@ export const organizationSchema = {
     latitude: -34.907382,
     longitude: -56.188793,
   },
-  telephone: '+598-2XXX-XXXX', // ⚠️ reemplazar con número real antes de producción
-  email: 'contacto@packexpress.com.uy',
+  telephone: '+59893594297',
+  email: 'packexpress2021@gmail.com',
   foundingDate: '2020',
   numberOfEmployees: { '@type': 'QuantitativeValue', value: 20 },
   openingHoursSpecification: [
@@ -51,9 +51,8 @@ export const organizationSchema = {
     { '@type': 'AdministrativeArea', name: 'Montevideo' },
   ],
   sameAs: [
-    'https://www.facebook.com/packexpressuy',
-    'https://www.instagram.com/packexpressuy',
-    'https://www.linkedin.com/company/packexpressuy',
+    'https://www.facebook.com/profile.php?id=100063612524908',
+    'https://www.instagram.com/packexpressuruguay/',
   ],
 }
 
@@ -67,7 +66,7 @@ export const localBusinessSchema = {
   currenciesAccepted: 'UYU, USD',
   paymentAccepted: 'Cash, Credit Card, Bank Transfer',
   url: BASE_URL,
-  telephone: '+598-2XXX-XXXX', // ⚠️ reemplazar con número real
+  telephone: '+59893594297',
   address: {
     '@type': 'PostalAddress',
     streetAddress: 'Carlos Quijano 1258',
@@ -115,7 +114,10 @@ export const websiteSchema = {
   publisher: { '@id': `${BASE_URL}/#organization` },
   potentialAction: {
     '@type': 'SearchAction',
-    target: `${BASE_URL}/#rastreo?n={tracking_number}`,
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${BASE_URL}/?rastreo={tracking_number}`,
+    },
     'query-input': 'required name=tracking_number',
   },
 }

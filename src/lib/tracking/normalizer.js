@@ -55,14 +55,6 @@ export const HITOS_META = [
     iconName: 'MapPin',
   },
   {
-    hito:     'LLEGO AL CENTRO DE DISTRIBUCION',
-    label:    'Centro de distribución',
-    sublabel: 'Preparación para proceso aduanero',
-    location: 'Cuba',
-    phase:    'destination',
-    iconName: 'Building2',
-  },
-  {
     hito:     'EN PROCESO DE ADUANA',
     label:    'En proceso de aduana',
     sublabel: 'Revisión y verificación aduanera',
@@ -77,6 +69,22 @@ export const HITOS_META = [
     location: 'Cuba',
     phase:    'customs',
     iconName: 'ShieldCheck',
+  },
+  {
+    hito:     'FACTURADO',
+    label:    'Facturado',
+    sublabel: 'Liberado por Correos y asignado a la Mipyme',
+    location: 'Cuba',
+    phase:    'delivery',
+    iconName: 'Receipt',
+  },
+  {
+    hito:     'LLEGO AL CENTRO DE DISTRIBUCION',
+    label:    'Centro de distribución',
+    sublabel: 'Preparación para entrega final',
+    location: 'Cuba',
+    phase:    'delivery',
+    iconName: 'Building2',
   },
   {
     hito:     'EN REPARTO',
@@ -114,11 +122,7 @@ export function formatDate(raw) {
     const day   = d.getDate()
     const month = d.toLocaleDateString('es', { month: 'short' }).replace('.', '').toLowerCase()
     const year  = d.getFullYear()
-    const hasTime = raw.includes(' ')
-    const h = String(d.getHours()).padStart(2, '0')
-    const m = String(d.getMinutes()).padStart(2, '0')
-
-    return hasTime ? `${day} ${month} ${year}, ${h}:${m}` : `${day} ${month} ${year}`
+    return `${day} ${month} ${year}`
   } catch {
     return raw
   }
@@ -150,19 +154,15 @@ export function formatRawEventDate(fecha) {
     const monKey = rawMon.toLowerCase().replace(/\.$/, '')
     const m = MONTHS_ES_COPA[monKey] ?? '01'
     const mName = MONTH_NAMES[parseInt(m, 10)]
-    return time
-      ? `${parseInt(day, 10)} ${mName} ${year}, ${time}`
-      : `${parseInt(day, 10)} ${mName} ${year}`
+    return `${parseInt(day, 10)} ${mName} ${year}`
   }
 
   // Destino ZAS: "25/11/2025" | "25/11/2025 14:30"
   const zas = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}:\d{2}))?/)
   if (zas) {
-    const [, day, month, year, time] = zas
+    const [, day, month, year] = zas
     const mNum = parseInt(month, 10)
-    return time
-      ? `${parseInt(day, 10)} ${MONTH_NAMES[mNum] ?? month} ${year}, ${time}`
-      : `${parseInt(day, 10)} ${MONTH_NAMES[mNum] ?? month} ${year}`
+    return `${parseInt(day, 10)} ${MONTH_NAMES[mNum] ?? month} ${year}`
   }
 
   // ISO / YYYY-MM-DD: delegar al formatDate existente
@@ -235,11 +235,14 @@ export function buildTrackingState(guiaData, syncData = null) {
     // Ocultar observaciones internas auto-completadas
     const obs      = ev?.observacion ?? null
     const showObs  = obs && !obs.startsWith('Auto-completado')
+    // Solo mostrar fecha si hay observación real (hito con fuente verificada)
+    // Los backfilleados no tienen observación y su fecha es inferida, no real
+    const showFecha = showObs
 
     return {
       ...meta,
       status,
-      fecha:      ev?.fecha_hora ?? null,
+      fecha:       showFecha ? (ev?.fecha_hora ?? null) : null,
       observacion: showObs ? obs : null,
     }
   })
