@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect } from 'react'
+import { lazy, Suspense, useState, useEffect, startTransition } from 'react'
 import { ThemeProvider } from './context/ThemeContext'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { useLenis } from './hooks/useLenis'
@@ -71,7 +71,7 @@ export default function App() {
   const [legalType,   setLegalType]   = useState(null)
 
   useEffect(() => {
-    const open = () => setCotizarOpen(true)
+    const open = () => startTransition(() => setCotizarOpen(true))
     window.addEventListener('openCotizar', open)
     if (window.location.hash === '#tarifas') setCotizarOpen(true)
     return () => window.removeEventListener('openCotizar', open)
@@ -81,6 +81,13 @@ export default function App() {
     const open = (e) => setLegalType(e.detail)
     window.addEventListener('openLegal', open)
     return () => window.removeEventListener('openLegal', open)
+  }, [])
+
+  useEffect(() => {
+    // Precargar Cotizacion durante idle para que el chunk ya esté listo al hacer click
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => import('./components/Cotizacion'))
+    }
   }, [])
 
   useEffect(() => {

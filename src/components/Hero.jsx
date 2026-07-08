@@ -433,6 +433,8 @@ export default function Hero() {
             className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 mb-10 sm:mb-12"
           >
             <button
+              onMouseEnter={() => import('./Cotizacion')}
+              onFocus={() => import('./Cotizacion')}
               onClick={() => window.dispatchEvent(new CustomEvent('openCotizar'))}
               className="px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
                          bg-[#F07232] hover:bg-[#E8823C] text-white font-semibold text-sm
