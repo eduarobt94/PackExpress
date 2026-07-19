@@ -438,8 +438,8 @@ export default function Hero() {
               onClick={() => window.dispatchEvent(new CustomEvent('openCotizar'))}
               className="px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
                          bg-[#F07232] hover:bg-[#E8823C] text-white font-semibold text-sm
-                         transition-all duration-300
-                         hover:shadow-[0_0_32px_rgba(255,107,0,0.30)]"
+                         transition-[background-color,box-shadow,transform] duration-200
+                         hover:shadow-[0_0_32px_rgba(255,107,0,0.30)] active:scale-[0.97]"
             >
               Cotizar envío
             </button>
@@ -448,7 +448,7 @@ export default function Hero() {
               className="px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
                          border border-[#527ED8]/25 hover:border-[#527ED8]/55
                          text-[var(--fg-2)] hover:text-[#6B90DC] font-semibold text-sm
-                         transition-all duration-300
+                         transition-[color,background-color,border-color,box-shadow] duration-200
                          bg-[#527ED8]/[0.06] backdrop-blur-2xl hover:bg-[#527ED8]/[0.12]
                          hover:shadow-[0_0_24px_rgba(59,126,248,0.18)]"
             >
@@ -483,7 +483,7 @@ export default function Hero() {
             <button
               onClick={handleHeroTrack}
               className="flex items-center gap-1.5 px-5 py-2.5 bg-[#F07232] hover:bg-[#E8823C] text-white text-sm
-                         font-semibold rounded-xl transition-colors duration-200 whitespace-nowrap"
+                         font-semibold rounded-xl transition-[background-color,transform] duration-150 active:scale-[0.97] whitespace-nowrap"
             >
               <MapPin size={13} />
               <span className="hidden min-[400px]:inline">Rastrear</span>

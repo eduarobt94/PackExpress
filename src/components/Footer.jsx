@@ -73,7 +73,7 @@ export default function Footer() {
                    bg-[#22C55E] hover:bg-[#16A34A]
                    shadow-[0_4px_24px_rgba(34,197,94,0.4)]
                    hover:shadow-[0_4px_32px_rgba(34,197,94,0.55)]
-                   transition-all duration-200 hover:scale-105 active:scale-95"
+                   transition-[background-color,box-shadow,transform] duration-200 hover:scale-105 active:scale-95"
       >
         <MessageCircle size={24} className="text-white" />
       </a>
@@ -114,7 +114,7 @@ export default function Footer() {
                 className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl w-full sm:w-auto
                            border border-[#527ED8]/30 hover:border-[#527ED8]/55
                            text-[#527ED8] hover:text-[#6B90DC] text-[13px] font-semibold
-                           transition-all duration-200 tracking-wide whitespace-nowrap
+                           transition-[color,background-color,border-color,box-shadow] duration-200 tracking-wide whitespace-nowrap
                            hover:bg-[#527ED8]/[0.07] hover:shadow-[0_0_24px_rgba(59,126,248,0.18)]"
               >
                 Abrir casillero <ArrowRight size={14} />
@@ -174,7 +174,7 @@ export default function Footer() {
                                bg-[var(--bd-1)] hover:bg-[var(--bd-2)]
                                text-[var(--fg-4)] hover:text-[var(--social-color)]
                                border border-[var(--bd-1)] hover:border-[var(--bd-2)]
-                               transition-all duration-200"
+                               transition-[color,background-color,border-color] duration-200"
                   >
                     {icon}
                   </a>

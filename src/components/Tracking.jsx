@@ -167,10 +167,10 @@ function StatusHeader({ state, isSyncing }) {
         style={{ height: 4, backgroundColor: 'rgba(255,255,255,0.07)' }}
       >
         <motion.div
-          className="h-full rounded-full"
-          style={{ backgroundColor: accent }}
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
+          className="h-full w-full rounded-full"
+          style={{ backgroundColor: accent, transformOrigin: 'left' }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: pct / 100 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
         />
       </div>
@@ -180,11 +180,11 @@ function StatusHeader({ state, isSyncing }) {
         {isSyncing && (
           <motion.div
             key="syncing"
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginTop: 10 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex items-center gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="flex items-center gap-2 mt-2.5"
           >
             <Loader2 size={11} className="animate-spin flex-shrink-0" style={{ color: 'var(--fg-5)' }} />
             <p className="text-[11px]" style={{ color: 'var(--fg-5)' }}>
@@ -196,10 +196,10 @@ function StatusHeader({ state, isSyncing }) {
         {!isSyncing && syncSummary && (
           <motion.div
             key="verified"
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: 'auto', marginTop: 10 }}
-            transition={{ duration: 0.25, delay: 0.1 }}
-            className="flex items-center gap-2 flex-wrap"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.1 }}
+            className="flex items-center gap-2 flex-wrap mt-2.5"
           >
             <Sparkles size={10} style={{ color: 'var(--fg-5)', flexShrink: 0 }} />
             <span className="text-[10.5px]" style={{ color: 'var(--fg-5)' }}>Fuentes verificadas:</span>
@@ -539,7 +539,7 @@ export default function Tracking() {
                 spellCheck={false}
                 autoComplete="off"
                 aria-label="Número de guía"
-                className="w-full rounded-xl py-3.5 pl-10 pr-10 font-mono text-sm outline-none transition-all duration-200 focus:shadow-[0_0_0_3px_rgba(240,114,50,0.14)]"
+                className="w-full rounded-xl py-3.5 pl-10 pr-10 font-mono text-sm outline-none transition-[border-color,box-shadow] duration-200 focus:shadow-[0_0_0_3px_rgba(240,114,50,0.14)]"
                 style={{
                   backgroundColor: 'var(--bg-input)',
                   color:           'var(--fg-1)',
@@ -579,11 +579,11 @@ export default function Tracking() {
           <AnimatePresence>
             {activeError && (
               <motion.div
-                initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                animate={{ opacity: 1, height: 'auto', marginTop: 10 }}
-                exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                transition={{ duration: 0.22 }}
-                className="overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="mt-2.5"
                 role="alert"
               >
                 <div

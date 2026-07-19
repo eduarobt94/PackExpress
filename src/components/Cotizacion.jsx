@@ -108,7 +108,7 @@ const inputCls = `
   w-full rounded-xl px-4 py-3 text-[var(--fg-1)] placeholder-[var(--fg-4)] text-sm outline-none
   bg-[var(--bg-input)] border border-[var(--bd-2)]
   focus:border-[#FF6B00]/50 focus:shadow-[0_0_0_3px_rgba(255,107,0,0.10)]
-  transition-all duration-200
+  transition-[border-color,box-shadow] duration-200
 `
 
 function Field({ label, icon: Icon, children }) {
@@ -187,7 +187,7 @@ function CountrySelect({ value, onChange }) {
             initial={{ opacity: 0, y: 8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0,  scale: 1    }}
             exit={{    opacity: 0, y: 8,  scale: 0.98 }}
-            transition={{ duration: 0.16, ease: 'easeOut' }}
+            transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
             style={{ position: 'fixed', top: dropPos.top, left: dropPos.left, width: dropPos.width, zIndex: 9999 }}
             className="rounded-xl overflow-hidden border border-[var(--bd-2)] bg-[var(--bg-elevated)]
                        shadow-[0_20px_60px_rgba(0,0,0,0.65)]"
@@ -267,7 +267,7 @@ function ResultPanel({ cotizacion, zona, pais, descuento, pesoEfectivo }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className="space-y-3"
     >
       {/* Zona + País */}
@@ -493,7 +493,7 @@ export default function Cotizacion({ onClose }) {
             onClick={onClose}
             className="relative w-9 h-9 rounded-xl border border-[var(--bd-2)] flex items-center justify-center
                        text-[var(--fg-3)] hover:text-[var(--fg-1)] hover:border-[var(--bd-3)]
-                       transition-all duration-200 shrink-0"
+                       transition-[color,border-color] duration-200 shrink-0"
             aria-label="Cerrar"
           >
             <X size={16} />
@@ -537,7 +537,7 @@ export default function Cotizacion({ onClose }) {
                     onClick={handleReset}
                     className="px-6 py-3 rounded-xl text-sm font-semibold border border-[var(--bd-2)]
                                text-[var(--fg-3)] hover:border-[#FF6B00]/40 hover:text-[#FF6B00]
-                               transition-all duration-200"
+                               transition-[color,border-color] duration-200"
                   >
                     Nueva cotización
                   </button>
@@ -570,7 +570,7 @@ export default function Cotizacion({ onClose }) {
                           type="button"
                           onClick={() => setTipo(id)}
                           className="flex items-center gap-2 px-3 py-3 rounded-xl border text-left
-                                     transition-all duration-200"
+                                     transition-[border-color,background-color] duration-200"
                           style={{
                             borderColor:  tipo === id ? 'rgba(255,107,0,0.45)' : 'var(--bd-2)',
                             background:   tipo === id ? 'rgba(255,107,0,0.07)' : 'var(--bg-input)',
@@ -678,7 +678,7 @@ export default function Cotizacion({ onClose }) {
                     disabled={!isValid || loading}
                     whileHover={isValid && !loading ? { scale: 1.02 } : {}}
                     whileTap={isValid && !loading ? { scale: 0.98 } : {}}
-                    className="w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-300
+                    className="w-full py-3.5 rounded-xl font-bold text-sm transition-[background-color,box-shadow,color] duration-200
                                flex items-center justify-center gap-2"
                     style={{
                       backgroundColor: isValid && !loading ? '#FF6B00' : 'rgba(255,255,255,0.04)',
@@ -729,11 +729,11 @@ export default function Cotizacion({ onClose }) {
                   {pesoEfectivo > 0 && (
                     <motion.div
                       key="peso-info"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="space-y-1.5 overflow-hidden"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-1.5"
                     >
                       <div className="flex justify-between text-[12px]">
                         <span className="text-[var(--fg-4)]">Peso real</span>
@@ -803,7 +803,7 @@ export default function Cotizacion({ onClose }) {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className="w-full py-4 rounded-xl font-bold text-sm text-white
-                               transition-all duration-300"
+                               transition-[background-color,box-shadow] duration-200"
                     style={{
                       background: '#FF6B00',
                       boxShadow: '0 0 28px rgba(255,107,0,0.35)',

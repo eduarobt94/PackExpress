@@ -30,7 +30,7 @@ export default function Navbar() {
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 backdrop-blur-xl ${
+        className={`fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-150 backdrop-blur-xl ${
           scrolled
             ? 'border-b border-[var(--bd-1)] shadow-[var(--shadow-navbar)]'
             : 'border-b border-transparent'
@@ -55,7 +55,7 @@ export default function Navbar() {
                     className="relative text-sm text-[var(--fg-3)] hover:text-[var(--fg-1)] transition-colors duration-200 group py-1"
                   >
                     Tarifas
-                    <span className="absolute bottom-0 left-0 w-0 h-px bg-[#F07232] group-hover:w-full transition-all duration-300" />
+                    <span className="absolute bottom-0 left-0 w-0 h-px bg-[#F07232] group-hover:w-full transition-[width] duration-300" />
                   </button>
                 ) : (
                   <a
@@ -65,7 +65,7 @@ export default function Navbar() {
                   >
                     {label}
                     <span className="absolute bottom-0 left-0 w-0 h-px bg-[#F07232]
-                                     group-hover:w-full transition-all duration-300" />
+                                     group-hover:w-full transition-[width] duration-300" />
                   </a>
                 )
               )}
@@ -78,7 +78,7 @@ export default function Navbar() {
                 href="#rastreo"
                 className="flex items-center gap-1.5 text-sm text-[var(--fg-2)] hover:text-[var(--fg-1)]
                            border border-[var(--bd-2)] hover:border-[var(--bd-3)] px-4 py-2 rounded-lg
-                           transition-all duration-200 hover:bg-[var(--bd-1)]"
+                           transition-[color,background-color,border-color] duration-200 hover:bg-[var(--bd-1)]"
               >
                 <MapPin size={13} />
                 Rastrear
@@ -87,7 +87,7 @@ export default function Navbar() {
                 onClick={() => window.dispatchEvent(new CustomEvent('openCotizar'))}
                 className="flex items-center gap-1.5 text-sm font-semibold text-white
                            bg-[#F07232] hover:bg-[#E8823C] px-4 py-2 rounded-lg
-                           transition-all duration-200 hover:shadow-[0_0_20px_rgba(255,107,0,0.25)]
+                           transition-[background-color,box-shadow] duration-200 hover:shadow-[0_0_20px_rgba(255,107,0,0.25)]
                            focus-visible:ring-2 focus-visible:ring-[#F07232]/50"
               >
                 Cotizar

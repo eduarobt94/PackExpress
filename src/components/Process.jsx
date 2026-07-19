@@ -135,7 +135,7 @@ function StepsDisplay({ flow, inView }) {
               ? '0%'
               : `${((filling >= 0 ? filling : active) / (steps.length - 1)) * 100}%`,
           }}
-          transition={{ duration: LINE_MS / 1000, ease: [0.4, 0, 0.2, 1] }}
+          transition={{ duration: LINE_MS / 1000, ease: [0.16, 1, 0.3, 1] }}
         />
       </div>
 

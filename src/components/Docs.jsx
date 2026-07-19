@@ -85,7 +85,7 @@ function DocRow({ doc, delay = 0 }) {
   const { label, title, desc, action, href, modal, alert } = doc
 
   const sharedCls = `group flex items-center gap-4 px-5 py-4 w-full
-    bg-[var(--bg-card)] border rounded-xl cursor-pointer transition-all duration-200
+    bg-[var(--bg-card)] border rounded-xl cursor-pointer transition-[border-color,background-color] duration-200
     ${alert
       ? 'border-[var(--bd-1)] hover:border-[#E53535]/40 hover:bg-[#E53535]/[0.04]'
       : 'border-[var(--bd-1)] hover:border-[#F07232]/40'
@@ -190,7 +190,7 @@ export default function Docs() {
 
   const inputCls = (field) =>
     `w-full bg-[var(--bg-input)] border rounded-xl px-4 py-3 text-sm text-[var(--fg-1)] placeholder-[var(--fg-4)]
-     outline-none transition-all duration-200
+     outline-none transition-[border-color,box-shadow] duration-200
      focus:border-[#F07232]/50 focus:shadow-[0_0_0_3px_rgba(255,107,0,0.07)]
      ${errors[field] ? 'border-red-500/50' : 'border-[var(--bd-1)]'}`
 
@@ -309,7 +309,7 @@ export default function Docs() {
                 <button type="submit" disabled={sending}
                   className="flex items-center justify-center gap-2 rounded-xl mx-auto
                              bg-[#527ED8] hover:bg-[#6B90DC] text-white text-[14px] font-semibold
-                             transition-all duration-200 disabled:opacity-60 tracking-wide
+                             transition-[background-color,box-shadow] duration-200 disabled:opacity-60 tracking-wide
                              hover:shadow-[0_0_24px_rgba(59,126,248,0.30)]"
                   style={{ width: 280, height: 49 }}>
                   {sending ? (
@@ -411,7 +411,7 @@ export default function Docs() {
                 className="flex items-center justify-center gap-2.5 w-full py-3.5
                            border border-[#527ED8]/40 hover:border-[#527ED8]/70
                            text-[#527ED8] hover:text-[#6B90DC] text-[13px] font-semibold
-                           rounded-xl transition-all duration-200 tracking-wide
+                           rounded-xl transition-[color,background-color,border-color,box-shadow] duration-200 tracking-wide
                            hover:bg-[#527ED8]/[0.07] hover:shadow-[0_0_20px_rgba(59,126,248,0.15)]">
                 <MessageCircle size={14} />
                 Contactar por WhatsApp
@@ -458,7 +458,7 @@ export default function Docs() {
                   onClick={() => setMapOpen(false)}
                   className="w-8 h-8 rounded-lg border border-[var(--bd-2)] flex items-center justify-center
                              text-[var(--fg-4)] hover:text-[var(--fg-1)] hover:border-[var(--bd-3)]
-                             transition-all duration-200"
+                             transition-[color,border-color] duration-200"
                   aria-label="Cerrar mapa"
                 >
                   <X size={14} />
