@@ -7,11 +7,23 @@ export default function ChatAgent() {
   const [open, setOpen] = useState(false)
   const [texto, setTexto] = useState('')
   const scrollRef = useRef(null)
+  const inputRef = useRef(null)
+  const toggleButtonRef = useRef(null)
   const { mensajes, escribiendo, enviarMensaje, iniciarBienvenida } = useChatAgent()
 
   useEffect(() => {
-    if (open) iniciarBienvenida()
+    if (open) {
+      iniciarBienvenida()
+      inputRef.current?.focus()
+    }
   }, [open, iniciarBienvenida])
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [open])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -30,7 +42,12 @@ export default function ChatAgent() {
     <>
       <button
         type="button"
-        onClick={() => setOpen(v => !v)}
+        ref={toggleButtonRef}
+        onClick={() => setOpen(v => {
+          const next = !v
+          if (!next) toggleButtonRef.current?.focus()
+          return next
+        })}
         aria-label={open ? 'Cerrar chat de soporte' : 'Abrir chat de soporte'}
         className="fixed bottom-[84px] sm:bottom-[92px] right-6 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full
                    flex items-center justify-center cursor-pointer
@@ -49,6 +66,8 @@ export default function ChatAgent() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            role="dialog"
+            aria-label="Asistente Pack Express"
             className="fixed z-40 bottom-[144px] sm:bottom-[156px] right-4 sm:right-6 left-4 sm:left-auto
                        sm:w-[360px] h-[65vh] sm:h-[520px] max-h-[600px]
                        rounded-2xl border border-[var(--bd-2)] overflow-hidden
@@ -70,7 +89,7 @@ export default function ChatAgent() {
               </div>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => { setOpen(false); toggleButtonRef.current?.focus() }}
                 aria-label="Cerrar chat"
                 className="p-1.5 rounded-lg text-[var(--fg-3)] hover:text-[var(--fg-1)] hover:bg-[var(--bd-1)] transition-colors cursor-pointer"
               >
@@ -78,7 +97,7 @@ export default function ChatAgent() {
               </button>
             </div>
 
-            <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5">
+            <div ref={scrollRef} aria-live="polite" aria-relevant="additions" className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5">
               {mensajes.map(m => (
                 <div
                   key={m.id}
@@ -125,6 +144,7 @@ export default function ChatAgent() {
             <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 border-t border-[var(--bd-1)] shrink-0">
               <input
                 type="text"
+                ref={inputRef}
                 value={texto}
                 onChange={e => setTexto(e.target.value)}
                 placeholder="Escribí tu mensaje..."
