@@ -70,7 +70,7 @@ export default function PromoBanner() {
   const rangoFechas = formatRangoFechas(promo.fecha_inicio, promo.fecha_fin)
 
   const content = (
-    <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8 flex items-center justify-center gap-2 py-2.5">
+    <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8 flex items-center justify-center gap-2 py-1.5">
       <Tag size={14} className="shrink-0 text-white" />
       <span className="text-[13px] md:text-[15px] font-semibold tracking-[0.01em] text-white text-center">
         {promo.mensaje}
@@ -97,7 +97,7 @@ export default function PromoBanner() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="fixed top-0 inset-x-0 z-[60]"
-      style={{ background: 'linear-gradient(90deg, #C85A1F 0%, #F07232 50%, #C85A1F 100%)' }}
+      style={{ background: 'linear-gradient(110deg, #A8481A 0%, #F07232 35%, #FF9358 50%, #F07232 65%, #A8481A 100%)' }}
     >
       {hasSafeLink ? (
         <a href={promo.link_url} className="block">{content}</a>
