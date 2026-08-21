@@ -4,6 +4,8 @@ import { ChevronRight } from 'lucide-react'
 
 const PROMO_ENDPOINT = '/pack-sistema/api/v1/promociones.php?action=activa'
 
+const isSafeUrl = (url) => /^(https?:\/\/|\/)/i.test(url)
+
 export default function PromoBanner() {
   const [promo, setPromo] = useState(null)
   const barRef = useRef(null)
@@ -16,7 +18,7 @@ export default function PromoBanner() {
         if (cancelled) return
         if (json?.ok && json.data?.promocion) setPromo(json.data.promocion)
       })
-      .catch(() => { /* sin promo activa ante cualquier error de red */ })
+      .catch(err => { console.error('[PromoBanner] fetch failed', err) })
     return () => { cancelled = true }
   }, [])
 
@@ -44,13 +46,14 @@ export default function PromoBanner() {
   if (!promo) return null
 
   const ctaLabel = promo.link_texto?.trim() || 'Ver más'
+  const hasSafeLink = promo.link_url && isSafeUrl(promo.link_url)
 
   const content = (
     <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8 flex items-center justify-center gap-2 py-2.5">
       <span className="text-[13px] md:text-sm font-medium tracking-[0.02em] text-[#FFF5EC] text-center">
         {promo.mensaje}
       </span>
-      {promo.link_url && (
+      {hasSafeLink && (
         <>
           <span className="hidden sm:inline text-[#FFF5EC]/40">·</span>
           <span className="hidden sm:inline-flex items-center gap-0.5 text-[13px] font-medium text-[#FFF5EC] underline decoration-transparent hover:decoration-current underline-offset-4 transition-[text-decoration-color] duration-200">
@@ -71,7 +74,7 @@ export default function PromoBanner() {
       className="fixed top-0 inset-x-0 z-[60]"
       style={{ background: 'linear-gradient(90deg, #C85A1F 0%, #F07232 50%, #C85A1F 100%)' }}
     >
-      {promo.link_url ? (
+      {hasSafeLink ? (
         <a href={promo.link_url} className="block">{content}</a>
       ) : content}
     </motion.div>
