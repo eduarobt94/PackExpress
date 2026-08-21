@@ -64,6 +64,7 @@ const Coverage     = lazy(() => import('./components/Coverage'))
 const Docs         = lazy(() => import('./components/Docs'))
 const Testimonials = lazy(() => import('./components/Testimonials'))
 const Footer       = lazy(() => import('./components/Footer'))
+const ChatAgent    = lazy(() => import('./components/ChatAgent/ChatAgent'))
 
 export default function App() {
   useLenis()
@@ -145,6 +146,10 @@ export default function App() {
           <footer role="contentinfo">
             <Footer />
           </footer>
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <ChatAgent />
         </Suspense>
       </div>
 
