@@ -6,27 +6,27 @@ import { FAQ } from './chatKnowledge'
 
 const PALABRAS_COTIZAR = [
   'cotizar', 'cotizacion', 'precio', 'precios', 'cuanto cuesta', 'cuanto sale',
-  'tarifa', 'tarifas', 'cuanto vale', 'cuanto sale enviar', 'costo de envio',
+  'tarifa', 'tarifas', 'cuanto vale', 'costo de envio',
 ]
 
 /** Minúsculas, sin tildes, sin espacios extra. */
 export function normalizeText(texto) {
   return texto
     .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .trim()
 }
 
-/** Busca un número de guía en el texto: solo dígitos (3+) o formato CM000000689PK. */
+function contieneAlguna(texto, frases) {
+  return frases.some(frase => texto.includes(normalizeText(frase)))
+}
+
+/** Busca un número de guía: el mensaje entero debe ser solo dígitos (3+) o formato CM000000689PK. */
 export function extraerNumeroGuia(texto) {
-  const compacto = texto.replace(/\s+/g, '')
+  const compacto = texto.trim().replace(/\s+/g, '')
   const matchCodigo = compacto.match(/^cm0*(\d+)pk$/i)
   if (matchCodigo) return compacto
-
-  const tokens = texto.trim().split(/\s+/)
-  for (const token of tokens) {
-    if (/^\d{3,}$/.test(token)) return token
-  }
+  if (/^\d{3,}$/.test(compacto)) return compacto
   return null
 }
 
@@ -49,7 +49,10 @@ export function matchPais(texto, countryZone) {
   const exacto = paises.find(pais => normalizeText(pais) === norm)
   if (exacto) return exacto
 
-  const contenido = paises.find(pais => norm.includes(normalizeText(pais)))
+  const contenido = paises.find(pais => {
+    const paisNorm = normalizeText(pais)
+    return new RegExp(`\\b${paisNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(norm)
+  })
   return contenido ?? null
 }
 
@@ -86,12 +89,12 @@ export function detectarIntencion(textoOriginal, estado) {
 
   const texto = normalizeText(textoOriginal)
 
-  if (PALABRAS_COTIZAR.some(p => texto.includes(p))) {
+  if (contieneAlguna(texto, PALABRAS_COTIZAR)) {
     return { tipo: 'cotizar_iniciar' }
   }
 
   for (const entrada of FAQ) {
-    if (entrada.palabrasClave.some(p => texto.includes(normalizeText(p)))) {
+    if (contieneAlguna(texto, entrada.palabrasClave)) {
       return { tipo: 'faq', respuesta: entrada.respuesta }
     }
   }
