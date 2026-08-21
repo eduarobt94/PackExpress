@@ -70,9 +70,9 @@ export default function PromoBanner() {
   const rangoFechas = formatRangoFechas(promo.fecha_inicio, promo.fecha_fin)
 
   const content = (
-    <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8 flex items-center justify-center gap-2 py-1.5">
-      <Tag size={14} className="shrink-0 text-white" />
-      <span className="text-[13px] md:text-[15px] font-semibold tracking-[0.01em] text-white text-center">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 lg:px-8 flex items-center justify-center gap-2 py-1.5">
+      <Tag size={14} className="hidden sm:block shrink-0 text-white" />
+      <span className="text-[12px] sm:text-[13px] md:text-[15px] font-semibold tracking-[0.01em] text-white text-center leading-snug">
         {promo.mensaje}
         {rangoFechas && (
           <span className="font-medium text-white/80"> · {rangoFechas}</span>
