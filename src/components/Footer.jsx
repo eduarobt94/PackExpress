@@ -1,5 +1,6 @@
 import { MapPin, Phone, Mail, MessageCircle, ArrowUpRight, ArrowRight } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+import { WHATSAPP_URL } from '../lib/whatsapp'
 
 const COLS = [
   {
@@ -30,8 +31,6 @@ const COLS = [
     ],
   },
 ]
-
-const WHATSAPP_URL = 'https://wa.me/59893594297?text=Hola%2C%20me%20gustar%C3%ADa%20cotizar%20un%20env%C3%ADo.'
 
 const SOCIAL = [
   {
