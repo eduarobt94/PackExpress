@@ -37,6 +37,7 @@ export function useChatAgent() {
   const [mensajes, setMensajes] = useState(cargarHistorial)
   const [escribiendo, setEscribiendo] = useState(false)
   const flujoRef = useRef(flujoVacio())
+  const procesandoRef = useRef(false)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mensajes))
@@ -77,6 +78,8 @@ export function useChatAgent() {
   }, [responderConDelay])
 
   const manejarRastreo = useCallback(async (numero) => {
+    if (procesandoRef.current) return
+    procesandoRef.current = true
     try {
       const res  = await fetch(`${API}/rastreo.php?guia_numero=${encodeURIComponent(numero)}`)
       const json = await res.json()
@@ -85,7 +88,7 @@ export function useChatAgent() {
         return
       }
       const { guia, events } = json.data
-      const ultimo = events[events.length - 1]
+      const ultimo = (events ?? [])[(events ?? []).length - 1]
       if (!ultimo) {
         responderConDelay(`Encontré tu envío #${guia.numero}, pero todavía no tiene eventos de rastreo registrados.`)
         return
@@ -93,10 +96,14 @@ export function useChatAgent() {
       responderConDelay(`Tu envío #${guia.numero} está en ${ultimo.hito} desde el ${formatFechaHora(ultimo.fecha_hora)}.`)
     } catch {
       ofrecerSalidaWhatsapp('Tuve un problema para consultar el rastreo. Probá de nuevo en un momento, o escribinos por WhatsApp.')
+    } finally {
+      procesandoRef.current = false
     }
   }, [responderConDelay, ofrecerSalidaWhatsapp])
 
   const iniciarCotizacion = useCallback(async () => {
+    if (procesandoRef.current) return
+    procesandoRef.current = true
     flujoRef.current = { activo: true, paso: 'peso', datos: {}, intentosFallidos: 0, tipos: [] }
     try {
       const res  = await fetch(`${API}/tarifario.php?action=tipos`)
@@ -104,11 +111,16 @@ export function useChatAgent() {
       flujoRef.current.tipos = json.ok ? json.data : []
     } catch {
       flujoRef.current.tipos = []
+    } finally {
+      procesandoRef.current = false
     }
     responderConDelay('¡Perfecto! ¿Cuál es el peso aproximado del envío en kg?')
   }, [responderConDelay])
 
   const manejarRespuestaCotizacion = useCallback(async (valor) => {
+    if (procesandoRef.current) return
+    procesandoRef.current = true
+    try {
     const flujo = flujoRef.current
 
     if (flujo.paso === 'peso') {
@@ -188,12 +200,19 @@ export function useChatAgent() {
         ofrecerSalidaWhatsapp('Tuve un problema calculando la cotización. Probá de nuevo, o escribinos por WhatsApp.')
       }
     }
+    } finally {
+      procesandoRef.current = false
+    }
   }, [responderConDelay, abrirCotizadorCompleto, ofrecerSalidaWhatsapp])
 
   const enviarMensaje = useCallback((textoUsuario) => {
     const texto = textoUsuario.trim()
     if (!texto) return
     agregarMensaje('user', texto)
+
+    if (procesandoRef.current) {
+      return
+    }
 
     if (texto === 'Hablar por WhatsApp') {
       window.open(WHATSAPP_URL, '_blank', 'noopener')
