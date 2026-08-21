@@ -30,7 +30,7 @@ function crearMensaje(autor, texto, chips = null) {
 }
 
 function flujoVacio() {
-  return { activo: false, paso: null, datos: {}, intentosFallidos: 0, tipos: [] }
+  return { activo: false, paso: null, datos: {}, intentosFallidos: 0, tipos: [], zonaMap: COUNTRY_ZONE }
 }
 
 export function useChatAgent() {
@@ -104,11 +104,19 @@ export function useChatAgent() {
   const iniciarCotizacion = useCallback(async () => {
     if (procesandoRef.current) return
     procesandoRef.current = true
-    flujoRef.current = { activo: true, paso: 'peso', datos: {}, intentosFallidos: 0, tipos: [] }
+    flujoRef.current = { activo: true, paso: 'peso', datos: {}, intentosFallidos: 0, tipos: [], zonaMap: COUNTRY_ZONE }
     try {
-      const res  = await fetch(`${API}/tarifario.php?action=tipos`)
-      const json = await res.json()
-      flujoRef.current.tipos = json.ok ? json.data : []
+      const [tiposRes, zonasRes] = await Promise.all([
+        fetch(`${API}/tarifario.php?action=tipos`),
+        fetch(`${API}/tarifario.php?action=zonas`),
+      ])
+      const tiposJson = await tiposRes.json()
+      flujoRef.current.tipos = tiposJson.ok ? tiposJson.data : []
+
+      const zonasJson = await zonasRes.json()
+      if (zonasJson.ok && Array.isArray(zonasJson.data)) {
+        flujoRef.current.zonaMap = Object.fromEntries(zonasJson.data.map(p => [p.nombre, p.zona_cod]))
+      }
     } catch {
       flujoRef.current.tipos = []
     } finally {
@@ -142,7 +150,7 @@ export function useChatAgent() {
     }
 
     if (flujo.paso === 'pais') {
-      const pais = matchPais(valor, COUNTRY_ZONE)
+      const pais = matchPais(valor, flujo.zonaMap)
       if (!pais) {
         flujo.intentosFallidos += 1
         if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
@@ -173,6 +181,7 @@ export function useChatAgent() {
       }
 
       const { peso, pais } = flujo.datos
+      const zonaMap = flujo.zonaMap
       try {
         const res  = await fetch(`${API}/tarifario.php?action=cotizar_todas`, {
           method: 'POST',
@@ -187,7 +196,7 @@ export function useChatAgent() {
           return
         }
 
-        const zonaCod = COUNTRY_ZONE[pais]
+        const zonaCod = zonaMap[pais]
         const fila    = json.data.zonas.find(z => z.zona_cod === zonaCod)
 
         if (!fila || !fila.disponible) {
