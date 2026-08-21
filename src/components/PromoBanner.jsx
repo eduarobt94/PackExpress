@@ -97,7 +97,7 @@ export default function PromoBanner() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       className="fixed top-0 inset-x-0 z-[60]"
-      style={{ background: 'linear-gradient(110deg, #A8481A 0%, #F07232 35%, #FF9358 50%, #F07232 65%, #A8481A 100%)' }}
+      style={{ background: 'linear-gradient(90deg, #B85D2C 0%, #F07232 22%, #F07232 78%, #B85D2C 100%)' }}
     >
       {hasSafeLink ? (
         <a href={promo.link_url} className="block">{content}</a>
