@@ -1,10 +1,30 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Tag } from 'lucide-react'
 
 const PROMO_ENDPOINT = '/pack-sistema/api/v1/promociones.php?action=activa'
 
 const isSafeUrl = (url) => /^(https?:\/\/|\/)/i.test(url)
+
+const MESES = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+]
+
+/** Parsea 'YYYY-MM-DD' sin pasar por Date() para evitar corrimientos por timezone. */
+function parseFechaLocal(fecha) {
+  const [y, m, d] = fecha.split('-').map(Number)
+  return { dia: d, mes: MESES[m - 1] }
+}
+
+/** 'Del 8 al 21 de agosto' (mismo mes) o 'Del 28 de septiembre al 2 de agosto' (meses distintos). */
+function formatRangoFechas(fechaInicio, fechaFin) {
+  if (!fechaInicio || !fechaFin) return null
+  const ini = parseFechaLocal(fechaInicio)
+  const fin = parseFechaLocal(fechaFin)
+  if (ini.mes === fin.mes) return `Del ${ini.dia} al ${fin.dia} de ${fin.mes}`
+  return `Del ${ini.dia} de ${ini.mes} al ${fin.dia} de ${fin.mes}`
+}
 
 export default function PromoBanner() {
   const [promo, setPromo] = useState(null)
@@ -47,16 +67,21 @@ export default function PromoBanner() {
 
   const ctaLabel = promo.link_texto?.trim() || 'Ver más'
   const hasSafeLink = promo.link_url && isSafeUrl(promo.link_url)
+  const rangoFechas = formatRangoFechas(promo.fecha_inicio, promo.fecha_fin)
 
   const content = (
     <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8 flex items-center justify-center gap-2 py-2.5">
-      <span className="text-[13px] md:text-sm font-medium tracking-[0.02em] text-[#FFF5EC] text-center">
+      <Tag size={14} className="shrink-0 text-white" />
+      <span className="text-[13px] md:text-[15px] font-semibold tracking-[0.01em] text-white text-center">
         {promo.mensaje}
+        {rangoFechas && (
+          <span className="font-medium text-white/80"> · {rangoFechas}</span>
+        )}
       </span>
       {hasSafeLink && (
         <>
-          <span className="hidden sm:inline text-[#FFF5EC]/40">·</span>
-          <span className="hidden sm:inline-flex items-center gap-0.5 text-[13px] font-medium text-[#FFF5EC] underline decoration-transparent hover:decoration-current underline-offset-4 transition-[text-decoration-color] duration-200">
+          <span className="hidden sm:inline text-white/40">·</span>
+          <span className="hidden sm:inline-flex items-center gap-0.5 text-[13px] font-medium text-white underline decoration-transparent hover:decoration-current underline-offset-4 transition-[text-decoration-color] duration-200">
             {ctaLabel}
             <ChevronRight size={12} />
           </span>
