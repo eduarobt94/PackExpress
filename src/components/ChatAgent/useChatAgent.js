@@ -188,7 +188,7 @@ export function useChatAgent() {
         }
 
         const zonaCod = COUNTRY_ZONE[pais]
-        const fila    = json.data.find(z => z.zona_cod === zonaCod)
+        const fila    = json.data.zonas.find(z => z.zona_cod === zonaCod)
 
         if (!fila || !fila.disponible) {
           responderConDelay(`No tengo una tarifa disponible para ${pais} con ${peso} kg en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
