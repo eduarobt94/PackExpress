@@ -40,10 +40,11 @@ const servicesSchemas = [
 ]
 
 // Above-fold — eager
-import Navbar    from './components/Navbar'
-import Hero      from './components/Hero'
+import Navbar     from './components/Navbar'
+import PromoBanner from './components/PromoBanner'
+import Hero       from './components/Hero'
 import LegalModal from './components/LegalModal'
-import NotFound  from './components/NotFound'
+import NotFound   from './components/NotFound'
 
 // Rutas válidas del SPA — cualquier otra devuelve 404
 const VALID_PATHS = new Set(['/', '/index.html'])
@@ -118,6 +119,8 @@ export default function App() {
         >
           Ir al contenido principal
         </a>
+
+        <PromoBanner />
 
         <header role="banner">
           <Navbar />

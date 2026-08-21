@@ -30,12 +30,15 @@ export default function Navbar() {
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-150 backdrop-blur-xl ${
+        className={`fixed inset-x-0 z-50 transition-[background-color,border-color,box-shadow,top] duration-150 backdrop-blur-xl ${
           scrolled
             ? 'border-b border-[var(--bd-1)] shadow-[var(--shadow-navbar)]'
             : 'border-b border-transparent'
         }`}
-        style={{ backgroundColor: scrolled ? 'color-mix(in srgb, var(--bg-base) 82%, transparent)' : 'transparent' }}
+        style={{
+          top: 'var(--promo-h, 0px)',
+          backgroundColor: scrolled ? 'color-mix(in srgb, var(--bg-base) 82%, transparent)' : 'transparent',
+        }}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-[68px]">
