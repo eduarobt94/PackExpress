@@ -68,6 +68,7 @@ export default function ChatAgent() {
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             role="dialog"
             aria-label="Asistente Pack Express"
+            data-lenis-prevent
             className="fixed z-40 bottom-[144px] sm:bottom-[156px] right-4 sm:right-6 left-4 sm:left-auto
                        sm:w-[360px] h-[65vh] sm:h-[520px] max-h-[600px]
                        rounded-2xl border border-[var(--bd-2)] overflow-hidden

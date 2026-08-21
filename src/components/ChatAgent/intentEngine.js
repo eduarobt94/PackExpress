@@ -59,9 +59,10 @@ export function matchPais(texto, countryZone) {
 /** Busca en la lista de tipos de servicio (de la API) el que matchea el texto por nombre o código. */
 export function matchTipo(texto, tipos) {
   const norm = normalizeText(texto)
-  return tipos.find(t =>
-    norm.includes(normalizeText(t.nombre)) || norm.includes(normalizeText(t.codigo)),
-  ) ?? null
+  return tipos.find(t => {
+    const nombreNorm = normalizeText(t.nombre)
+    return norm.includes(nombreNorm) || nombreNorm.includes(norm) || norm.includes(normalizeText(t.codigo))
+  }) ?? null
 }
 
 /** 'YYYY-MM-DD HH:MM:SS' → 'DD/MM/YYYY'. */
