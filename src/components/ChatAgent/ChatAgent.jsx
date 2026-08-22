@@ -29,7 +29,7 @@ export default function ChatAgent() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
-  }, [mensajes, escribiendo])
+  }, [mensajes, escribiendo, open])
 
   const handleSubmit = (e) => {
     e.preventDefault()
