@@ -18,6 +18,14 @@ const PALABRAS_HUMANO = [
   'hablar con un operador',
 ]
 
+/** Pedido de rastreo en lenguaje natural (no solo el código pegado y solo). */
+const PALABRAS_RASTREO = [
+  'rastrear', 'rastreo', 'rastreame', 'rastrearlo', 'seguimiento', 'trackear',
+  'donde esta mi envio', 'donde esta mi paquete', 'donde esta mi guia',
+  'estado de mi envio', 'estado de mi paquete', 'estado de mi guia',
+  'donde va mi paquete', 'donde va mi envio',
+]
+
 /** Minúsculas, sin tildes, sin espacios extra. */
 export function normalizeText(texto) {
   return texto
@@ -97,6 +105,24 @@ export function extraerNumeroGuia(texto) {
   return null
 }
 
+/**
+ * Busca un número de guía EN CUALQUIER PARTE del texto (a diferencia de
+ * extraerNumeroGuia, no exige que sea el mensaje entero). Solo se usa cuando
+ * ya hay una intención explícita de rastreo en el mensaje (ver
+ * PALABRAS_RASTREO) — así no se reintroduce el falso positivo original de
+ * confundir cualquier número suelto ("500 gramos") con un código de guía.
+ */
+function extraerNumeroGuiaEmbebido(texto) {
+  const compacto = texto.replace(/\s+/g, '')
+  const matchCodigo = compacto.match(/cm0*(\d+)pk/i)
+  if (matchCodigo) return matchCodigo[0]
+  const tokens = texto.trim().split(/\s+/)
+  for (const token of tokens) {
+    if (/^\d{3,}$/.test(token)) return token
+  }
+  return null
+}
+
 /** Extrae el primer número (con decimales) del texto, o null si no hay ninguno válido (> 0). */
 export function parsePeso(texto) {
   const match = texto.replace(',', '.').match(/(\d+(\.\d+)?)/)
@@ -158,13 +184,20 @@ export function elegirSaludo(fecha = new Date()) {
 }
 
 /**
- * Busca UNA intención "de negocio" (humano, cotizar, o FAQ) en el texto ya
- * normalizado. No incluye rastreo/cotizar_respuesta (se resuelven antes, en
+ * Busca UNA intención "de negocio" (rastreo en lenguaje natural, humano,
+ * cotizar, o FAQ). No incluye cotizar_respuesta (se resuelve antes, en
  * detectarIntenciones) ni greeting/small_talk/goodbye (se resuelven aparte).
+ * `textoOriginal` (sin normalizar) hace falta para poder extraer un código
+ * de guía embebido en la frase si el usuario pide rastreo con texto libre.
  */
-function buscarIntencionDeNegocio(texto) {
+function buscarIntencionDeNegocio(texto, textoOriginal) {
   if (contieneAlguna(texto, PALABRAS_HUMANO)) {
     return { tipo: 'human_handoff' }
+  }
+  if (contieneAlguna(texto, PALABRAS_RASTREO)) {
+    const numeroEmbebido = extraerNumeroGuiaEmbebido(textoOriginal)
+    if (numeroEmbebido) return { tipo: 'rastreo', numero: numeroEmbebido }
+    return { tipo: 'rastreo_pedir_numero' }
   }
   if (contieneAlguna(texto, PALABRAS_COTIZAR)) {
     return { tipo: 'cotizar_iniciar' }
@@ -211,14 +244,14 @@ export function detectarIntenciones(textoOriginal, estado) {
     if (contieneAlguna(texto, grupo.palabrasClave)) {
       // Igual que el saludo: "gracias, y el horario?" debe responder ambas cosas,
       // no solo el agradecimiento.
-      const negocioCombinado = buscarIntencionDeNegocio(texto)
+      const negocioCombinado = buscarIntencionDeNegocio(texto, textoOriginal)
       if (negocioCombinado) return [{ tipo: grupo.tipo, respuestas: grupo.respuestas }, negocioCombinado]
       return [{ tipo: grupo.tipo, respuestas: grupo.respuestas }]
     }
   }
 
   const esGreeting = contieneAlguna(texto, GREETING_PALABRAS)
-  const negocio = buscarIntencionDeNegocio(texto)
+  const negocio = buscarIntencionDeNegocio(texto, textoOriginal)
 
   if (esGreeting && negocio) return [{ tipo: 'greeting' }, negocio]
   if (esGreeting) return [{ tipo: 'greeting' }]

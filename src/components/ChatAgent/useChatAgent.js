@@ -97,11 +97,19 @@ export function useChatAgent() {
         return ofrecerSalidaWhatsapp(`No encontré ninguna guía con el número "${numero}". Revisá que esté bien escrito, o escribinos por WhatsApp si preferís que te ayudemos directamente.`)
       }
       const { guia, events } = json.data
+      // guia.numero es el AWB/manifiesto compartido por todos los paquetes del
+      // lote, no identifica una guía puntual — el código único por guía es el
+      // formato CM...PK derivado de id_guia (el mismo que el cliente puede
+      // haber tipeado para buscar).
+      const codigoGuia = `CM${String(guia.id_guia).padStart(9, '0')}PK`
+      const destino = guia.municipio_dest && guia.provincia_dest
+        ? ` Destino: ${guia.municipio_dest}, ${guia.provincia_dest}.`
+        : ''
       const ultimo = (events ?? [])[(events ?? []).length - 1]
       if (!ultimo) {
-        return responderConDelay(`Encontré tu envío #${guia.numero}, pero todavía no tiene eventos de rastreo registrados.`)
+        return responderConDelay(`Encontré tu envío #${codigoGuia}, pero todavía no tiene eventos de rastreo registrados.${destino}`)
       }
-      return responderConDelay(`Tu envío #${guia.numero} está en ${ultimo.hito} desde el ${formatFechaHora(ultimo.fecha_hora)}.`)
+      return responderConDelay(`Tu envío #${codigoGuia} está en ${ultimo.hito} desde el ${formatFechaHora(ultimo.fecha_hora)}.${destino}`)
     } catch {
       return ofrecerSalidaWhatsapp('Tuve un problema para consultar el rastreo. Probá de nuevo en un momento, o escribinos por WhatsApp.')
     } finally {
@@ -221,6 +229,8 @@ export function useChatAgent() {
     switch (intencion.tipo) {
       case 'rastreo':
         return manejarRastreo(intencion.numero)
+      case 'rastreo_pedir_numero':
+        return responderConDelay('Decime el número de tu guía y te digo en qué estado está.')
       case 'cotizar_iniciar':
         return iniciarCotizacion()
       case 'cotizar_respuesta':

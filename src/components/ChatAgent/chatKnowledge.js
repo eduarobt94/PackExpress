@@ -116,9 +116,20 @@ export const FAQ = [
       'documentacion', 'documentos', 'declaracion jurada', 'que documentos necesito',
       'requisitos', 'requisitos para enviar', 'articulos prohibidos',
       'que no puedo enviar', 'que esta prohibido enviar', 'papeles necesarios',
-      'que necesito para enviar', 'que no se puede mandar',
+      'que necesito para enviar', 'que no se puede mandar', 'prohibidos', 'prohibido',
+      'lista de prohibidos', 'cosas prohibidas',
     ],
     respuesta: 'Para envíos internacionales necesitás completar la Declaración Jurada. También tenés disponible la lista de Artículos Prohibidos y los Requisitos Courier en la sección Documentación de la página.',
+  },
+  {
+    id: 'peso_maximo',
+    palabrasClave: [
+      'peso maximo', 'maximo de kg', 'cuanto puedo enviar', 'limite de peso',
+      'kg extra', 'peso extra', 'hasta cuantos kg', 'cuanto es lo maximo',
+      'maximo peso', 'kilos extra', 'kilo adicional', 'kg adicional',
+      'cuantos kilos puedo enviar', 'hay limite de peso', 'peso limite',
+    ],
+    respuesta: 'No tenemos un límite máximo fijo de peso: cada tarifa incluye un peso base, y lo que excede ese peso se cobra como kilo adicional según la zona y el tipo de envío. Para saber el costo exacto con tu peso, puedo cotizarlo ahora mismo — escribí "cotizar" — o te lo confirma nuestro equipo por WhatsApp.',
   },
   {
     id: 'servicios',
