@@ -183,8 +183,13 @@ function buscarIntencionDeNegocio(texto) {
  *
  * Prioridad: flujo de cotización en curso > número de guía > despedida >
  * small talk > saludo (+ intención de negocio si viene combinado en el mismo
- * mensaje) > intención de negocio sola > "último tema" si el mensaje es
- * corto y no matchea nada por sí solo > desconocido.
+ * mensaje) > intención de negocio sola > "último tema" si el mensaje tiene
+ * entre 2 y 5 palabras y no matchea nada por sí solo > desconocido.
+ *
+ * El mínimo de 2 palabras para la heurística de "último tema" es a propósito:
+ * una sola palabra sin sentido (ej. texto ilegible tipeado sin querer) no debe
+ * reusar el último tema — debe caer en el fallback normal. Un seguimiento real
+ * corto casi siempre tiene 2+ palabras ("y los sábados", "y el precio").
  */
 export function detectarIntenciones(textoOriginal, estado) {
   if (estado?.flujo === 'cotizando') {
@@ -215,7 +220,8 @@ export function detectarIntenciones(textoOriginal, estado) {
   if (esGreeting) return [{ tipo: 'greeting' }]
   if (negocio) return [negocio]
 
-  if (estado?.ultimoTema && textoOriginal.trim().split(/\s+/).length < 6) {
+  const palabrasMensaje = textoOriginal.trim().split(/\s+/)
+  if (estado?.ultimoTema && palabrasMensaje.length >= 2 && palabrasMensaje.length < 6) {
     const temaPrevio = FAQ.find(f => f.id === estado.ultimoTema)
     if (temaPrevio) {
       return [{ tipo: 'faq', respuesta: temaPrevio.respuesta, temaId: temaPrevio.id, derivaWhatsapp: !!temaPrevio.derivaWhatsapp }]
