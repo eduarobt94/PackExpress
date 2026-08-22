@@ -137,6 +137,7 @@ export const FAQ = [
       'tienen cobertura nacional', 'reparten en todo el pais',
       'envian fuera de uruguay', 'hacen envios al exterior', 'hacen envios a europa',
       'hacen envios a america', 'que zonas cubren', 'llegan a todo el pais',
+      'hacen envios al interior',
     ],
     respuesta: 'Tenemos cobertura en los 19 departamentos de Uruguay y hacemos envíos internacionales a más de 50 países en América, Europa, Asia y Oceanía.',
   },

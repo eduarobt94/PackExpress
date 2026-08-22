@@ -4,7 +4,7 @@
  */
 import {
   FAQ, SMALL_TALK, GREETING_PALABRAS, GREETING_RESPONSES, GOODBYE_PALABRAS,
-} from './chatKnowledge'
+} from './chatKnowledge.js'
 
 const PALABRAS_COTIZAR = [
   'cotizar', 'cotizacion', 'precio', 'precios', 'cuanto cuesta', 'cuanto sale',
@@ -23,7 +23,8 @@ const PALABRAS_HUMANO = [
   'hablar con un operador', 'quiero hablar con soporte',
   'necesito ayuda de una persona', 'derivame con un humano',
   'quiero un representante', 'atencion personalizada', 'pasame con un asesor',
-  'esto no me sirve pasame con alguien',
+  'esto no me sirve pasame con alguien', 'el whatsapp', 'tienen whatsapp',
+  'me das el whatsapp', 'pasame el whatsapp',
 ]
 
 /** Pedido de rastreo en lenguaje natural (no solo el código pegado y solo). */
@@ -84,7 +85,13 @@ function palabraFuzzyEn(texto, objetivo) {
 }
 
 /** Palabras cortas con colisiones conocidas de Levenshtein contra vocabulario común — exigen match exacto. */
-const PALABRAS_SIN_FUZZY = new Set(['hola', 'precio', 'tarifa', 'buenas'])
+const PALABRAS_SIN_FUZZY = new Set([
+  'hola', 'precio', 'tarifa', 'buenas',
+  // 'documentos' con tolerancia a errores (distancia 1) matchea "documento"
+  // en singular — que puede ser una respuesta real del paso "tipo de envío"
+  // en el flujo de cotización, no una pregunta sobre la FAQ de documentación.
+  'documentos',
+])
 
 /** Frases de una sola palabra toleran errores de tipeo (salvo excepciones conocidas); frases de varias palabras exigen substring exacto. */
 function contieneFrase(textoNormalizado, frase) {
