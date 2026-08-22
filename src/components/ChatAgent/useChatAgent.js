@@ -1,12 +1,13 @@
 /**
  * Hook que orquesta la conversación del ChatAgent: estado de mensajes,
- * persistencia en localStorage, y el flujo de rastreo/cotización llamando
- * a los endpoints públicos que ya usan Tracking.jsx y Cotizacion.jsx.
+ * persistencia en localStorage, y los flujos de rastreo/cotización/FAQ
+ * llamando a los endpoints públicos que ya usan Tracking.jsx y Cotizacion.jsx.
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  detectarIntencion, parsePeso, matchPais, matchTipo, formatFechaHora,
+  detectarIntenciones, parsePeso, matchPais, matchTipo, formatFechaHora, elegirSaludo,
 } from './intentEngine'
+import { GOODBYE_RESPONSES } from './chatKnowledge'
 import { COUNTRY_ZONE, ZONE_LABELS } from '../../lib/zones'
 import { WHATSAPP_URL } from '../../lib/whatsapp'
 
@@ -33,10 +34,15 @@ function flujoVacio() {
   return { activo: false, paso: null, datos: {}, intentosFallidos: 0, tipos: [], zonaMap: COUNTRY_ZONE }
 }
 
+function contextoVacio() {
+  return { ultimoTema: null, nivelFallback: 0 }
+}
+
 export function useChatAgent() {
   const [mensajes, setMensajes] = useState(cargarHistorial)
   const [escribiendo, setEscribiendo] = useState(false)
   const flujoRef = useRef(flujoVacio())
+  const contextoRef = useRef(contextoVacio())
   const procesandoRef = useRef(false)
 
   useEffect(() => {
@@ -214,6 +220,61 @@ export function useChatAgent() {
     }
   }, [responderConDelay, abrirCotizadorCompleto, ofrecerSalidaWhatsapp])
 
+  /** Procesa UNA intención ya detectada (puede haber varias por mensaje, ver enviarMensaje). */
+  const procesarIntencion = useCallback((intencion) => {
+    if (intencion.tipo !== 'desconocido') {
+      contextoRef.current.nivelFallback = 0
+    }
+
+    switch (intencion.tipo) {
+      case 'rastreo':
+        manejarRastreo(intencion.numero)
+        break
+      case 'cotizar_iniciar':
+        iniciarCotizacion()
+        break
+      case 'cotizar_respuesta':
+        manejarRespuestaCotizacion(intencion.valor)
+        break
+      case 'greeting':
+        responderConDelay(elegirSaludo())
+        break
+      case 'goodbye':
+        responderConDelay(GOODBYE_RESPONSES[Math.floor(Math.random() * GOODBYE_RESPONSES.length)])
+        break
+      case 'small_talk':
+      case 'thanks':
+        responderConDelay(intencion.respuestas[Math.floor(Math.random() * intencion.respuestas.length)])
+        break
+      case 'human_handoff':
+        responderConDelay('¡Dale! Te paso directo con nuestro equipo para que te ayuden mejor.', ['Hablar por WhatsApp'])
+        break
+      case 'faq':
+        contextoRef.current.ultimoTema = intencion.temaId
+        if (intencion.derivaWhatsapp) {
+          responderConDelay(intencion.respuesta, ['Hablar por WhatsApp'])
+        } else {
+          responderConDelay(intencion.respuesta)
+        }
+        break
+      default: {
+        contextoRef.current.nivelFallback += 1
+        const nivel = contextoRef.current.nivelFallback
+        if (nivel === 1) {
+          responderConDelay('Disculpá, no estoy seguro de haber entendido tu consulta. ¿Podés explicarme un poco más qué necesitás?')
+        } else if (nivel === 2) {
+          responderConDelay(
+            'Quiero ayudarte 😊 ¿Tu consulta está relacionada con nuestros servicios, precios, horarios, ubicación o rastreo de un envío?',
+            ['Servicios', 'Cotizar', 'Horarios', 'Ubicación', 'Rastrear mi envío'],
+          )
+        } else {
+          contextoRef.current.nivelFallback = 0
+          ofrecerSalidaWhatsapp('Para esta consulta necesito la ayuda de una persona de nuestro equipo. Podés contactarnos por WhatsApp y te ayudamos directamente.')
+        }
+      }
+    }
+  }, [responderConDelay, ofrecerSalidaWhatsapp, manejarRastreo, iniciarCotizacion, manejarRespuestaCotizacion])
+
   const enviarMensaje = useCallback((textoUsuario) => {
     const texto = textoUsuario.trim()
     if (!texto) return
@@ -232,29 +293,19 @@ export function useChatAgent() {
       return
     }
     if (texto === 'Preguntas frecuentes') {
-      responderConDelay('Puedo ayudarte con: horarios de atención, cómo funciona el casillero internacional, cobertura de países y departamentos, y documentación requerida. ¿Sobre cuál querés saber más?')
+      responderConDelay('Puedo ayudarte con: horarios de atención, cómo funciona el casillero internacional, cobertura de países y departamentos, nuestros servicios, contacto, ubicación y documentación requerida. ¿Sobre cuál querés saber más?')
       return
     }
 
-    const intencion = detectarIntencion(texto, { flujo: flujoRef.current.activo ? 'cotizando' : null })
+    const intenciones = detectarIntenciones(texto, {
+      flujo: flujoRef.current.activo ? 'cotizando' : null,
+      ultimoTema: contextoRef.current.ultimoTema,
+    })
 
-    switch (intencion.tipo) {
-      case 'rastreo':
-        manejarRastreo(intencion.numero)
-        break
-      case 'cotizar_iniciar':
-        iniciarCotizacion()
-        break
-      case 'cotizar_respuesta':
-        manejarRespuestaCotizacion(intencion.valor)
-        break
-      case 'faq':
-        responderConDelay(intencion.respuesta)
-        break
-      default:
-        ofrecerSalidaWhatsapp('No tengo esa información a mano, pero podés escribirnos directamente por WhatsApp y te ayudamos.')
-    }
-  }, [agregarMensaje, manejarRastreo, iniciarCotizacion, manejarRespuestaCotizacion, responderConDelay, ofrecerSalidaWhatsapp])
+    intenciones.forEach((intencion, i) => {
+      setTimeout(() => procesarIntencion(intencion), i * 800)
+    })
+  }, [agregarMensaje, responderConDelay, procesarIntencion])
 
   return { mensajes, escribiendo, enviarMensaje, iniciarBienvenida }
 }
