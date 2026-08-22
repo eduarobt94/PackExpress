@@ -45,6 +45,7 @@ export function useChatAgent() {
   const contextoRef = useRef(contextoVacio())
   const procesandoRef = useRef(false)
   const dispatchGenRef = useRef(0)
+  const bienvenidaEnviadaRef = useRef(false)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mensajes))
@@ -68,7 +69,12 @@ export function useChatAgent() {
 
   const iniciarBienvenida = useCallback(() => {
     setMensajes(prev => {
-      if (prev.length > 0) return prev
+      if (prev.length > 0 || bienvenidaEnviadaRef.current) return prev
+      // Guard síncrono: responderConDelay demora el mensaje real (setTimeout),
+      // así que "prev.length > 0" no alcanza para evitar duplicados si esta
+      // función se llama dos veces seguidas antes de que el mensaje se agregue
+      // (ej. React StrictMode invoca los efectos dos veces a propósito en dev).
+      bienvenidaEnviadaRef.current = true
       responderConDelay(
         '¡Hola! 👋 Soy el asistente de Pack Express. Puedo ayudarte a rastrear un envío, cotizar, o responder preguntas frecuentes.',
         ['Rastrear mi envío', 'Cotizar', 'Preguntas frecuentes'],
