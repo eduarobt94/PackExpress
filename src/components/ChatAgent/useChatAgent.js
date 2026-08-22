@@ -44,6 +44,7 @@ export function useChatAgent() {
   const flujoRef = useRef(flujoVacio())
   const contextoRef = useRef(contextoVacio())
   const procesandoRef = useRef(false)
+  const dispatchGenRef = useRef(0)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mensajes))
@@ -56,10 +57,13 @@ export function useChatAgent() {
   const responderConDelay = useCallback((texto, chips = null) => {
     setEscribiendo(true)
     const delay = 500 + Math.random() * 700
-    setTimeout(() => {
-      setEscribiendo(false)
-      agregarMensaje('bot', texto, chips)
-    }, delay)
+    return new Promise(resolve => {
+      setTimeout(() => {
+        setEscribiendo(false)
+        agregarMensaje('bot', texto, chips)
+        resolve()
+      }, delay)
+    })
   }, [agregarMensaje])
 
   const iniciarBienvenida = useCallback(() => {
@@ -74,13 +78,13 @@ export function useChatAgent() {
   }, [responderConDelay])
 
   const ofrecerSalidaWhatsapp = useCallback((mensaje) => {
-    responderConDelay(mensaje, ['Hablar por WhatsApp'])
+    return responderConDelay(mensaje, ['Hablar por WhatsApp'])
   }, [responderConDelay])
 
   const abrirCotizadorCompleto = useCallback((mensaje) => {
     flujoRef.current = flujoVacio()
     window.dispatchEvent(new CustomEvent('openCotizar'))
-    responderConDelay(mensaje)
+    return responderConDelay(mensaje)
   }, [responderConDelay])
 
   const manejarRastreo = useCallback(async (numero) => {
@@ -90,18 +94,16 @@ export function useChatAgent() {
       const res  = await fetch(`${API}/rastreo.php?guia_numero=${encodeURIComponent(numero)}`)
       const json = await res.json()
       if (!json.ok) {
-        ofrecerSalidaWhatsapp(`No encontré ninguna guía con el número "${numero}". Revisá que esté bien escrito, o escribinos por WhatsApp si preferís que te ayudemos directamente.`)
-        return
+        return ofrecerSalidaWhatsapp(`No encontré ninguna guía con el número "${numero}". Revisá que esté bien escrito, o escribinos por WhatsApp si preferís que te ayudemos directamente.`)
       }
       const { guia, events } = json.data
       const ultimo = (events ?? [])[(events ?? []).length - 1]
       if (!ultimo) {
-        responderConDelay(`Encontré tu envío #${guia.numero}, pero todavía no tiene eventos de rastreo registrados.`)
-        return
+        return responderConDelay(`Encontré tu envío #${guia.numero}, pero todavía no tiene eventos de rastreo registrados.`)
       }
-      responderConDelay(`Tu envío #${guia.numero} está en ${ultimo.hito} desde el ${formatFechaHora(ultimo.fecha_hora)}.`)
+      return responderConDelay(`Tu envío #${guia.numero} está en ${ultimo.hito} desde el ${formatFechaHora(ultimo.fecha_hora)}.`)
     } catch {
-      ofrecerSalidaWhatsapp('Tuve un problema para consultar el rastreo. Probá de nuevo en un momento, o escribinos por WhatsApp.')
+      return ofrecerSalidaWhatsapp('Tuve un problema para consultar el rastreo. Probá de nuevo en un momento, o escribinos por WhatsApp.')
     } finally {
       procesandoRef.current = false
     }
@@ -128,7 +130,7 @@ export function useChatAgent() {
     } finally {
       procesandoRef.current = false
     }
-    responderConDelay('¡Perfecto! ¿Cuál es el peso aproximado del envío en kg?')
+    return responderConDelay('¡Perfecto! ¿Cuál es el peso aproximado del envío en kg?')
   }, [responderConDelay])
 
   const manejarRespuestaCotizacion = useCallback(async (valor) => {
@@ -142,17 +144,14 @@ export function useChatAgent() {
       if (peso == null) {
         flujo.intentosFallidos += 1
         if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
-          abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
-          return
+          return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
         }
-        responderConDelay('No pude entender el peso, ¿podés escribirlo solo en números? Ej: 2.5')
-        return
+        return responderConDelay('No pude entender el peso, ¿podés escribirlo solo en números? Ej: 2.5')
       }
       flujo.datos.peso = peso
       flujo.paso = 'pais'
       flujo.intentosFallidos = 0
-      responderConDelay('¿A qué país enviamos?')
-      return
+      return responderConDelay('¿A qué país enviamos?')
     }
 
     if (flujo.paso === 'pais') {
@@ -160,18 +159,15 @@ export function useChatAgent() {
       if (!pais) {
         flujo.intentosFallidos += 1
         if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
-          abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
-          return
+          return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
         }
-        responderConDelay('No reconocí ese país, ¿podés escribirlo de nuevo? Por ejemplo: Estados Unidos, España, Cuba.')
-        return
+        return responderConDelay('No reconocí ese país, ¿podés escribirlo de nuevo? Por ejemplo: Estados Unidos, España, Cuba.')
       }
       flujo.datos.pais = pais
       flujo.paso = 'tipo'
       flujo.intentosFallidos = 0
       const nombresTipos = flujo.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
-      responderConDelay(`¿Qué tipo de envío es? (${nombresTipos})`)
-      return
+      return responderConDelay(`¿Qué tipo de envío es? (${nombresTipos})`)
     }
 
     if (flujo.paso === 'tipo') {
@@ -179,11 +175,9 @@ export function useChatAgent() {
       if (!tipo) {
         flujo.intentosFallidos += 1
         if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
-          abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
-          return
+          return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
         }
-        responderConDelay('No reconocí ese tipo de envío, ¿podés elegir uno de la lista?')
-        return
+        return responderConDelay('No reconocí ese tipo de envío, ¿podés elegir uno de la lista?')
       }
 
       const { peso, pais } = flujo.datos
@@ -198,21 +192,19 @@ export function useChatAgent() {
         flujoRef.current = flujoVacio()
 
         if (!json.ok) {
-          abrirCotizadorCompleto('Tuve un problema calculando la cotización. Te abrí el cotizador completo para que puedas intentarlo ahí.')
-          return
+          return abrirCotizadorCompleto('Tuve un problema calculando la cotización. Te abrí el cotizador completo para que puedas intentarlo ahí.')
         }
 
         const zonaCod = zonaMap[pais]
         const fila    = json.data.zonas.find(z => z.zona_cod === zonaCod)
 
         if (!fila || !fila.disponible) {
-          responderConDelay(`No tengo una tarifa disponible para ${pais} con ${peso} kg en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
-          return
+          return responderConDelay(`No tengo una tarifa disponible para ${pais} con ${peso} kg en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
         }
-        responderConDelay(`Envío de ${peso} kg a ${pais} (${ZONE_LABELS[zonaCod]}): USD ${fila.total.toFixed(2)}. Este precio es estimado, se confirma al gestionar el envío.`)
+        return responderConDelay(`Envío de ${peso} kg a ${pais} (${ZONE_LABELS[zonaCod]}): USD ${fila.total.toFixed(2)}. Este precio es estimado, se confirma al gestionar el envío.`)
       } catch {
         flujoRef.current = flujoVacio()
-        ofrecerSalidaWhatsapp('Tuve un problema calculando la cotización. Probá de nuevo, o escribinos por WhatsApp.')
+        return ofrecerSalidaWhatsapp('Tuve un problema calculando la cotización. Probá de nuevo, o escribinos por WhatsApp.')
       }
     }
     } finally {
@@ -221,56 +213,47 @@ export function useChatAgent() {
   }, [responderConDelay, abrirCotizadorCompleto, ofrecerSalidaWhatsapp])
 
   /** Procesa UNA intención ya detectada (puede haber varias por mensaje, ver enviarMensaje). */
-  const procesarIntencion = useCallback((intencion) => {
+  const procesarIntencion = useCallback(async (intencion) => {
     if (intencion.tipo !== 'desconocido') {
       contextoRef.current.nivelFallback = 0
     }
 
     switch (intencion.tipo) {
       case 'rastreo':
-        manejarRastreo(intencion.numero)
-        break
+        return manejarRastreo(intencion.numero)
       case 'cotizar_iniciar':
-        iniciarCotizacion()
-        break
+        return iniciarCotizacion()
       case 'cotizar_respuesta':
-        manejarRespuestaCotizacion(intencion.valor)
-        break
+        return manejarRespuestaCotizacion(intencion.valor)
       case 'greeting':
-        responderConDelay(elegirSaludo())
-        break
+        return responderConDelay(elegirSaludo())
       case 'goodbye':
-        responderConDelay(GOODBYE_RESPONSES[Math.floor(Math.random() * GOODBYE_RESPONSES.length)])
-        break
+        return responderConDelay(GOODBYE_RESPONSES[Math.floor(Math.random() * GOODBYE_RESPONSES.length)])
       case 'small_talk':
       case 'thanks':
-        responderConDelay(intencion.respuestas[Math.floor(Math.random() * intencion.respuestas.length)])
-        break
+        return responderConDelay(intencion.respuestas[Math.floor(Math.random() * intencion.respuestas.length)])
       case 'human_handoff':
-        responderConDelay('¡Dale! Te paso directo con nuestro equipo para que te ayuden mejor.', ['Hablar por WhatsApp'])
-        break
+        return responderConDelay('¡Dale! Te paso directo con nuestro equipo para que te ayuden mejor.', ['Hablar por WhatsApp'])
       case 'faq':
         contextoRef.current.ultimoTema = intencion.temaId
         if (intencion.derivaWhatsapp) {
-          responderConDelay(intencion.respuesta, ['Hablar por WhatsApp'])
-        } else {
-          responderConDelay(intencion.respuesta)
+          return responderConDelay(intencion.respuesta, ['Hablar por WhatsApp'])
         }
-        break
+        return responderConDelay(intencion.respuesta)
       default: {
         contextoRef.current.nivelFallback += 1
         const nivel = contextoRef.current.nivelFallback
         if (nivel === 1) {
-          responderConDelay('Disculpá, no estoy seguro de haber entendido tu consulta. ¿Podés explicarme un poco más qué necesitás?')
-        } else if (nivel === 2) {
-          responderConDelay(
+          return responderConDelay('Disculpá, no estoy seguro de haber entendido tu consulta. ¿Podés explicarme un poco más qué necesitás?')
+        }
+        if (nivel === 2) {
+          return responderConDelay(
             'Quiero ayudarte 😊 ¿Tu consulta está relacionada con nuestros servicios, precios, horarios, ubicación o rastreo de un envío?',
             ['Servicios', 'Cotizar', 'Horarios', 'Ubicación', 'Rastrear mi envío'],
           )
-        } else {
-          contextoRef.current.nivelFallback = 0
-          ofrecerSalidaWhatsapp('Para esta consulta necesito la ayuda de una persona de nuestro equipo. Podés contactarnos por WhatsApp y te ayudamos directamente.')
         }
+        contextoRef.current.nivelFallback = 0
+        return ofrecerSalidaWhatsapp('Para esta consulta necesito la ayuda de una persona de nuestro equipo. Podés contactarnos por WhatsApp y te ayudamos directamente.')
       }
     }
   }, [responderConDelay, ofrecerSalidaWhatsapp, manejarRastreo, iniciarCotizacion, manejarRespuestaCotizacion])
@@ -302,9 +285,13 @@ export function useChatAgent() {
       ultimoTema: contextoRef.current.ultimoTema,
     })
 
-    intenciones.forEach((intencion, i) => {
-      setTimeout(() => procesarIntencion(intencion), i * 800)
-    })
+    const miGen = ++dispatchGenRef.current
+    ;(async () => {
+      for (const intencion of intenciones) {
+        if (dispatchGenRef.current !== miGen) return
+        await procesarIntencion(intencion)
+      }
+    })()
   }, [agregarMensaje, responderConDelay, procesarIntencion])
 
   return { mensajes, escribiendo, enviarMensaje, iniciarBienvenida }
