@@ -51,6 +51,7 @@ function contextoVacio() {
 export function useChatAgent() {
   const [mensajes, setMensajes] = useState(cargarHistorial)
   const [escribiendo, setEscribiendo] = useState(false)
+  const [ocupado, setOcupado] = useState(false)
   const flujoRef = useRef(flujoVacio())
   const contextoRef = useRef(contextoVacio())
   const procesandoRef = useRef(false)
@@ -351,11 +352,15 @@ export function useChatAgent() {
   const enviarMensaje = useCallback((textoUsuario) => {
     const texto = textoUsuario.trim()
     if (!texto) return
-    agregarMensaje('user', texto)
-
+    // Guard contra doble envío: el input queda deshabilitado mientras `ocupado`
+    // es true (ver ChatAgent.jsx), pero esto cubre el caso borde de un envío
+    // que ya estaba en vuelo (ej. tecla Enter) justo cuando el bot empieza a
+    // procesar — sin esto, el mensaje quedaba agregado a la conversación pero
+    // se ignoraba en silencio (ni error ni respuesta), confundiendo al usuario.
     if (procesandoRef.current) {
       return
     }
+    agregarMensaje('user', texto)
 
     if (texto === 'Hablar por WhatsApp') {
       window.open(WHATSAPP_URL, '_blank', 'noopener')
@@ -376,13 +381,18 @@ export function useChatAgent() {
     })
 
     const miGen = ++dispatchGenRef.current
+    setOcupado(true)
     ;(async () => {
-      for (const intencion of intenciones) {
-        if (dispatchGenRef.current !== miGen) return
-        await procesarIntencion(intencion)
+      try {
+        for (const intencion of intenciones) {
+          if (dispatchGenRef.current !== miGen) return
+          await procesarIntencion(intencion)
+        }
+      } finally {
+        if (dispatchGenRef.current === miGen) setOcupado(false)
       }
     })()
   }, [agregarMensaje, responderConDelay, procesarIntencion])
 
-  return { mensajes, escribiendo, enviarMensaje, iniciarBienvenida }
+  return { mensajes, escribiendo, ocupado, enviarMensaje, iniciarBienvenida }
 }

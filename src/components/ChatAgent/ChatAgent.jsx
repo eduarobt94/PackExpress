@@ -9,7 +9,7 @@ export default function ChatAgent() {
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
   const toggleButtonRef = useRef(null)
-  const { mensajes, escribiendo, enviarMensaje, iniciarBienvenida } = useChatAgent()
+  const { mensajes, escribiendo, ocupado, enviarMensaje, iniciarBienvenida } = useChatAgent()
 
   useEffect(() => {
     if (open) {
@@ -120,7 +120,8 @@ export default function ChatAgent() {
                           key={chip}
                           type="button"
                           onClick={() => enviarMensaje(chip)}
-                          className="text-[11px] px-2.5 py-1 rounded-full border border-[#F07232]/30 text-[#F07232] hover:bg-[#F07232]/10 transition-colors cursor-pointer"
+                          disabled={ocupado || escribiendo}
+                          className="text-[11px] px-2.5 py-1 rounded-full border border-[#F07232]/30 text-[#F07232] hover:bg-[#F07232]/10 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {chip}
                         </button>
@@ -148,13 +149,14 @@ export default function ChatAgent() {
                 ref={inputRef}
                 value={texto}
                 onChange={e => setTexto(e.target.value)}
-                placeholder="Escribí tu mensaje..."
-                className="flex-1 h-10 px-3 rounded-lg text-[13px] bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)] outline-none focus:border-[#F07232]/50 transition-colors"
+                placeholder={ocupado ? 'Esperá la respuesta...' : 'Escribí tu mensaje...'}
+                disabled={ocupado || escribiendo}
+                className="flex-1 h-10 px-3 rounded-lg text-[13px] bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)] outline-none focus:border-[#F07232]/50 transition-colors disabled:opacity-60"
               />
               <button
                 type="submit"
                 aria-label="Enviar mensaje"
-                disabled={!texto.trim()}
+                disabled={!texto.trim() || ocupado}
                 className="w-10 h-10 shrink-0 rounded-lg flex items-center justify-center bg-[#F07232] hover:bg-[#E8823C] disabled:opacity-40 transition-colors cursor-pointer disabled:cursor-not-allowed"
               >
                 <Send size={16} className="text-white" />
