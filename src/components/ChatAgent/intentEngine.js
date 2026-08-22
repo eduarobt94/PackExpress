@@ -209,6 +209,10 @@ export function detectarIntenciones(textoOriginal, estado) {
 
   for (const grupo of SMALL_TALK) {
     if (contieneAlguna(texto, grupo.palabrasClave)) {
+      // Igual que el saludo: "gracias, y el horario?" debe responder ambas cosas,
+      // no solo el agradecimiento.
+      const negocioCombinado = buscarIntencionDeNegocio(texto)
+      if (negocioCombinado) return [{ tipo: grupo.tipo, respuestas: grupo.respuestas }, negocioCombinado]
       return [{ tipo: grupo.tipo, respuestas: grupo.respuestas }]
     }
   }
