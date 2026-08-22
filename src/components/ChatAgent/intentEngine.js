@@ -2,11 +2,20 @@
  * Motor de intención del ChatAgent — funciones puras, sin JSX ni efectos
  * secundarios. Recibe texto del usuario y decide qué quiere hacer.
  */
-import { FAQ } from './chatKnowledge'
+import {
+  FAQ, SMALL_TALK, GREETING_PALABRAS, GREETING_RESPONSES, GOODBYE_PALABRAS,
+} from './chatKnowledge'
 
 const PALABRAS_COTIZAR = [
   'cotizar', 'cotizacion', 'precio', 'precios', 'cuanto cuesta', 'cuanto sale',
   'tarifa', 'tarifas', 'cuanto vale', 'costo de envio',
+]
+
+const PALABRAS_HUMANO = [
+  'hablar con una persona', 'hablar con alguien', 'hablar con un humano',
+  'necesito un asesor', 'hablar con un agente', 'pasame con alguien',
+  'quiero whatsapp', 'me pasas el whatsapp', 'contactar por whatsapp',
+  'hablar con un operador',
 ]
 
 /** Minúsculas, sin tildes, sin espacios extra. */
@@ -17,8 +26,53 @@ export function normalizeText(texto) {
     .trim()
 }
 
-function contieneAlguna(texto, frases) {
-  return frases.some(frase => texto.includes(normalizeText(frase)))
+/** Distancia de Levenshtein entre dos strings cortos (palabras individuales). */
+function levenshtein(a, b) {
+  const m = a.length
+  const n = b.length
+  if (m === 0) return n
+  if (n === 0) return m
+  const fila = Array.from({ length: n + 1 }, (_, j) => j)
+  for (let i = 1; i <= m; i++) {
+    let anterior = fila[0]
+    fila[0] = i
+    for (let j = 1; j <= n; j++) {
+      const temp = fila[j]
+      const costo = a[i - 1] === b[j - 1] ? 0 : 1
+      fila[j] = Math.min(fila[j] + 1, fila[j - 1] + 1, anterior + costo)
+      anterior = temp
+    }
+  }
+  return fila[n]
+}
+
+/** Tolerancia de errores según el largo de la palabra objetivo: 0 para <4, 1 para 4-7, 2 para 8+. */
+function toleranciaPara(largo) {
+  if (largo < 4) return 0
+  if (largo < 8) return 1
+  return 2
+}
+
+/** true si alguna palabra de `texto` matchea `objetivo` exacto o con tolerancia a errores de tipeo. */
+function palabraFuzzyEn(texto, objetivo) {
+  const tolerancia = toleranciaPara(objetivo.length)
+  return texto.split(/\s+/).some(palabra => {
+    if (palabra === objetivo) return true
+    if (tolerancia === 0) return false
+    if (Math.abs(palabra.length - objetivo.length) > tolerancia) return false
+    return levenshtein(palabra, objetivo) <= tolerancia
+  })
+}
+
+/** Frases de una sola palabra toleran errores de tipeo; frases de varias palabras exigen substring exacto. */
+function contieneFrase(textoNormalizado, frase) {
+  const fraseNorm = normalizeText(frase)
+  if (fraseNorm.includes(' ')) return textoNormalizado.includes(fraseNorm)
+  return palabraFuzzyEn(textoNormalizado, fraseNorm)
+}
+
+function contieneAlguna(textoNormalizado, frases) {
+  return frases.some(frase => contieneFrase(textoNormalizado, frase))
 }
 
 /** Busca un número de guía: el mensaje entero debe ser solo dígitos (3+) o formato CM000000689PK. */
@@ -40,7 +94,10 @@ export function parsePeso(texto) {
 
 /**
  * Busca el nombre de país (clave de countryZone) que mejor matchea el texto.
- * Primero intenta match exacto, después "el texto contiene el nombre del país".
+ * Primero intenta match exacto, después "el texto contiene el nombre del país"
+ * con límite de palabra. Sin fuzzy matching acá a propósito: el flujo de
+ * cotización ya está probado en producción calculando precios reales — no
+ * vale la pena el riesgo de un falso positivo ahí.
  */
 export function matchPais(texto, countryZone) {
   const norm = normalizeText(texto)
@@ -73,32 +130,84 @@ export function formatFechaHora(fechaHora) {
   return `${d}/${m}/${y}`
 }
 
+/** Franja horaria real: mañana 05:00-11:59, tarde 12:00-18:59, noche 19:00-04:59. Rangos configurables acá. */
+export function franjaHoraria(hora) {
+  if (hora >= 5 && hora < 12) return 'manana'
+  if (hora >= 12 && hora < 19) return 'tarde'
+  return 'noche'
+}
+
+/** Elige una respuesta de saludo al azar según la hora real del dispositivo del usuario. */
+export function elegirSaludo(fecha = new Date()) {
+  const franja = franjaHoraria(fecha.getHours())
+  const opciones = GREETING_RESPONSES[franja]
+  return opciones[Math.floor(Math.random() * opciones.length)]
+}
+
 /**
- * Detecta la intención del usuario. `estado.flujo === 'cotizando'` indica que
- * hay un flujo de cotización a mitad de camino esperando una respuesta puntual
- * (peso/país/tipo) — en ese caso el texto NO se re-evalúa como intención nueva.
+ * Busca UNA intención "de negocio" (humano, cotizar, o FAQ) en el texto ya
+ * normalizado. No incluye rastreo/cotizar_respuesta (se resuelven antes, en
+ * detectarIntenciones) ni greeting/small_talk/goodbye (se resuelven aparte).
  */
-export function detectarIntencion(textoOriginal, estado) {
+function buscarIntencionDeNegocio(texto) {
+  if (contieneAlguna(texto, PALABRAS_HUMANO)) {
+    return { tipo: 'human_handoff' }
+  }
+  if (contieneAlguna(texto, PALABRAS_COTIZAR)) {
+    return { tipo: 'cotizar_iniciar' }
+  }
+  for (const entrada of FAQ) {
+    if (contieneAlguna(texto, entrada.palabrasClave)) {
+      return { tipo: 'faq', respuesta: entrada.respuesta, temaId: entrada.id, derivaWhatsapp: !!entrada.derivaWhatsapp }
+    }
+  }
+  return null
+}
+
+/**
+ * Detecta todas las intenciones del mensaje. Devuelve un ARRAY, nunca vacío.
+ * `estado`: { flujo: 'cotizando' | null, ultimoTema: string | null }
+ *
+ * Prioridad: flujo de cotización en curso > número de guía > despedida >
+ * small talk > saludo (+ intención de negocio si viene combinado en el mismo
+ * mensaje) > intención de negocio sola > "último tema" si el mensaje es
+ * corto y no matchea nada por sí solo > desconocido.
+ */
+export function detectarIntenciones(textoOriginal, estado) {
   if (estado?.flujo === 'cotizando') {
-    return { tipo: 'cotizar_respuesta', valor: textoOriginal.trim() }
+    return [{ tipo: 'cotizar_respuesta', valor: textoOriginal.trim() }]
   }
 
   const numeroGuia = extraerNumeroGuia(textoOriginal)
   if (numeroGuia) {
-    return { tipo: 'rastreo', numero: numeroGuia }
+    return [{ tipo: 'rastreo', numero: numeroGuia }]
   }
 
   const texto = normalizeText(textoOriginal)
 
-  if (contieneAlguna(texto, PALABRAS_COTIZAR)) {
-    return { tipo: 'cotizar_iniciar' }
+  if (contieneAlguna(texto, GOODBYE_PALABRAS)) {
+    return [{ tipo: 'goodbye' }]
   }
 
-  for (const entrada of FAQ) {
-    if (contieneAlguna(texto, entrada.palabrasClave)) {
-      return { tipo: 'faq', respuesta: entrada.respuesta }
+  for (const grupo of SMALL_TALK) {
+    if (contieneAlguna(texto, grupo.palabrasClave)) {
+      return [{ tipo: grupo.tipo, respuestas: grupo.respuestas }]
     }
   }
 
-  return { tipo: 'desconocido' }
+  const esGreeting = contieneAlguna(texto, GREETING_PALABRAS)
+  const negocio = buscarIntencionDeNegocio(texto)
+
+  if (esGreeting && negocio) return [{ tipo: 'greeting' }, negocio]
+  if (esGreeting) return [{ tipo: 'greeting' }]
+  if (negocio) return [negocio]
+
+  if (estado?.ultimoTema && textoOriginal.trim().split(/\s+/).length < 6) {
+    const temaPrevio = FAQ.find(f => f.id === estado.ultimoTema)
+    if (temaPrevio) {
+      return [{ tipo: 'faq', respuesta: temaPrevio.respuesta, temaId: temaPrevio.id, derivaWhatsapp: !!temaPrevio.derivaWhatsapp }]
+    }
+  }
+
+  return [{ tipo: 'desconocido' }]
 }
