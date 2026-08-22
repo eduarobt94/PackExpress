@@ -57,7 +57,7 @@ export const SMALL_TALK = [
   },
   {
     tipo: 'small_talk',
-    palabrasClave: ['perfecto', 'genial', 'ok', 'okay', 'entendido', 'buenisimo', 'joya'],
+    palabrasClave: ['perfecto', 'genial', 'ok', 'okay', 'entendido', 'buenisimo'],
     respuestas: [
       '¡Excelente! 😊 ¿Necesitás algo más?',
       'Perfecto 👍 ¿Te ayudo con algo más?',
@@ -103,8 +103,8 @@ export const FAQ = [
   {
     id: 'cobertura',
     palabrasClave: [
-      'cobertura', 'a que paises envian', 'paises destino', 'envian a',
-      'llegan a', 'departamentos', 'todo uruguay', 'interior del pais',
+      'cobertura', 'a que paises envian', 'paises destino',
+      'departamentos', 'todo uruguay', 'interior del pais',
       'cuantos paises', 'a donde envian', 'zonas de reparto',
       'envian al interior', 'llegan al interior', 'hacen envios internacionales',
     ],
