@@ -8,14 +8,22 @@ import {
 
 const PALABRAS_COTIZAR = [
   'cotizar', 'cotizacion', 'precio', 'precios', 'cuanto cuesta', 'cuanto sale',
-  'tarifa', 'tarifas', 'cuanto vale', 'costo de envio',
+  'tarifa', 'tarifas', 'cuanto vale', 'costo de envio', 'costo del envio',
+  'cuanto me sale el envio', 'quiero cotizar', 'quiero saber el precio',
+  'que precio tiene', 'cuanto tengo que pagar', 'cuanto me cobran',
+  'valor del envio', 'cuanto me cuesta', 'dame un precio',
+  'necesito una cotizacion', 'me pasas un precio', 'quiero un presupuesto',
+  'cuanto sale enviar', 'cuanto cuesta enviar un paquete',
 ]
 
 const PALABRAS_HUMANO = [
   'hablar con una persona', 'hablar con alguien', 'hablar con un humano',
   'necesito un asesor', 'hablar con un agente', 'pasame con alguien',
   'quiero whatsapp', 'me pasas el whatsapp', 'contactar por whatsapp',
-  'hablar con un operador',
+  'hablar con un operador', 'quiero hablar con soporte',
+  'necesito ayuda de una persona', 'derivame con un humano',
+  'quiero un representante', 'atencion personalizada', 'pasame con un asesor',
+  'esto no me sirve pasame con alguien',
 ]
 
 /** Pedido de rastreo en lenguaje natural (no solo el código pegado y solo). */
@@ -23,7 +31,10 @@ const PALABRAS_RASTREO = [
   'rastrear', 'rastreo', 'rastreame', 'rastrearlo', 'seguimiento', 'trackear',
   'donde esta mi envio', 'donde esta mi paquete', 'donde esta mi guia',
   'estado de mi envio', 'estado de mi paquete', 'estado de mi guia',
-  'donde va mi paquete', 'donde va mi envio',
+  'donde va mi paquete', 'donde va mi envio', 'quiero saber donde esta mi pedido',
+  'seguimiento de mi pedido', 'quiero rastrear', 'necesito rastrear mi envio',
+  'consultar estado de guia', 'ver estado de mi envio', 'donde esta mi pedido',
+  'quiero saber donde va mi paquete', 'en que estado esta mi envio',
 ]
 
 /** Minúsculas, sin tildes, sin espacios extra. */
