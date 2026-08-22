@@ -105,7 +105,7 @@ export default function ChatAgent() {
                   className="flex flex-col gap-1.5"
                   style={{ alignItems: m.autor === 'user' ? 'flex-end' : 'flex-start' }}
                 >
-                  <div className={`max-w-[85%] rounded-xl px-3 py-2 text-[13px] leading-relaxed ${
+                  <div className={`max-w-[85%] rounded-xl px-3 py-2 text-[13px] leading-relaxed whitespace-pre-line ${
                     m.autor === 'user'
                       ? 'bg-[#F07232]/10 border border-[#F07232]/25 text-[var(--fg-1)]'
                       : 'bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)]'

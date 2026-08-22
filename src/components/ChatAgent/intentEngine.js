@@ -201,7 +201,7 @@ export function elegirSaludo(fecha = new Date()) {
  * `textoOriginal` (sin normalizar) hace falta para poder extraer un código
  * de guía embebido en la frase si el usuario pide rastreo con texto libre.
  */
-function buscarIntencionDeNegocio(texto, textoOriginal) {
+export function buscarIntencionDeNegocio(texto, textoOriginal) {
   if (contieneAlguna(texto, PALABRAS_HUMANO)) {
     return { tipo: 'human_handoff' }
   }

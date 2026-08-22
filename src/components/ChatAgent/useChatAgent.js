@@ -5,7 +5,8 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  detectarIntenciones, parsePeso, matchPais, matchTipo, formatFechaHora, elegirSaludo,
+  detectarIntenciones, parsePeso, matchPais, matchTipo, formatFechaHora, elegirSaludo, normalizeText,
+  buscarIntencionDeNegocio,
 } from './intentEngine'
 import { GOODBYE_RESPONSES } from './chatKnowledge'
 import { COUNTRY_ZONE, ZONE_LABELS } from '../../lib/zones'
@@ -14,6 +15,15 @@ import { WHATSAPP_URL } from '../../lib/whatsapp'
 const API = '/pack-sistema/api/v1'
 const STORAGE_KEY = 'pe_chat_history'
 const MAX_INTENTOS_FALLIDOS = 2
+
+/** Pesos de referencia para armar una tabla cuando el usuario pide "todas las tarifas" en vez de un peso puntual. */
+const PESOS_TABLA = [1, 3, 5, 10, 20]
+const PALABRAS_TODO_TARIFARIO = [
+  'todo', 'todos', 'todas', 'toda', 'de todos', 'todo el tarifario',
+  'toda la tarifa', 'todas las tarifas', 'el tarifario completo',
+  'todos los pesos', 'cualquier peso', 'todo el rango', 'la tabla completa',
+  'todas las tarifas de envio', 'toda la lista de precios',
+]
 
 function cargarHistorial() {
   try {
@@ -147,6 +157,29 @@ export function useChatAgent() {
     return responderConDelay('¡Perfecto! ¿Cuál es el peso aproximado del envío en kg?')
   }, [responderConDelay])
 
+  /**
+   * Si el usuario, en medio del flujo de cotización, en vez de contestar el
+   * paso pendiente (peso/país/tipo) hace una pregunta real (FAQ o pedir un
+   * humano), la respondemos sin gastar un intento fallido y volvemos a
+   * preguntar lo mismo — evita que "cuál es el peso máximo" dentro del
+   * flujo termine forzando el cotizador completo en vez de responder.
+   */
+  const intentarResponderInterrupcion = useCallback(async (valor, promptReintento) => {
+    const texto = normalizeText(valor)
+    const negocio = buscarIntencionDeNegocio(texto, valor)
+    if (negocio?.tipo === 'faq') {
+      await responderConDelay(negocio.respuesta, negocio.derivaWhatsapp ? ['Hablar por WhatsApp'] : null)
+      await responderConDelay(promptReintento)
+      return true
+    }
+    if (negocio?.tipo === 'human_handoff') {
+      await responderConDelay('¡Dale! Te paso directo con nuestro equipo para que te ayuden mejor.', ['Hablar por WhatsApp'])
+      await responderConDelay(`Cuando quieras seguimos: ${promptReintento}`)
+      return true
+    }
+    return false
+  }, [responderConDelay])
+
   const manejarRespuestaCotizacion = useCallback(async (valor) => {
     if (procesandoRef.current) return
     procesandoRef.current = true
@@ -154,8 +187,17 @@ export function useChatAgent() {
     const flujo = flujoRef.current
 
     if (flujo.paso === 'peso') {
+      const textoNorm = normalizeText(valor)
+      const pideTabla = PALABRAS_TODO_TARIFARIO.some(p => textoNorm === p || textoNorm.includes(p))
+      if (pideTabla) {
+        flujo.datos.modoTabla = true
+        flujo.paso = 'pais'
+        flujo.intentosFallidos = 0
+        return responderConDelay('¡Dale! Te muestro precios de referencia para varios pesos. ¿A qué país enviamos?')
+      }
       const peso = parsePeso(valor)
       if (peso == null) {
+        if (await intentarResponderInterrupcion(valor, '¿Cuál es el peso aproximado del envío en kg?')) return
         flujo.intentosFallidos += 1
         if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
           return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
@@ -171,6 +213,7 @@ export function useChatAgent() {
     if (flujo.paso === 'pais') {
       const pais = matchPais(valor, flujo.zonaMap)
       if (!pais) {
+        if (await intentarResponderInterrupcion(valor, '¿A qué país enviamos?')) return
         flujo.intentosFallidos += 1
         if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
           return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
@@ -187,6 +230,8 @@ export function useChatAgent() {
     if (flujo.paso === 'tipo') {
       const tipo = matchTipo(valor, flujo.tipos)
       if (!tipo) {
+        const nombresTipos = flujo.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
+        if (await intentarResponderInterrupcion(valor, `¿Qué tipo de envío es? (${nombresTipos})`)) return
         flujo.intentosFallidos += 1
         if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
           return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
@@ -194,8 +239,38 @@ export function useChatAgent() {
         return responderConDelay('No reconocí ese tipo de envío, ¿podés elegir uno de la lista?')
       }
 
-      const { peso, pais } = flujo.datos
+      const { peso, pais, modoTabla } = flujo.datos
       const zonaMap = flujo.zonaMap
+      const zonaCod = zonaMap[pais]
+
+      if (modoTabla) {
+        try {
+          const jsons = await Promise.all(
+            PESOS_TABLA.map(p => fetch(`${API}/tarifario.php?action=cotizar_todas`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ peso: p, tipo_servicio_id: tipo.id }),
+            }).then(r => r.json())),
+          )
+          flujoRef.current = flujoVacio()
+
+          const filas = jsons.map((json, i) => {
+            if (!json.ok) return null
+            const fila = json.data.zonas.find(z => z.zona_cod === zonaCod)
+            if (!fila || !fila.disponible) return null
+            return `${PESOS_TABLA[i]} kg — USD ${fila.total.toFixed(2)}`
+          }).filter(Boolean)
+
+          if (filas.length === 0) {
+            return responderConDelay(`No tengo tarifas disponibles para ${pais} en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
+          }
+          return responderConDelay(`Precios de referencia para ${pais} (${ZONE_LABELS[zonaCod]}):\n${filas.join('\n')}\n\nSon precios estimados por peso, se confirman al gestionar el envío. Si me decís tu peso exacto te lo cotizo directo.`)
+        } catch {
+          flujoRef.current = flujoVacio()
+          return ofrecerSalidaWhatsapp('Tuve un problema calculando las tarifas. Probá de nuevo, o escribinos por WhatsApp.')
+        }
+      }
+
       try {
         const res  = await fetch(`${API}/tarifario.php?action=cotizar_todas`, {
           method: 'POST',
@@ -209,8 +284,7 @@ export function useChatAgent() {
           return abrirCotizadorCompleto('Tuve un problema calculando la cotización. Te abrí el cotizador completo para que puedas intentarlo ahí.')
         }
 
-        const zonaCod = zonaMap[pais]
-        const fila    = json.data.zonas.find(z => z.zona_cod === zonaCod)
+        const fila = json.data.zonas.find(z => z.zona_cod === zonaCod)
 
         if (!fila || !fila.disponible) {
           return responderConDelay(`No tengo una tarifa disponible para ${pais} con ${peso} kg en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
@@ -224,7 +298,7 @@ export function useChatAgent() {
     } finally {
       procesandoRef.current = false
     }
-  }, [responderConDelay, abrirCotizadorCompleto, ofrecerSalidaWhatsapp])
+  }, [responderConDelay, abrirCotizadorCompleto, ofrecerSalidaWhatsapp, intentarResponderInterrupcion])
 
   /** Procesa UNA intención ya detectada (puede haber varias por mensaje, ver enviarMensaje). */
   const procesarIntencion = useCallback(async (intencion) => {
