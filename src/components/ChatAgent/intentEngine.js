@@ -64,10 +64,22 @@ function palabraFuzzyEn(texto, objetivo) {
   })
 }
 
-/** Frases de una sola palabra toleran errores de tipeo; frases de varias palabras exigen substring exacto. */
+/** Palabras cortas con colisiones conocidas de Levenshtein contra vocabulario común — exigen match exacto. */
+const PALABRAS_SIN_FUZZY = new Set(['hola'])
+
+/** Frases de una sola palabra toleran errores de tipeo (salvo excepciones conocidas); frases de varias palabras exigen substring exacto. */
 function contieneFrase(textoNormalizado, frase) {
   const fraseNorm = normalizeText(frase)
   if (fraseNorm.includes(' ')) return textoNormalizado.includes(fraseNorm)
+  if (PALABRAS_SIN_FUZZY.has(fraseNorm)) {
+    // normalizeText no quita puntuación: "Hola," normalizado deja el token "hola,"
+    // (separado solo por \s+), así que hay que pelar puntuación final acá para
+    // que el caso real más común ("Hola, ...") siga matcheando exacto.
+    return textoNormalizado
+      .split(/\s+/)
+      .map(palabra => palabra.replace(/[.,!?¡¿]+$/, ''))
+      .includes(fraseNorm)
+  }
   return palabraFuzzyEn(textoNormalizado, fraseNorm)
 }
 

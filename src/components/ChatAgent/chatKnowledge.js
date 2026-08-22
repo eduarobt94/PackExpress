@@ -57,7 +57,7 @@ export const SMALL_TALK = [
   },
   {
     tipo: 'small_talk',
-    palabrasClave: ['perfecto', 'genial', 'ok', 'okay', 'dale', 'entendido', 'buenisimo', 'joya'],
+    palabrasClave: ['perfecto', 'genial', 'ok', 'okay', 'entendido', 'buenisimo', 'joya'],
     respuestas: [
       '¡Excelente! 😊 ¿Necesitás algo más?',
       'Perfecto 👍 ¿Te ayudo con algo más?',
