@@ -132,7 +132,11 @@ export const FAQ = [
       'que necesito para el casillero', 'como recibo mis compras de estados unidos',
       'reenvio de compras', 'como funciona el reenvio', 'consolidan mis compras',
     ],
-    respuesta: 'El Casillero Internacional te da una dirección en EE.UU. para comprar en tiendas americanas. Nosotros recibimos tus compras, las consolidamos y te las enviamos a Uruguay con la gestión aduanera incluida.',
+    // El Casillero Internacional TODAVÍA NO está operativo: es un servicio que
+    // se va a incorporar. No se anuncia como disponible ni se promete fecha —
+    // se deriva a WhatsApp para quien quiera que le avisen cuando esté.
+    derivaWhatsapp: true,
+    respuesta: 'El Casillero Internacional todavía no está disponible: es un servicio que estamos preparando para incorporar. Si querés que te avisemos cuando esté activo, escribinos por WhatsApp. Mientras tanto sí podemos ayudarte con envíos de paquetería nacional e internacional.',
   },
   {
     id: 'cobertura',
@@ -203,7 +207,9 @@ export const FAQ = [
       'envian documentos', 'hacen distribucion nacional',
       'que puedo mandar', 'que cosas puedo mandar', 'que cosas puedo enviar',
     ],
-    respuesta: 'Ofrecemos Paquetería Courier (nacional e internacional), Casillero Internacional, Equipaje No Acompañado, Envío de Documentos y Distribución Nacional en todo Uruguay.',
+    // Casillero Internacional NO se lista acá: todavía no está operativo
+    // (ver la FAQ 'casillero'). Solo se nombran servicios realmente activos.
+    respuesta: 'Ofrecemos Paquetería Courier (nacional e internacional), Equipaje No Acompañado, Envío de Documentos y Distribución Nacional en todo Uruguay.',
   },
   {
     id: 'contacto',

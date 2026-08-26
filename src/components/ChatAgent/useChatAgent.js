@@ -503,7 +503,9 @@ export function useChatAgent() {
     }
     if (texto === 'Casillero') {
       const faq = FAQ.find(f => f.id === 'casillero')
-      if (faq) responderConDelay(faq.respuesta)
+      // El casillero deriva a WhatsApp (todavía no está operativo), así que
+      // el chip tiene que ofrecer la misma salida que la FAQ.
+      if (faq) responderConDelay(faq.respuesta, faq.derivaWhatsapp ? ['Hablar por WhatsApp'] : null)
       return
     }
     if (texto === 'Despacho') {
