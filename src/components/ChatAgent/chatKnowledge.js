@@ -218,6 +218,58 @@ export const FAQ = [
     respuesta: 'Nos encontrás en Instagram como @packexpressuruguay y en Facebook como Pack Express Uruguay.',
   },
   {
+    id: 'experiencia_empresa',
+    palabrasClave: [
+      'hace cuanto existen', 'cuantos años tienen', 'desde cuando operan',
+      'son una empresa nueva', 'experiencia de la empresa', 'cuantos envios hicieron',
+      'son confiables', 'tienen buenas reseñas', 'cuantos clientes tienen',
+      'indice de satisfaccion', 'son de fiar', 'hace cuanto trabajan',
+    ],
+    respuesta: 'Tenemos más de 5 años de experiencia conectando Uruguay con el mundo: ya llevamos más de 50.000 envíos completados y un 98% de clientes satisfechos.',
+  },
+  {
+    id: 'proceso_envio',
+    palabrasClave: [
+      'como es el proceso de envio', 'pasan a buscar el paquete',
+      'recogen a domicilio', 'como funciona el envio paso a paso',
+      'hacen recoleccion en mi casa', 'como envio un paquete', 'que pasos sigue mi envio',
+    ],
+    respuesta: 'El proceso es simple: pasamos a buscar tu envío a domicilio (o lo recibimos en nuestra sede de Carlos Quijano 1258), lo clasificamos, lo transportamos, gestionamos toda la documentación de despacho, y te lo entregamos con seguimiento en tiempo real.',
+  },
+  {
+    id: 'tiempos_entrega',
+    palabrasClave: [
+      'cuanto tarda un envio', 'cuanto demora la entrega', 'en cuanto tiempo llega',
+      'tiempo de entrega internacional', 'cuantos dias tarda en llegar',
+      'cuanto tarda en llegar a destino', 'tiempos de entrega',
+    ],
+    respuesta: 'Para envíos internacionales: despachamos ante la Aduana de Uruguay los lunes, el vuelo (con escala en Panamá) sale entre martes y jueves, el transbordo puede demorar de 4 a 7 días, y una vez en destino la entrega local puede tomar hasta 30 días desde que la recibe la aduana de destino. Para envíos nacionales urgentes tenemos entrega express en 24 h.',
+  },
+  {
+    id: 'despacho_aduanero',
+    palabrasClave: [
+      'cuanto cuesta el despacho aduanero', 'costo de aduana', 'cobran aduana',
+      'hay que pagar aduana', 'cuanto es el despacho en aduana', 'costo de despacho',
+    ],
+    respuesta: 'El despacho aduanero en Uruguay tiene un costo fijo de USD 100, independiente del peso total del envío.',
+  },
+  {
+    id: 'normativa_ursec',
+    palabrasClave: [
+      'estan habilitados por ursec', 'son legales', 'tienen normativa oficial',
+      'estan regulados', 'resolucion 148', 'estan autorizados',
+    ],
+    respuesta: 'Sí, operamos bajo la Resolución N°148/2023 de URSEC, la normativa oficial de servicios postales en Uruguay.',
+  },
+  {
+    id: 'cotizar_online',
+    palabrasClave: [
+      'puedo cotizar online', 'hay una calculadora de precio',
+      'cotizar sin hablar con alguien', 'cotizador en la pagina', 'cotizador online',
+    ],
+    respuesta: 'Sí, podés cotizar tu envío al instante desde el botón "Cotizar envío" en la página, sin necesidad de escribirnos primero — o si preferís, seguimos la cotización acá mismo, escribí "cotizar".',
+  },
+  {
     id: 'sin_info_pago',
     derivaWhatsapp: true,
     palabrasClave: [

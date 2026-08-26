@@ -217,13 +217,17 @@ export function buscarIntencionDeNegocio(texto, textoOriginal) {
     if (numeroEmbebido) return { tipo: 'rastreo', numero: numeroEmbebido }
     return { tipo: 'rastreo_pedir_numero' }
   }
-  if (contieneAlguna(texto, PALABRAS_COTIZAR)) {
-    return { tipo: 'cotizar_iniciar' }
-  }
+  // FAQ antes que "cotizar" genérico: palabras como "cuanto cuesta"/"precio"
+  // aparecen en preguntas de temas puntuales (ej. "cuanto cuesta el despacho
+  // aduanero") que tienen su propia respuesta específica y no deben terminar
+  // en el flujo de cotización de envíos.
   for (const entrada of FAQ) {
     if (contieneAlguna(texto, entrada.palabrasClave)) {
       return { tipo: 'faq', respuesta: entrada.respuesta, temaId: entrada.id, derivaWhatsapp: !!entrada.derivaWhatsapp }
     }
+  }
+  if (contieneAlguna(texto, PALABRAS_COTIZAR)) {
+    return { tipo: 'cotizar_iniciar' }
   }
   return null
 }
