@@ -45,7 +45,7 @@ function flujoVacio() {
 }
 
 function contextoVacio() {
-  return { ultimoTema: null, nivelFallback: 0, esperandoGuia: false }
+  return { ultimoTema: null, nivelFallback: 0, esperandoGuia: false, esperandoPaisTiempos: false }
 }
 
 export function useChatAgent() {
@@ -392,12 +392,15 @@ export function useChatAgent() {
     // número: así una respuesta real a otra pregunta ("en realidad quiero
     // cotizar") no queda arrastrando el contexto de rastreo.
     contextoRef.current.esperandoGuia = intencion.tipo === 'rastreo_pedir_numero'
+    contextoRef.current.esperandoPaisTiempos = intencion.tipo === 'tiempos_pedir_pais'
 
     switch (intencion.tipo) {
       case 'rastreo':
         return manejarRastreo(intencion.numero)
       case 'rastreo_pedir_numero':
         return responderConDelay('Decime el número de tu guía y te digo en qué estado está.')
+      case 'tiempos_pedir_pais':
+        return responderConDelay('¿A qué país enviamos? Así te cuento los tiempos estimados (varían bastante entre un envío nacional y uno internacional).')
       case 'cotizar_iniciar':
         return iniciarCotizacion(intencion.paisPrellenado)
       case 'cotizar_directo':
@@ -496,6 +499,7 @@ export function useChatAgent() {
       flujo: flujoRef.current.activo ? 'cotizando' : null,
       ultimoTema: contextoRef.current.ultimoTema,
       esperandoGuia: contextoRef.current.esperandoGuia,
+      esperandoPaisTiempos: contextoRef.current.esperandoPaisTiempos,
       countryZone: COUNTRY_ZONE,
     })
 

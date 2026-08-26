@@ -359,6 +359,15 @@ caso('esperandoGuia: "el numero es 123456" con contexto', 'el numero es 123456',
 caso('esperandoGuia: sin el contexto NO se extrae embebido', 'es este CM000001224PK', sinFlujo, esperarTipo('desconocido'))
 caso('esperandoGuia: otra intención real sigue funcionando con el contexto activo', 'en realidad quiero cotizar', conEsperandoGuia, esperarTipo('cotizar_iniciar'))
 
+// ── tiempos_entrega: pedir país si no viene especificado ─────────────────
+const conEsperandoPaisTiempos = { flujo: null, ultimoTema: null, countryZone: ZONA_FAKE, esperandoPaisTiempos: true }
+caso('tiempos: sin pais pregunta el destino', 'Que tiempo demoran los envios en llegar al destino', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos: typo "ntregar" sin pais tambien pregunta', 'Que tiempo demoran en ntregar', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos: sin countryZone responde directo (no rompe uso sin entidades)', 'cuanto demora un envio', sinFlujo, esperarTipo('tiempos_entrega'))
+caso('tiempos: con pais en el mismo mensaje responde directo', 'cuanto demora un envio a Cuba', conCountryZone, esperarTipo('tiempos_entrega'))
+caso('tiempos: pais solo con el contexto activo responde tiempos', 'Cuba', conEsperandoPaisTiempos, esperarTipo('tiempos_entrega'))
+caso('tiempos: pais solo SIN el contexto no dispara nada', 'Cuba', conCountryZone, esperarTipo('desconocido'))
+
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
   const ok = JSON.stringify(obtenido) === JSON.stringify(esperado)

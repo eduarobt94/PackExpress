@@ -475,6 +475,12 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
   // en el flujo de cotización de envíos.
   for (const entrada of FAQ) {
     if (contieneAlguna(texto, entrada.palabrasClave)) {
+      // tiempos_entrega sin país mencionado: preguntamos el destino antes de
+      // responder — el tiempo real (nacional 24h vs internacional con
+      // escala) depende de eso, y así se evita responder a ciegas.
+      if (entrada.id === 'tiempos_entrega' && countryZone && !matchPais(textoOriginal, countryZone)) {
+        return { tipo: 'tiempos_pedir_pais' }
+      }
       return { tipo: 'faq', respuesta: entrada.respuesta, temaId: entrada.id, derivaWhatsapp: !!entrada.derivaWhatsapp, chips: entrada.chips ?? null }
     }
   }
@@ -530,6 +536,17 @@ export function detectarIntenciones(textoOriginal, estado) {
   if (estado?.esperandoGuia) {
     const numeroEmbebido = extraerNumeroGuiaEmbebido(textoOriginal)
     if (numeroEmbebido) return [{ tipo: 'rastreo', numero: numeroEmbebido }]
+  }
+
+  // El bot acaba de preguntar el país para responder tiempos_entrega — con
+  // este contexto alcanza con que el país aparezca en el mensaje (aunque
+  // sea la respuesta bien corta, "Cuba", que sola no dispara nada normalmente).
+  if (estado?.esperandoPaisTiempos && estado.countryZone) {
+    const pais = matchPais(textoOriginal, estado.countryZone)
+    if (pais) {
+      const tiempos = FAQ.find(f => f.id === 'tiempos_entrega')
+      if (tiempos) return [{ tipo: 'faq', respuesta: tiempos.respuesta, temaId: tiempos.id, derivaWhatsapp: false, chips: null }]
+    }
   }
 
   const texto = normalizeText(textoOriginal)
