@@ -6,7 +6,8 @@ const ENVIOS_BASE = 50000
 const METRICAS_ENDPOINT = '/pack-sistema/api/v1/metricas.php?action=envios'
 
 const STATS = [
-  { id: 'envios', end: ENVIOS_BASE, suffix: '+', label: 'Envíos completados', prefix: '', blue: false },
+  // Sin sufijo '+': el número es exacto (piso histórico + guías reales de la base).
+  { id: 'envios', end: ENVIOS_BASE, suffix: '', label: 'Envíos completados', prefix: '', blue: false },
   { end: 50,    suffix: '+',  label: 'Destinos internacionales', prefix: '', blue: true  },
   { end: 5,     suffix: '',   label: 'Años operando',            prefix: '', blue: false },
   { end: 98,    suffix: '%',  label: 'Índice de satisfacción',   prefix: '', blue: false },
