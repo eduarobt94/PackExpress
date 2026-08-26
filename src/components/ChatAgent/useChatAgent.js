@@ -134,7 +134,14 @@ export function useChatAgent() {
     }
   }, [responderConDelay, ofrecerSalidaWhatsapp])
 
-  const iniciarCotizacion = useCallback(async () => {
+  /**
+   * `paisPrellenado`: si el mensaje que disparó la cotización ya mencionaba
+   * el país destino (ej. "quiero mandar un paquete pa Cuba"), se lo guarda
+   * de una vez y se salta el paso "país" del wizard más adelante — el país
+   * se re-valida contra el mapa dinámico real recién llegado, igual que en
+   * iniciarCotizacionDirecta.
+   */
+  const iniciarCotizacion = useCallback(async (paisPrellenado) => {
     if (procesandoRef.current) return
     procesandoRef.current = true
     flujoRef.current = { activo: true, paso: 'peso', datos: {}, intentosFallidos: 0, tipos: [], zonaMap: COUNTRY_ZONE }
@@ -154,6 +161,10 @@ export function useChatAgent() {
       flujoRef.current.tipos = []
     } finally {
       procesandoRef.current = false
+    }
+    if (paisPrellenado) {
+      const paisFinal = matchPais(paisPrellenado, flujoRef.current.zonaMap) ?? paisPrellenado
+      flujoRef.current.datos.pais = paisFinal
     }
     return responderConDelay('¡Perfecto! ¿Cuál es el peso aproximado del envío en kg?')
   }, [responderConDelay])
@@ -224,10 +235,18 @@ export function useChatAgent() {
     if (flujo.paso === 'peso') {
       const textoNorm = normalizeText(valor)
       const pideTabla = PALABRAS_TODO_TARIFARIO.some(p => textoNorm === p || textoNorm.includes(p))
+      // Si el país ya se conocía de entrada (paisPrellenado en
+      // iniciarCotizacion, ej. "quiero mandar un paquete pa Cuba"), no hace
+      // falta volver a preguntarlo — se salta directo al paso "tipo".
+      const nombresTipos = flujo.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
       if (pideTabla) {
         flujo.datos.modoTabla = true
-        flujo.paso = 'pais'
         flujo.intentosFallidos = 0
+        if (flujo.datos.pais) {
+          flujo.paso = 'tipo'
+          return responderConDelay(`¡Dale! Ya tengo ${flujo.datos.pais} como destino. ¿Qué tipo de envío es? (${nombresTipos})`)
+        }
+        flujo.paso = 'pais'
         return responderConDelay('¡Dale! Te muestro precios de referencia para varios pesos. ¿A qué país enviamos?')
       }
       const peso = parsePeso(valor)
@@ -240,8 +259,12 @@ export function useChatAgent() {
         return responderConDelay('No pude entender el peso, ¿podés escribirlo solo en números? Ej: 2.5')
       }
       flujo.datos.peso = peso
-      flujo.paso = 'pais'
       flujo.intentosFallidos = 0
+      if (flujo.datos.pais) {
+        flujo.paso = 'tipo'
+        return responderConDelay(`¡Perfecto! ${peso} kg a ${flujo.datos.pais}. ¿Qué tipo de envío es? (${nombresTipos})`)
+      }
+      flujo.paso = 'pais'
       return responderConDelay('¿A qué país enviamos?')
     }
 
@@ -347,7 +370,7 @@ export function useChatAgent() {
       case 'rastreo_pedir_numero':
         return responderConDelay('Decime el número de tu guía y te digo en qué estado está.')
       case 'cotizar_iniciar':
-        return iniciarCotizacion()
+        return iniciarCotizacion(intencion.paisPrellenado)
       case 'cotizar_directo':
         return iniciarCotizacionDirecta(intencion.peso, intencion.pais)
       case 'cobertura_pais':

@@ -20,6 +20,7 @@ const PALABRAS_COTIZAR = [
   'tengo una caja para enviar', 'cuanto me cobrarian', 'cuanto saldria',
   'que precio manejan', 'a como esta el envio', 'a como sale el envio',
   'quiero mandar', 'quiero enviar', 'tengo que enviar', 'necesito enviar',
+  'necesito mandar', 'como hago para mandar',
   'tengo un paquete para enviar', 'tengo una caja',
   'kg para enviar', 'kilos para enviar',
 ]
@@ -75,6 +76,9 @@ const PALABRAS_RASTREO_ESPECIFICAS = [
   'no me llego el paquete', 'no me llego mi pedido', 'mi paquete no llego',
   'el paquete esta demorado', 'mi envio esta demorado', 'el paquete llego dañado',
   'me llego el paquete roto', 'mi pedido esta perdido',
+  // muy corta pero de alta precisión en este contexto (courier): "¿dónde
+  // está?" a secas, sin objeto, casi siempre pregunta por un envío propio.
+  'donde esta', 'esta llegando', 'ya llego', 'como lo rastreo',
 ]
 
 /** "Cuánto tarda"/"cuánto demora(n)"/"cuánto tiempo" — patrón de pregunta general de tiempos. */
@@ -91,6 +95,10 @@ const ABREVIACIONES = {
   q: 'que', qro: 'quiero', xq: 'porque', pq: 'porque',
   tb: 'tambien', tmb: 'tambien', dnd: 'donde', hs: 'horas',
   finde: 'fin de semana',
+  // 'pa' (por 'para') es muy frecuente en español cubano/rioplatense informal
+  // de WhatsApp ("mandar pa Cuba"). Reemplazo de palabra completa, nunca
+  // substring, así que no toca "pan", "papa", etc.
+  pa: 'para',
 }
 
 function expandirAbreviaciones(textoNormalizado) {
@@ -168,6 +176,16 @@ const PALABRAS_SIN_FUZZY = new Set([
   // en singular — que puede ser una respuesta real del paso "tipo de envío"
   // en el flujo de cotización, no una pregunta sobre la FAQ de documentación.
   'documentos',
+  // 'pago' (4 letras) queda a distancia 1 de "hago" — sin esto, "como hago
+  // para mandar un paquete" fuzzy-matcheaba "como pago" (formas de pago) por
+  // pura coincidencia de longitud/distancia, nada que ver con el tema real.
+  'pago',
+  // 'estan'/'esta' (singular/plural de "estar") tienen distancia 1 entre sí
+  // y aparecen en frases de temas distintos ("donde estan" de ubicación vs
+  // "donde esta" de rastreo) — sin esto, cualquiera de las dos frases
+  // fuzzy-matcheaba la del otro tema. Son palabras reales distintas, no un
+  // error de tipeo entre sí, así que ambas exigen match exacto.
+  'estan', 'esta',
 ])
 
 /** Pela puntuación de los extremos de cada palabra (normalizeText no lo hace). */
@@ -206,11 +224,17 @@ function fraseFuzzyContigua(textoNormalizado, fraseNorm) {
   return false
 }
 
-/** Frases de una sola palabra toleran errores de tipeo (salvo excepciones conocidas); frases de varias palabras exigen substring exacto o, si falla, cada palabra en el mismo orden con tolerancia a typos. */
+/** Substring exacto pero con límite de palabra en ambos extremos — "donde esta" NO debe matchear dentro de "donde estan" solo porque es su prefijo. */
+function contieneSubstringConLimite(textoNormalizado, fraseNorm) {
+  const patron = new RegExp(`\\b${fraseNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`)
+  return patron.test(textoNormalizado)
+}
+
+/** Frases de una sola palabra toleran errores de tipeo (salvo excepciones conocidas); frases de varias palabras exigen substring exacto (con límite de palabra) o, si falla, cada palabra en el mismo orden con tolerancia a typos. */
 function contieneFrase(textoNormalizado, frase) {
   const fraseNorm = normalizeText(frase)
   if (fraseNorm.includes(' ')) {
-    return textoNormalizado.includes(fraseNorm) || fraseFuzzyContigua(textoNormalizado, fraseNorm)
+    return contieneSubstringConLimite(textoNormalizado, fraseNorm) || fraseFuzzyContigua(textoNormalizado, fraseNorm)
   }
   if (PALABRAS_SIN_FUZZY.has(fraseNorm)) {
     // normalizeText no quita puntuación: "Hola," normalizado deja el token "hola,"
@@ -343,8 +367,12 @@ export function extraerPesoYPais(textoOriginal, countryZone) {
  * colisión, no una lista de exclusión de palabras.
  */
 const PATRONES_COBERTURA_PAIS = [
-  'envian a', 'envian al', 'mandan a', 'llegan a', 'hacen envios a',
-  'puedo enviar a', 'puedo mandar a', 'tienen envios a', 'cubren',
+  'envian a', 'envian al', 'envian para', 'mandan a', 'mandan para',
+  'llegan a', 'llegan para', 'hacen envios a', 'hacen envios para',
+  'puedo enviar a', 'puedo enviar para', 'puedo mandar a', 'puedo mandar para',
+  'puedo llevar para', 'tienen envios a', 'cubren',
+  'ustedes mandan', 'ustedes envian', 'se puede mandar', 'se puede enviar',
+  'como se puede mandar', 'como se puede enviar',
 ]
 
 /** Devuelve el país si el mensaje pregunta por cobertura hacia ese país puntual, o null. */
@@ -404,7 +432,11 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
     return { tipo: 'ambiguo_precio' }
   }
   if (contieneAlguna(texto, PALABRAS_COTIZAR)) {
-    return { tipo: 'cotizar_iniciar' }
+    // Si el mismo mensaje ya menciona el país destino (ej. "quiero mandar un
+    // paquete pa Cuba"), se lo pasamos al wizard para que no lo vuelva a
+    // preguntar — es el mismo principio de cotizar_directo pero sin peso.
+    const paisPrellenado = countryZone ? matchPais(textoOriginal, countryZone) : null
+    return { tipo: 'cotizar_iniciar', paisPrellenado }
   }
   if (countryZone) {
     const paisCobertura = detectarCoberturaPais(textoOriginal, countryZone)

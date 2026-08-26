@@ -268,6 +268,40 @@ caso('rastreo/tiempos: "tracking" solo sigue siendo rastreo', 'tracking', sinFlu
 caso('rastreo/tiempos: quiero hacer seguimiento sigue siendo rastreo', 'quiero hacer seguimiento', sinFlujo, esperarTipo('rastreo_pedir_numero'))
 caso('rastreo/tiempos: frase especifica no se ve afectada', 'Donde esta mi paquete', sinFlujo, esperarTipo('rastreo_pedir_numero'))
 
+// ── Español cubano / "pa" / "para" / preguntas cortas de WhatsApp ────────
+caso('cubano: quiero mandar un paquete pa Cuba (abre flujo)', 'quiero mandar un paquete pa Cuba', conCountryZone, esperarTipo('cotizar_iniciar'))
+caso('cubano: necesito mandar una caja para Cuba', 'necesito mandar una caja para Cuba', conCountryZone, esperarTipo('cotizar_iniciar'))
+caso('cubano: como hago pa mandar un paquete (NO es pago)', 'como hago pa mandar un paquete', conCountryZone, (_, t) => t[0] !== 'sin_info_pago')
+caso('cubano: ustedes mandan para Cuba', 'ustedes mandan para Cuba?', conCountryZone, esperarTipo('cobertura_pais'))
+caso('cubano: ustedes envian para Cuba', 'ustedes envian para Cuba?', conCountryZone, esperarTipo('cobertura_pais'))
+caso('cubano: se puede mandar para Cuba', 'se puede mandar para Cuba?', conCountryZone, esperarTipo('cobertura_pais'))
+caso('cubano: como se puede mandar para Cuba', 'como se puede mandar para Cuba?', conCountryZone, esperarTipo('cobertura_pais'))
+caso('cubano: cuanto cuesta mandar 10 kilos pa Cuba', 'cuanto cuesta mandar 10 kilos pa Cuba', conCountryZone, esperarTipo('cotizar_directo'))
+caso('cubano: que puedo mandar', 'que puedo mandar', sinFlujo, esperarTipo('servicios'))
+caso('cubano: q puedo mandar (abreviacion)', 'q puedo mandar', sinFlujo, esperarTipo('servicios'))
+caso('cubano: esta llegando?', 'esta llegando?', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('cubano: ya llego?', 'ya llego?', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('cubano: como lo rastreo', 'como lo rastreo', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('cubano: cuando llega (tiempos, no rastreo)', 'cuando llega', sinFlujo, esperarTipo('tiempos_entrega'))
+caso('cubano: donde esta (corto, rastreo)', 'donde esta', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('NO cruza: dnd estan ubicados sigue siendo ubicacion', 'dnd estan ubicados', sinFlujo, esperarTipo('ubicacion'))
+caso('NO cruza: recogen a domicilio es proceso_envio, no ubicacion', 'recogen a domicilio', sinFlujo, esperarTipo('proceso_envio'))
+
+// ── Integridad: cada keyword de cada FAQ debe resolver a su propio tema ──
+{
+  const { FAQ: faqReal } = await import('../src/components/ChatAgent/chatKnowledge.js')
+  let integros = 0, rotos = 0
+  for (const entrada of faqReal) {
+    for (const kw of entrada.palabrasClave) {
+      const tipos = detectarIntenciones(kw, { flujo: null, ultimoTema: null }).map(i => i.temaId || i.tipo)
+      if (tipos.includes(entrada.id)) integros++
+      else { rotos++; fallas.push({ descripcion: `keyword huérfana: "${kw}" (${entrada.id})`, texto: kw, obtenido: tipos }) }
+    }
+  }
+  pasaron += integros
+  fallaron += rotos
+}
+
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
   const ok = JSON.stringify(obtenido) === JSON.stringify(esperado)

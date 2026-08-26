@@ -186,6 +186,7 @@ export const FAQ = [
       'hacen envios nacionales', 'que modalidades de envio tienen',
       'manejan equipaje no acompañado', 'que es equipaje no acompañado',
       'envian documentos', 'hacen distribucion nacional',
+      'que puedo mandar', 'que cosas puedo mandar', 'que cosas puedo enviar',
     ],
     respuesta: 'Ofrecemos Paquetería Courier (nacional e internacional), Casillero Internacional, Equipaje No Acompañado, Envío de Documentos y Distribución Nacional en todo Uruguay.',
   },
@@ -204,7 +205,7 @@ export const FAQ = [
     id: 'ubicacion',
     palabrasClave: [
       'ubicacion', 'direccion', 'donde estan', 'donde queda', 'donde se ubican',
-      'donde los encuentro', 'domicilio', 'sede', 'oficina',
+      'donde los encuentro', 'sede', 'oficina',
       'cual es su direccion', 'en que calle estan', 'como llego hasta ahi',
       'tienen local', 'tienen oficina fisica', 'puedo visitarlos',
       'donde puedo ir', 'donde tienen local',
@@ -247,6 +248,7 @@ export const FAQ = [
       'cuanto tarda en llegar a destino', 'tiempos de entrega',
       'cuanto demora', 'cuanto demoran', 'cuanto tarda', 'en cuanto llega',
       'cuanto tiempo tarda', 'cuanto se tarda', 'que tan rapido llega',
+      'cuando llega',
     ],
     respuesta: 'Para envíos internacionales: despachamos ante la Aduana de Uruguay los lunes, el vuelo (con escala en Panamá) sale entre martes y jueves, el transbordo puede demorar de 4 a 7 días, y una vez en destino la entrega local puede tomar hasta 30 días desde que la recibe la aduana de destino. Para envíos nacionales urgentes tenemos entrega express en 24 h.',
   },
@@ -270,7 +272,7 @@ export const FAQ = [
     id: 'cotizar_online',
     palabrasClave: [
       'puedo cotizar online', 'hay una calculadora de precio',
-      'cotizar sin hablar con alguien', 'cotizador en la pagina', 'cotizador online',
+      'cotizar sin escribirles', 'cotizador en la pagina', 'cotizador online',
     ],
     respuesta: 'Sí, podés cotizar tu envío al instante desde el botón "Cotizar envío" en la página, sin necesidad de escribirnos primero — o si preferís, seguimos la cotización acá mismo, escribí "cotizar".',
   },
