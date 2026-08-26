@@ -278,8 +278,21 @@ function extraerNumeroGuiaEmbebido(texto) {
 }
 
 /** Extrae el primer número (con decimales) del texto, o null si no hay ninguno válido (> 0). */
+/**
+ * "medio kilo"/"media kilo"/"medio kg" -> "0.5 kilo"; "20 kilos y medio"/
+ * "20 kg y medio" -> "20.5 kilo"; "un kilo y medio" -> "1.5 kilo". Convierte
+ * el peso dicho en palabras a número ANTES de buscar dígitos, para que
+ * parsePeso y extraerPesoYPais lo entiendan igual que "20.5".
+ */
+function expandirPesoInformal(texto) {
+  return texto
+    .replace(/(\d+(?:[.,]\d+)?)\s*(kilos?|kgs?)\s+y\s+medi[oa]\b/gi, (_, n) => `${parseFloat(n.replace(',', '.')) + 0.5} kilo`)
+    .replace(/\bun\s+(?:kilo|kg)\s+y\s+medi[oa]\b/gi, '1.5 kilo')
+    .replace(/\bmedi[oa]\s+(?:kilos?|kgs?)\b/gi, '0.5 kilo')
+}
+
 export function parsePeso(texto) {
-  const match = texto.replace(',', '.').match(/(\d+(\.\d+)?)/)
+  const match = expandirPesoInformal(texto).replace(',', '.').match(/(\d+(\.\d+)?)/)
   if (!match) return null
   const valor = parseFloat(match[1])
   return valor > 0 ? valor : null
@@ -357,7 +370,7 @@ export function elegirSaludo(fecha = new Date()) {
  * saltar directo al paso "tipo").
  */
 export function extraerPesoYPais(textoOriginal, countryZone) {
-  const matchPeso = textoOriginal.match(PATRON_PESO_CON_UNIDAD)
+  const matchPeso = expandirPesoInformal(textoOriginal).match(PATRON_PESO_CON_UNIDAD)
   if (!matchPeso) return null
   const peso = parseFloat(matchPeso[1].replace(',', '.'))
   if (!(peso > 0)) return null

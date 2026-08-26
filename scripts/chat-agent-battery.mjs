@@ -323,6 +323,11 @@ caso('entidad: 10kgs para Cuba (plural pegado)', '10kgs para Cuba', conCountryZo
 caso('entidad: 20 kilos para España', '20 kilos para España', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 20 && r[0].pais === 'España')
 caso('entidad: cuanto cuesta enviar a Cuba trae pais prellenado', 'cuanto cuesta enviar a Cuba', conCountryZone, (r, t) => t[0] === 'cotizar_iniciar' && r[0].paisPrellenado === 'Cuba')
 
+// ── Peso dicho en palabras: "medio kilo", "X y medio" ────────────────────
+caso('peso en palabras: medio kilo en flujo directo', 'Cuanto cuesta un envio a Cuba medio kilo de paqueteria', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 0.5 && r[0].pais === 'Cuba')
+caso('peso en palabras: 20 kilos y medio', '20 kilos y medio a Cuba', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 20.5)
+caso('peso en palabras: 20 kilos y media', '20 kilos y media a Cuba', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 20.5)
+
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
   const ok = JSON.stringify(obtenido) === JSON.stringify(esperado)
@@ -336,6 +341,11 @@ assertPure('parsePeso: decimal con coma', parsePeso('3,5'), 3.5)
 assertPure('parsePeso: decimal con punto', parsePeso('3.5 kg'), 3.5)
 assertPure('parsePeso: texto sin número', parsePeso('no se'), null)
 assertPure('parsePeso: cero no es válido', parsePeso('0'), null)
+assertPure('parsePeso: medio kilo', parsePeso('medio kilo'), 0.5)
+assertPure('parsePeso: medio kg', parsePeso('medio kg'), 0.5)
+assertPure('parsePeso: 20 kilos y medio', parsePeso('20 kilos y medio'), 20.5)
+assertPure('parsePeso: 20 kilos y media', parsePeso('20 kilos y media'), 20.5)
+assertPure('parsePeso: un kilo y medio', parsePeso('un kilo y medio'), 1.5)
 
 // ── Reporte de la parte pura ─────────────────────────────────────────────
 console.log(`\n== Motor de intención (pura, sin red) ==`)
