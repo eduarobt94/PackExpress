@@ -1,22 +1,46 @@
 #!/usr/bin/env node
 /**
  * Batería de pruebas del motor de intención del ChatAgent.
+ * Última actualización: 2026-08-26 · 483 casos puros + 4 checks de API en vivo.
  *
  * Cubre: detección de intención pura (detectarIntenciones/buscarIntencionDeNegocio,
- * sin red, sin React) contra ~140 variantes de mensajes reales — saludos, small
- * talk, despedida, las 13 FAQ, cotizar, rastreo (código pegado y en lenguaje
- * natural), derivación a humano, combinaciones multi-intención, la heurística
- * de "último tema", y las interrupciones dentro del flujo de cotización.
+ * sin red, sin React) contra ~186 escenarios de mensajes reales, más un
+ * oráculo de integridad que prueba cada una de las ~300 keywords de las 19
+ * FAQ como mensaje completo (debe resolver a su propio tema, solo o
+ * combinado con saludo/small-talk) — juntos suman los 483 casos:
+ *   - saludos, small talk, despedida, las 19 FAQ (incluye articulos_prohibidos
+ *     separado de documentacion, y experiencia_empresa/proceso_envio/
+ *     tiempos_entrega/despacho_aduanero/normativa_ursec/cotizar_online);
+ *   - cotizar: flujo completo, tabla de tarifas ("todas las tarifas"),
+ *     entidades peso+país+tipo detectadas en un solo mensaje (incluye
+ *     variantes de escritura 10kg/10KG/10kgs/20 kilos, "pa"/"para"/"a", y
+ *     peso dicho en palabras — "medio kilo", "20 kilos y medio");
+ *   - rastreo: código pegado, lenguaje natural, código embebido en frase
+ *     libre, y el contexto puntual "esperandoGuia" (responder el código
+ *     tras pedirlo, sin que venga solo);
+ *   - cobertura_pais (¿envían/mandan/llegan a X país?) y ambiguo_precio
+ *     (chips de aclaración para "cuánto cuesta" a secas);
+ *   - derivación a humano, combinaciones multi-intención, heurística de
+ *     "último tema", interrupciones dentro del flujo de cotización;
+ *   - typos multi-palabra (fraseFuzzyContigua), abreviaciones de chat
+ *     (q/xq/tb/dnd/hs/finde/pa), español cubano/rioplatense y mensajes
+ *     cortos de WhatsApp;
+ *   - horarios por día como entidad (bolsa de palabras: día + verbo, en
+ *     cualquier orden — "trabajan el domingo", "atienden los domingos");
+ *   - casos negativos ("NO cruza de tema") para cada colisión real
+ *     encontrada y corregida en el camino.
  * También valida en vivo la forma real de los endpoints públicos que usa
  * useChatAgent.js (rastreo.php, tarifario.php) para detectar drift de contrato
  * con el backend (ej. el bug real de "data.zonas" anidado que hubo en este
- * proyecto).
+ * proyecto, y el hallazgo pendiente de que action=tipos exige sesión).
  *
  * Esto NO reemplaza un E2E de navegador real: el flujo multi-turno de
  * cotización (peso -> país -> tipo, con estado en refs de React) vive dentro
  * de useChatAgent.js y no se puede ejecutar fuera de React sin duplicar su
  * lógica (lo que daría falsa confianza). Para cubrir eso hace falta un
- * harness de navegador (Playwright) que no existe en este proyecto todavía.
+ * harness de navegador (Playwright) que no existe en este proyecto todavía
+ * — los cambios en useChatAgent.js se verifican manualmente contra el dev
+ * server real en cada sesión de trabajo.
  *
  * Uso: node scripts/chat-agent-battery.mjs
  * (opcional) SKIP_API=1 node scripts/chat-agent-battery.mjs   -> salta los checks de API en vivo
