@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { MapPin, Globe, Zap, Shield } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
+import { CASILLERO_WHATSAPP_URL } from '../lib/whatsapp'
 
 /* â”€â”€ Three.js dot-map canvas "” Three.js se carga dinámicamente â”€â”€â”€â”€ */
 function DotMap({ onReady }) {
@@ -396,7 +397,7 @@ export default function Hero() {
           >
             <span className="text-[#E8823C] whitespace-nowrap">Courier</span>
             <span className="text-[var(--fg-5)]">·</span>
-            <span className="text-[#6B90DC] whitespace-nowrap">Casillero Internacional</span>
+            <span className="text-[#6B90DC] whitespace-nowrap">Casillero Internacional (pronto)</span>
             <span className="text-[var(--fg-5)]">·</span>
             <span className="text-[var(--fg-2)] whitespace-nowrap">Distribución Nacional</span>
           </motion.div>
@@ -421,9 +422,9 @@ export default function Hero() {
             transition={{ duration: 0.7, delay: 0.38 }}
             className="text-[15px] sm:text-lg text-[var(--fg-2)] leading-relaxed max-w-[480px] mb-10"
           >
-            Distribución en todo Uruguay, envíos internacionales a +50 países
-            y tu casillero personal para comprar donde quieras y recibir
-            en tu puerta. Todo desde un solo lugar.
+            Distribución en todo Uruguay y envíos internacionales a +50 países.
+            Muy pronto, además: tu casillero personal para comprar donde
+            quieras y recibir en tu puerta.
           </motion.p>
 
           <motion.div
@@ -443,8 +444,12 @@ export default function Hero() {
             >
               Cotizar envío
             </button>
+            {/* El casillero todavía no está operativo: el CTA capta interesados
+                por WhatsApp en vez de prometer una cuenta que aún no existe. */}
             <a
-              href="#servicios"
+              href={CASILLERO_WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
                          border border-[#527ED8]/25 hover:border-[#527ED8]/55
                          text-[var(--fg-2)] hover:text-[#6B90DC] font-semibold text-sm
@@ -452,7 +457,7 @@ export default function Hero() {
                          bg-[#527ED8]/[0.06] backdrop-blur-2xl hover:bg-[#527ED8]/[0.12]
                          hover:shadow-[0_0_24px_rgba(59,126,248,0.18)]"
             >
-              Abrir mi casillero
+              Avisame cuando esté el casillero
             </a>
           </motion.div>
 
@@ -499,7 +504,7 @@ export default function Hero() {
             {[
               { Icon: Globe,  label: '+50 países destino',     blue: false },
               { Icon: Zap,    label: 'Todo Uruguay',           blue: false },
-              { Icon: Shield, label: 'Casillero Internacional', blue: true  },
+              { Icon: Shield, label: 'Casillero Internacional · Pronto', blue: true  },
             ].map(({ Icon, label, blue }) => (
               <div
                 key={label}

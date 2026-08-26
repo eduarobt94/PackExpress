@@ -1,13 +1,13 @@
 import { MapPin, Phone, Mail, MessageCircle, ArrowUpRight, ArrowRight } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
-import { WHATSAPP_URL } from '../lib/whatsapp'
+import { WHATSAPP_URL, CASILLERO_WHATSAPP_URL } from '../lib/whatsapp'
 
 const COLS = [
   {
     heading: 'Servicios',
     links: [
       { label: 'Paquetería Courier',      href: '#servicios' },
-      { label: 'Casillero Internacional', href: '#servicios', blue: true },
+      { label: 'Casillero Internacional (pronto)', href: '#servicios', blue: true },
       { label: 'Equipaje No Acompañado',  href: '#servicios' },
       { label: 'Envío de Documentos',     href: '#servicios' },
     ],
@@ -108,15 +108,18 @@ export default function Footer() {
               >
                 Cotizar envío <ArrowRight size={14} />
               </button>
+              {/* Casillero todavía no operativo: el CTA capta interesados. */}
               <a
-                href="#servicios"
+                href={CASILLERO_WHATSAPP_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl w-full sm:w-auto
                            border border-[#527ED8]/30 hover:border-[#527ED8]/55
                            text-[#527ED8] hover:text-[#6B90DC] text-[13px] font-semibold
                            transition-[color,background-color,border-color,box-shadow] duration-200 tracking-wide whitespace-nowrap
                            hover:bg-[#527ED8]/[0.07] hover:shadow-[0_0_24px_rgba(59,126,248,0.18)]"
               >
-                Abrir casillero <ArrowRight size={14} />
+                Avisame del casillero <ArrowRight size={14} />
               </a>
             </div>
           </div>
@@ -136,8 +139,8 @@ export default function Footer() {
               </a>
 
               <p className="text-[12px] text-[var(--fg-4)] leading-relaxed mb-7 max-w-[260px]">
-                Courier, casillero internacional y distribución nacional
-                desde Montevideo. Llegamos a todo Uruguay y más de 50 países.
+                Courier y distribución nacional desde Montevideo. Llegamos a
+                todo Uruguay y más de 50 países.
               </p>
 
               <div className="space-y-2.5">

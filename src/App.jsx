@@ -17,11 +17,10 @@ const servicesSchemas = [
     'Envíos internacionales desde Uruguay a más de 50 países. Gestión aduanera, seguimiento en tiempo real y entrega garantizada.',
     '/#servicios'
   ),
-  serviceSchema(
-    'Casillero Internacional',
-    'Servicio de casillero para comprar en tiendas de EE.UU., Europa y Asia desde Uruguay. Recepción, consolidación y despacho con trámites aduaneros incluidos.',
-    '/#servicios'
-  ),
+  // El casillero todavía no se presta: no se declara como Service en el
+  // structured data (eso le diría a Google que es un servicio disponible).
+  // Su estado real se explica en las FAQ de schemas.js. Reactivar este bloque
+  // cuando el servicio esté operativo.
   serviceSchema(
     'Distribución Nacional Uruguay',
     'Cobertura logística en los 19 departamentos de Uruguay. Entrega estándar en 48 horas hábiles y express en 24 horas en Montevideo.',

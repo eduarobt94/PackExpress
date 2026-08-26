@@ -101,7 +101,7 @@ export default function Coverage() {
             className="flex flex-col gap-3 lg:items-end"
           >
             <p className="text-[var(--fg-3)] text-sm leading-relaxed max-w-xs lg:text-right">
-              Distribución en los 19 departamentos de Uruguay, courier a +50 países y casillero internacional desde EE.UU.
+              Distribución en los 19 departamentos de Uruguay y courier a +50 países.
             </p>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('openCotizar'))}

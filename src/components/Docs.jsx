@@ -53,7 +53,7 @@ const DOCS = [
 const SUBJECTS = [
   'Consulta general',
   'Cotización de envío',
-  'Casillero Internacional',
+  'Casillero Internacional (próximamente)',
   'Distribución nacional (Uruguay)',
   'Envío internacional',
   'Rastreo de paquete',
@@ -348,7 +348,7 @@ export default function Docs() {
                   ¿Necesitás asesoramiento?
                 </h3>
                 <p className="text-[12px] text-[var(--fg-2)] leading-relaxed">
-                  Courier, casillero o distribución te guiamos en cada paso.
+                  Courier o distribución, te guiamos en cada paso.
                 </p>
               </div>
             </div>
