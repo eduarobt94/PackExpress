@@ -404,6 +404,18 @@ function esConsultaHorarioPorDia(textoNormalizado) {
 }
 
 /**
+ * Para tiempos_entrega, "Uruguay" cuenta como destino nacional aunque no
+ * esté en COUNTRY_ZONE (ese mapa es solo de zonas internacionales — la
+ * cotización de envíos usa esa lista tal cual, a propósito, así que no se
+ * le agrega Uruguay ahí solo para esto). Se resuelve aparte, antes de
+ * intentar matchPais.
+ */
+function matchDestinoTiempos(textoOriginal, countryZone) {
+  if (/\buruguay\b/.test(normalizeText(textoOriginal))) return 'Uruguay'
+  return matchPais(textoOriginal, countryZone)
+}
+
+/**
  * "Demora de envíos / tiempos de entrega", generalizado por RAÍZ de palabra
  * en vez de por frase exacta — cubre a la vez toda la familia
  * demora/demoran/demoro, tarda/tardan/tardaria, llega/llegan/llegaria,
@@ -498,8 +510,10 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
       // tiempos_entrega sin país mencionado: preguntamos el destino antes de
       // responder — el tiempo real (nacional 24h vs internacional con
       // escala) depende de eso, y así se evita responder a ciegas.
-      if (entrada.id === 'tiempos_entrega' && countryZone && !matchPais(textoOriginal, countryZone)) {
-        return { tipo: 'tiempos_pedir_pais' }
+      if (entrada.id === 'tiempos_entrega' && countryZone) {
+        const paisEncontrado = matchDestinoTiempos(textoOriginal, countryZone)
+        if (!paisEncontrado) return { tipo: 'tiempos_pedir_pais' }
+        return { tipo: 'faq', respuesta: entrada.respuesta, temaId: entrada.id, derivaWhatsapp: false, chips: null, pais: paisEncontrado }
       }
       return { tipo: 'faq', respuesta: entrada.respuesta, temaId: entrada.id, derivaWhatsapp: !!entrada.derivaWhatsapp, chips: entrada.chips ?? null }
     }
@@ -562,10 +576,10 @@ export function detectarIntenciones(textoOriginal, estado) {
   // este contexto alcanza con que el país aparezca en el mensaje (aunque
   // sea la respuesta bien corta, "Cuba", que sola no dispara nada normalmente).
   if (estado?.esperandoPaisTiempos && estado.countryZone) {
-    const pais = matchPais(textoOriginal, estado.countryZone)
+    const pais = matchDestinoTiempos(textoOriginal, estado.countryZone)
     if (pais) {
       const tiempos = FAQ.find(f => f.id === 'tiempos_entrega')
-      if (tiempos) return [{ tipo: 'faq', respuesta: tiempos.respuesta, temaId: tiempos.id, derivaWhatsapp: false, chips: null }]
+      if (tiempos) return [{ tipo: 'faq', respuesta: tiempos.respuesta, temaId: tiempos.id, derivaWhatsapp: false, chips: null, pais }]
     }
   }
 

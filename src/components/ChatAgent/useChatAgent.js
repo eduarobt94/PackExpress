@@ -8,7 +8,7 @@ import {
   detectarIntenciones, parsePeso, matchPais, matchTipo, formatFechaHora, elegirSaludo, normalizeText,
   buscarIntencionDeNegocio,
 } from './intentEngine'
-import { GOODBYE_RESPONSES, FAQ } from './chatKnowledge'
+import { GOODBYE_RESPONSES, FAQ, RESPUESTA_TIEMPOS_NACIONAL } from './chatKnowledge'
 import { COUNTRY_ZONE, ZONE_LABELS } from '../../lib/zones'
 import { WHATSAPP_URL } from '../../lib/whatsapp'
 
@@ -420,12 +420,18 @@ export function useChatAgent() {
         return responderConDelay(intencion.respuestas[Math.floor(Math.random() * intencion.respuestas.length)])
       case 'human_handoff':
         return responderConDelay('¡Dale! Te paso directo con nuestro equipo para que te ayuden mejor.', ['Hablar por WhatsApp'])
-      case 'faq':
+      case 'faq': {
         contextoRef.current.ultimoTema = intencion.temaId
         if (intencion.derivaWhatsapp) {
           return responderConDelay(intencion.respuesta, ['Hablar por WhatsApp'])
         }
-        return responderConDelay(intencion.respuesta, intencion.chips ?? null)
+        // tiempos_entrega con destino Uruguay: responder con el tiempo
+        // nacional en vez del texto internacional (mezclarlos no aporta,
+        // ya sabemos cuál de los dos aplica).
+        const esNacional = intencion.temaId === 'tiempos_entrega' && intencion.pais && normalizeText(intencion.pais) === 'uruguay'
+        const respuesta = esNacional ? RESPUESTA_TIEMPOS_NACIONAL : intencion.respuesta
+        return responderConDelay(respuesta, intencion.chips ?? null)
+      }
       default: {
         contextoRef.current.nivelFallback += 1
         const nivel = contextoRef.current.nivelFallback

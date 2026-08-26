@@ -95,6 +95,9 @@ export const GOODBYE_RESPONSES = [
   '¡Hasta luego! Fue un gusto ayudarte.',
 ]
 
+/** Respuesta de tiempos_entrega cuando el destino resuelto es Uruguay (nacional) — ver 'tiempos_entrega' en FAQ para la internacional. */
+export const RESPUESTA_TIEMPOS_NACIONAL = 'Para envíos nacionales dentro de Uruguay tenemos entrega express en 24 h.'
+
 export const FAQ = [
   {
     id: 'horarios',
@@ -265,7 +268,12 @@ export const FAQ = [
       'demoran en entregar', 'tardan en entregar', 'demora en entregar', 'tarda en entregar',
       'que tiempo demoran los envios', 'los envios en cuanto llegan',
     ],
-    respuesta: 'Para envíos internacionales: despachamos ante la Aduana de Uruguay los lunes, el vuelo (con escala en Panamá) sale entre martes y jueves, el transbordo puede demorar de 4 a 7 días, y una vez en destino la entrega local puede tomar hasta 30 días desde que la recibe la aduana de destino. Para envíos nacionales urgentes tenemos entrega express en 24 h.',
+    // Texto internacional por defecto (se usa también cuando no se pudo
+    // determinar el país, ej. una interrupción dentro de un flujo sin
+    // countryZone disponible). Para Uruguay como destino, useChatAgent.js
+    // responde con RESPUESTA_TIEMPOS_NACIONAL en su lugar — no tiene sentido
+    // mezclar ambos tiempos en la misma respuesta si ya sabemos cuál aplica.
+    respuesta: 'Para envíos internacionales: despachamos ante la Aduana de Uruguay los lunes, el vuelo (con escala en Panamá) sale entre martes y jueves, el transbordo puede demorar de 4 a 7 días, y una vez en destino la entrega local puede tomar hasta 30 días desde que la recibe la aduana de destino.',
   },
   {
     id: 'despacho_aduanero',

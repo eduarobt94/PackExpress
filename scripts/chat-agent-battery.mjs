@@ -396,6 +396,11 @@ caso('tiempos NO cruza: cuanto cuesta enviar a Cuba sigue siendo cotizar', 'Cuan
 caso('tiempos NO cruza: trabajan el domingo sigue siendo horarios', 'trabajan el domingo', conCountryZone, esperarTipo('horarios'))
 caso('tiempos: interrupcion de flujo (sin countryZone) responde directo sin pedir pais', 'cuanto demora?', sinFlujo, esperarTipo('tiempos_entrega'))
 
+// ── tiempos_entrega: Uruguay = destino nacional (no está en COUNTRY_ZONE, es solo internacional) ──
+caso('tiempos: Uruguay con el contexto activo resuelve pais=Uruguay', 'Uruguay', conEsperandoPaisTiempos, (r, t) => t[0] === 'tiempos_entrega' && r[0].pais === 'Uruguay')
+caso('tiempos: cuanto demora a Uruguay en el mismo mensaje resuelve pais=Uruguay', 'cuanto demora a Uruguay', conCountryZone, (r, t) => t[0] === 'tiempos_entrega' && r[0].pais === 'Uruguay')
+caso('tiempos: respuesta internacional NO menciona el express nacional', 'cuanto demora a Cuba', conCountryZone, (r) => !r[0].respuesta.toLowerCase().includes('express'))
+
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
   const ok = JSON.stringify(obtenido) === JSON.stringify(esperado)
