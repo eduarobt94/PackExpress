@@ -5,8 +5,8 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  detectarIntenciones, parsePeso, matchPais, matchTipo, formatFechaHora, elegirSaludo, normalizeText,
-  buscarIntencionDeNegocio,
+  detectarIntenciones, matchPais, matchTipo, formatFechaHora, elegirSaludo, normalizeText,
+  buscarIntencionDeNegocio, extraerEntidadesCotizacion,
 } from './intentEngine'
 import { GOODBYE_RESPONSES, FAQ, RESPUESTA_TIEMPOS_NACIONAL } from './chatKnowledge'
 import { COUNTRY_ZONE, ZONE_LABELS } from '../../lib/zones'
@@ -46,6 +46,58 @@ function flujoVacio() {
 
 function contextoVacio() {
   return { ultimoTema: null, nivelFallback: 0, esperandoGuia: false, esperandoPaisTiempos: false }
+}
+
+/* ── Slot filling del flujo de cotización ─────────────────────────────────
+ * El wizard es SLOT-driven, no step-driven: en cada mensaje se extraen todas
+ * las entidades que haya (ver extraerEntidadesCotizacion) y recién después se
+ * mira qué falta. Eso es lo que permite que el usuario se adelante ("10kg
+ * para Cuba, paquetería") o corrija algo ya dado ("perdón, son 15kg") sin
+ * que el flujo tenga que preverlo paso por paso.
+ */
+const SLOTS_COTIZACION = ['peso', 'pais', 'tipo']
+
+function nombresTiposDe(flujo) {
+  return flujo.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
+}
+
+/** Slots todavía sin completar. En modo tabla el peso no hace falta: se cotizan varios. */
+function slotsFaltantes(flujo) {
+  const requeridos = flujo.datos.modoTabla ? ['pais', 'tipo'] : SLOTS_COTIZACION
+  return requeridos.filter(slot => flujo.datos[slot] == null)
+}
+
+function preguntaDeSlot(slot, flujo) {
+  if (slot === 'peso') return '¿Cuál es el peso aproximado del envío en kg?'
+  if (slot === 'pais') return '¿A qué país enviamos?'
+  return `¿Qué tipo de envío es? (${nombresTiposDe(flujo)})`
+}
+
+function noEntendiSlot(slot) {
+  if (slot === 'peso') return 'No pude entender el peso, ¿podés escribirlo solo en números? Ej: 2.5'
+  if (slot === 'pais') return 'No reconocí ese país, ¿podés escribirlo de nuevo? Por ejemplo: Estados Unidos, España, Cuba.'
+  return 'No reconocí ese tipo de envío, ¿podés elegir uno de la lista?'
+}
+
+/** Confirma lo que se acaba de entender: "10 kg a Cuba", "15 kg", "destino España". */
+function resumenEntidades(nuevas) {
+  const partes = []
+  if (nuevas.peso != null && nuevas.pais) partes.push(`${nuevas.peso} kg a ${nuevas.pais}`)
+  else if (nuevas.peso != null) partes.push(`${nuevas.peso} kg`)
+  else if (nuevas.pais) partes.push(`destino ${nuevas.pais}`)
+  if (nuevas.tipo) partes.push(nuevas.tipo.nombre)
+  return partes.join(', ')
+}
+
+/** Texto de tiempos de entrega según el destino: nacional (Uruguay) vs internacional. */
+function respuestaTiempos(pais) {
+  const internacional = FAQ.find(f => f.id === 'tiempos_entrega')?.respuesta ?? ''
+  return pais && normalizeText(pais) === 'uruguay' ? RESPUESTA_TIEMPOS_NACIONAL : internacional
+}
+
+/** Respuesta final de un intent 'faq', resolviendo el caso de tiempos según destino. */
+function textoDeFaq(intencion) {
+  return intencion.temaId === 'tiempos_entrega' ? respuestaTiempos(intencion.pais) : intencion.respuesta
 }
 
 export function useChatAgent() {
@@ -275,10 +327,23 @@ export function useChatAgent() {
    * flujo termine forzando el cotizador completo en vez de responder.
    */
   const intentarResponderInterrupcion = useCallback(async (valor, promptReintento) => {
+    const flujo = flujoRef.current
     const texto = normalizeText(valor)
-    const negocio = buscarIntencionDeNegocio(texto, valor)
+    // Con zonaMap la interrupción entiende entidades igual que el flujo normal.
+    // Antes se llamaba sin él, así que "¿cuánto demora?" en medio de una
+    // cotización a Cuba no podía heredar el destino que el flujo YA conocía y
+    // respondía con el texto internacional genérico.
+    const negocio = buscarIntencionDeNegocio(texto, valor, flujo.zonaMap)
+
+    if (negocio?.tipo === 'tiempos_pedir_pais') {
+      // Si el flujo ya sabe el destino, no se lo volvemos a preguntar solo
+      // para contestar tiempos; si no lo sabe, vale el texto internacional.
+      await responderConDelay(respuestaTiempos(flujo.datos.pais))
+      await responderConDelay(promptReintento)
+      return true
+    }
     if (negocio?.tipo === 'faq') {
-      await responderConDelay(negocio.respuesta, negocio.derivaWhatsapp ? ['Hablar por WhatsApp'] : null)
+      await responderConDelay(textoDeFaq(negocio), negocio.derivaWhatsapp ? ['Hablar por WhatsApp'] : null)
       await responderConDelay(promptReintento)
       return true
     }
@@ -294,90 +359,48 @@ export function useChatAgent() {
     if (procesandoRef.current) return
     procesandoRef.current = true
     try {
-    const flujo = flujoRef.current
+      const flujo = flujoRef.current
+      const pasoActual = flujo.paso
 
-    if (flujo.paso === 'peso') {
+      // "todas las tarifas": cambia los slots requeridos (el peso deja de
+      // hacer falta). Solo se evalúa mientras el peso siga sin definirse — es
+      // una alternativa a darlo, no algo que aplique en cualquier momento.
       const textoNorm = normalizeText(valor)
-      const pideTabla = PALABRAS_TODO_TARIFARIO.some(p => textoNorm === p || textoNorm.includes(p))
-      // Si el país ya se conocía de entrada (paisPrellenado en
-      // iniciarCotizacion, ej. "quiero mandar un paquete pa Cuba"), no hace
-      // falta volver a preguntarlo — se salta directo al paso "tipo".
-      const nombresTipos = flujo.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
-      if (pideTabla) {
-        flujo.datos.modoTabla = true
-        flujo.intentosFallidos = 0
-        if (flujo.datos.pais) {
-          flujo.paso = 'tipo'
-          return responderConDelay(`¡Dale! Ya tengo ${flujo.datos.pais} como destino. ¿Qué tipo de envío es? (${nombresTipos})`)
-        }
-        flujo.paso = 'pais'
-        return responderConDelay('¡Dale! Te muestro precios de referencia para varios pesos. ¿A qué país enviamos?')
-      }
-      const peso = parsePeso(valor)
-      if (peso == null) {
-        if (await intentarResponderInterrupcion(valor, '¿Cuál es el peso aproximado del envío en kg?')) return
-        flujo.intentosFallidos += 1
-        if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
-          return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
-        }
-        return responderConDelay('No pude entender el peso, ¿podés escribirlo solo en números? Ej: 2.5')
-      }
-      flujo.datos.peso = peso
-      flujo.intentosFallidos = 0
-      // El mismo mensaje puede traer el país y/o el tipo junto con el peso
-      // ("10kg para Cuba", "20 kg de paquetería") aunque el flujo ya esté
-      // esperando solo el peso — sin esto se ignoraban y se volvían a
-      // preguntar, aun habiéndolos dicho.
-      const paisEnMismoMensaje = matchPais(valor, flujo.zonaMap)
-      if (paisEnMismoMensaje) flujo.datos.pais = paisEnMismoMensaje
-      if (flujo.datos.pais) {
-        const tipoEnMismoMensaje = matchTipo(valor, flujo.tipos)
-        if (tipoEnMismoMensaje) {
-          return cotizarYResponder({ ...flujo.datos, zonaMap: flujo.zonaMap }, tipoEnMismoMensaje)
-        }
-        flujo.paso = 'tipo'
-        return responderConDelay(`¡Perfecto! ${peso} kg a ${flujo.datos.pais}. ¿Qué tipo de envío es? (${nombresTipos})`)
-      }
-      flujo.paso = 'pais'
-      return responderConDelay('¿A qué país enviamos?')
-    }
+      const pideTabla = flujo.datos.peso == null &&
+        PALABRAS_TODO_TARIFARIO.some(p => textoNorm === p || textoNorm.includes(p))
+      if (pideTabla) flujo.datos.modoTabla = true
 
-    if (flujo.paso === 'pais') {
-      const pais = matchPais(valor, flujo.zonaMap)
-      if (!pais) {
-        if (await intentarResponderInterrupcion(valor, '¿A qué país enviamos?')) return
-        flujo.intentosFallidos += 1
-        if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
-          return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
-        }
-        return responderConDelay('No reconocí ese país, ¿podés escribirlo de nuevo? Por ejemplo: Estados Unidos, España, Cuba.')
-      }
-      flujo.datos.pais = pais
-      flujo.intentosFallidos = 0
-      // Igual que en el paso "peso": el mismo mensaje puede traer el tipo
-      // junto con el país ("Cuba, es paquetería").
-      const tipoEnMismoMensaje = matchTipo(valor, flujo.tipos)
-      if (tipoEnMismoMensaje) {
-        return cotizarYResponder({ ...flujo.datos, zonaMap: flujo.zonaMap }, tipoEnMismoMensaje)
-      }
-      flujo.paso = 'tipo'
-      const nombresTipos = flujo.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
-      return responderConDelay(`¿Qué tipo de envío es? (${nombresTipos})`)
-    }
+      // UNA sola pasada de extracción sobre el mensaje completo, sin importar
+      // qué slot se estaba preguntando. Lo nuevo pisa lo viejo, así que
+      // corregir un dato ya dado es el mismo mecanismo que darlo por primera vez.
+      const nuevas = extraerEntidadesCotizacion(valor, {
+        zonaMap: flujo.zonaMap,
+        tipos: flujo.tipos,
+        pasoActual,
+      })
+      Object.assign(flujo.datos, nuevas)
 
-    if (flujo.paso === 'tipo') {
-      const tipo = matchTipo(valor, flujo.tipos)
-      if (!tipo) {
-        const nombresTipos = flujo.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
-        if (await intentarResponderInterrupcion(valor, `¿Qué tipo de envío es? (${nombresTipos})`)) return
+      if (!pideTabla && Object.keys(nuevas).length === 0) {
+        if (await intentarResponderInterrupcion(valor, preguntaDeSlot(pasoActual, flujo))) return
         flujo.intentosFallidos += 1
         if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
           return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
         }
-        return responderConDelay('No reconocí ese tipo de envío, ¿podés elegir uno de la lista?')
+        return responderConDelay(noEntendiSlot(pasoActual))
       }
-      return cotizarYResponder({ ...flujo.datos, zonaMap: flujo.zonaMap }, tipo)
-    }
+
+      flujo.intentosFallidos = 0
+      const faltan = slotsFaltantes(flujo)
+      if (faltan.length === 0) {
+        return cotizarYResponder({ ...flujo.datos, zonaMap: flujo.zonaMap }, flujo.datos.tipo)
+      }
+
+      flujo.paso = faltan[0]
+      const pregunta = preguntaDeSlot(faltan[0], flujo)
+      const resumen = resumenEntidades(nuevas)
+      if (resumen) return responderConDelay(`¡Perfecto! ${resumen}. ${pregunta}`)
+      if (pideTabla) return responderConDelay(`¡Dale! Te muestro precios de referencia para varios pesos. ${pregunta}`)
+      return responderConDelay(pregunta)
     } finally {
       procesandoRef.current = false
     }
@@ -420,18 +443,14 @@ export function useChatAgent() {
         return responderConDelay(intencion.respuestas[Math.floor(Math.random() * intencion.respuestas.length)])
       case 'human_handoff':
         return responderConDelay('¡Dale! Te paso directo con nuestro equipo para que te ayuden mejor.', ['Hablar por WhatsApp'])
-      case 'faq': {
+      case 'faq':
         contextoRef.current.ultimoTema = intencion.temaId
         if (intencion.derivaWhatsapp) {
           return responderConDelay(intencion.respuesta, ['Hablar por WhatsApp'])
         }
-        // tiempos_entrega con destino Uruguay: responder con el tiempo
-        // nacional en vez del texto internacional (mezclarlos no aporta,
-        // ya sabemos cuál de los dos aplica).
-        const esNacional = intencion.temaId === 'tiempos_entrega' && intencion.pais && normalizeText(intencion.pais) === 'uruguay'
-        const respuesta = esNacional ? RESPUESTA_TIEMPOS_NACIONAL : intencion.respuesta
-        return responderConDelay(respuesta, intencion.chips ?? null)
-      }
+        // textoDeFaq resuelve el caso de tiempos_entrega según el destino
+        // (nacional vs internacional); para el resto devuelve la respuesta tal cual.
+        return responderConDelay(textoDeFaq(intencion), intencion.chips ?? null)
       default: {
         contextoRef.current.nivelFallback += 1
         const nivel = contextoRef.current.nivelFallback

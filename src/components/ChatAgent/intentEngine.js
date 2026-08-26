@@ -314,11 +314,22 @@ export function matchPais(texto, countryZone) {
   const exacto = paises.find(pais => normalizeText(pais) === norm)
   if (exacto) return exacto
 
-  const contenido = paises.find(pais => {
+  // Gana el país mencionado MÁS TARDE en el texto, no el que aparece primero
+  // en el mapa de países. Sin esto, `paises.find()` devolvía el primero según
+  // el orden de zones.js: "no es Cuba, es España" resolvía a Cuba (Cuba está
+  // antes que España en ese objeto), justo al revés de lo que el usuario dijo.
+  // La última mención es la interpretación correcta para correcciones.
+  let elegido = null
+  let mejorPos = -1
+  for (const pais of paises) {
     const paisNorm = normalizeText(pais)
-    return new RegExp(`\\b${paisNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(norm)
-  })
-  return contenido ?? null
+    const match = norm.match(new RegExp(`\\b${paisNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`))
+    if (match && match.index > mejorPos) {
+      mejorPos = match.index
+      elegido = pais
+    }
+  }
+  return elegido
 }
 
 /** Busca en la lista de tipos de servicio (de la API) el que matchea el texto por nombre o código. */
@@ -379,6 +390,45 @@ export function extraerPesoYPais(textoOriginal, countryZone) {
   const pais = matchPais(textoOriginal, countryZone)
   if (!pais) return null
   return { peso, pais }
+}
+
+/**
+ * Extrae, en UNA sola pasada, todas las entidades de cotización presentes en
+ * un mensaje: peso, país y tipo de envío. Reemplaza el look-ahead ad-hoc que
+ * cada paso del wizard hacía por su cuenta (el paso "peso" miraba 3
+ * extractores, "país" 2 y "tipo" solo 1), que era la razón de que el usuario
+ * no pudiera CORREGIR un dato ya dado: los pasos podían mirar hacia adelante,
+ * nunca hacia atrás.
+ *
+ * `pasoActual` decide cuándo un número SUELTO cuenta como peso: solo si el
+ * bot está preguntando el peso justo en ese momento ("¿cuánto pesa?" → "10").
+ * En cualquier otro paso se exige la unidad explícita ("15kg", "medio kilo"),
+ * para que un número incidental en otra respuesta (una dirección, un número
+ * de casa) no pise el peso ya confirmado.
+ */
+export function extraerEntidadesCotizacion(texto, { zonaMap, tipos, pasoActual } = {}) {
+  const entidades = {}
+
+  const conUnidad = expandirPesoInformal(texto).match(PATRON_PESO_CON_UNIDAD)
+  if (conUnidad) {
+    const valor = parseFloat(conUnidad[1].replace(',', '.'))
+    if (valor > 0) entidades.peso = valor
+  } else if (pasoActual === 'peso') {
+    const valor = parsePeso(texto)
+    if (valor != null) entidades.peso = valor
+  }
+
+  if (zonaMap) {
+    const pais = matchPais(texto, zonaMap)
+    if (pais) entidades.pais = pais
+  }
+
+  if (tipos?.length) {
+    const tipo = matchTipo(texto, tipos)
+    if (tipo) entidades.tipo = tipo
+  }
+
+  return entidades
 }
 
 /**

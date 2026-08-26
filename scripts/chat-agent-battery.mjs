@@ -47,6 +47,7 @@
  */
 import {
   detectarIntenciones, buscarIntencionDeNegocio, normalizeText, extraerNumeroGuia, parsePeso,
+  matchPais, extraerEntidadesCotizacion,
 } from '../src/components/ChatAgent/intentEngine.js'
 
 const API = 'http://localhost/pack-sistema/api/v1'
@@ -408,6 +409,37 @@ caso('pago gen: de que forma puedo pagar', 'de que forma puedo pagar', sinFlujo,
 caso('pago gen: como se realiza el pago', 'como se realiza el pago', sinFlujo, esperarTipo('sin_info_pago'))
 caso('pago gen: como abono mi envio', 'como abono mi envio', sinFlujo, esperarTipo('sin_info_pago'))
 caso('pago gen NO cruza: cuanto me cobran por enviar sigue siendo cotizar', 'cuanto me cobran por enviar', sinFlujo, esperarTipo('cotizar_iniciar'))
+
+// ── matchPais: gana la ÚLTIMA mención del texto, no el orden del mapa ────
+// (sin esto, "no es Cuba, es España" resolvía a Cuba porque Cuba está antes
+// que España en zones.js — justo al revés de lo que el usuario dijo)
+const ZONA_ORDEN = { 'Cuba': 'D', 'España': 'G', 'Argentina': 'E' }
+assertPure('matchPais: correccion "no es Cuba es España"', matchPais('no es Cuba es España', ZONA_ORDEN), 'España')
+assertPure('matchPais: correccion con puntuacion', matchPais('no, no es Cuba. Es España', ZONA_ORDEN), 'España')
+assertPure('matchPais: un solo pais sigue igual (Cuba)', matchPais('Cuba', ZONA_ORDEN), 'Cuba')
+assertPure('matchPais: un solo pais sigue igual (España)', matchPais('quiero enviar a España', ZONA_ORDEN), 'España')
+assertPure('matchPais: sin pais devuelve null', matchPais('no se', ZONA_ORDEN), null)
+
+// ── extraerEntidadesCotizacion: una pasada, todas las entidades ──────────
+const TIPOS_FAKE = [
+  { id: 1, codigo: 'DOC', nombre: 'Documentos' },
+  { id: 2, codigo: 'PAQ', nombre: 'Paquetería' },
+  { id: 3, codigo: 'EQ', nombre: 'Equipaje No Acompañado' },
+]
+const ctxEnt = (pasoActual) => ({ zonaMap: ZONA_FAKE, tipos: TIPOS_FAKE, pasoActual })
+function assertEntidades(descripcion, texto, pasoActual, esperado) {
+  const e = extraerEntidadesCotizacion(texto, ctxEnt(pasoActual))
+  assertPure(descripcion, { peso: e.peso ?? null, pais: e.pais ?? null, tipo: e.tipo?.nombre ?? null }, esperado)
+}
+assertEntidades('entidades: las tres de una', '10kg para Cuba, paqueteria', 'peso', { peso: 10, pais: 'Cuba', tipo: 'Paquetería' })
+assertEntidades('entidades: correccion de peso en paso pais', 'Perdon, son 15kg', 'pais', { peso: 15, pais: null, tipo: null })
+assertEntidades('entidades: correccion de pais en paso tipo', 'No, es España', 'tipo', { peso: null, pais: 'España', tipo: null })
+assertEntidades('entidades: numero suelto ES peso en paso peso', '10', 'peso', { peso: 10, pais: null, tipo: null })
+assertEntidades('entidades: numero suelto NO es peso en otro paso', '10', 'tipo', { peso: null, pais: null, tipo: null })
+assertEntidades('entidades: numero incidental no pisa el peso', 'calle 25, España', 'pais', { peso: null, pais: 'España', tipo: null })
+assertEntidades('entidades: peso en palabras + pais', 'medio kilo a Cuba', 'peso', { peso: 0.5, pais: 'Cuba', tipo: null })
+assertEntidades('entidades: interrupcion no extrae nada', 'cuanto demora?', 'peso', { peso: null, pais: null, tipo: null })
+assertEntidades('entidades: kg con unidad vale en cualquier paso', 'son 3 kg', 'tipo', { peso: 3, pais: null, tipo: null })
 
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
