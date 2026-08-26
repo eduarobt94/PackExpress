@@ -368,6 +368,34 @@ caso('tiempos: con pais en el mismo mensaje responde directo', 'cuanto demora un
 caso('tiempos: pais solo con el contexto activo responde tiempos', 'Cuba', conEsperandoPaisTiempos, esperarTipo('tiempos_entrega'))
 caso('tiempos: pais solo SIN el contexto no dispara nada', 'Cuba', conCountryZone, esperarTipo('desconocido'))
 
+// ── tiempos_entrega: expansión semántica generalizada (raíz de palabra) ──
+caso('tiempos gen: demora de los envios (sin interrogativo)', 'demora de los envios', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: demora de envio', 'demora de envio', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: demora del paquete', 'demora del paquete', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: cual es la demora', 'cual es la demora', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: que demora tiene el envio', 'que demora tiene el envio', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: typo "qui tiempo demora"', 'qui tiempo demora', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: q tiempo demora (abreviacion)', 'q tiempo demora', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: plazo de entrega', 'plazo de entrega', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: cual es el plazo de entrega', 'cual es el plazo de entrega', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: cuantos dias demora', 'cuantos dias demora', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: cuando estaria llegando', 'cuando estaria llegando', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: cuando lo recibo', 'cuando lo recibo', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: quiero saber cuanto demora', 'quiero saber cuanto demora', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: una consulta cuanto demora', 'una consulta cuanto demora', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: cuanto demora aprox', 'cuanto demora aprox', conCountryZone, esperarTipo('tiempos_pedir_pais'))
+caso('tiempos gen: con destino pa Cuba responde directo', 'cuanto demora pa Cuba', conCountryZone, esperarTipo('tiempos_entrega'))
+caso('tiempos gen: cuantos dias demora pa Cuba', 'cuantos dias demora pa Cuba', conCountryZone, esperarTipo('tiempos_entrega'))
+caso('tiempos gen: cuando llega pa Cuba', 'cuando llega pa Cuba', conCountryZone, esperarTipo('tiempos_entrega'))
+
+// ── tiempos_entrega: NO debe colisionar con otros temas ──────────────────
+caso('tiempos NO cruza: donde esta mi paquete sigue siendo rastreo', 'Donde esta mi paquete?', conCountryZone, esperarTipo('rastreo_pedir_numero'))
+caso('tiempos NO cruza: mi paquete no llego sigue siendo rastreo', 'Mi paquete no llego', conCountryZone, esperarTipo('rastreo_pedir_numero'))
+caso('tiempos NO cruza: que documentos necesito sigue siendo documentacion', 'que documentos necesito', conCountryZone, esperarTipo('documentacion'))
+caso('tiempos NO cruza: cuanto cuesta enviar a Cuba sigue siendo cotizar', 'Cuanto cuesta enviar a Cuba?', conCountryZone, esperarTipo('cotizar_iniciar'))
+caso('tiempos NO cruza: trabajan el domingo sigue siendo horarios', 'trabajan el domingo', conCountryZone, esperarTipo('horarios'))
+caso('tiempos: interrupcion de flujo (sin countryZone) responde directo sin pedir pais', 'cuanto demora?', sinFlujo, esperarTipo('tiempos_entrega'))
+
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
   const ok = JSON.stringify(obtenido) === JSON.stringify(esperado)

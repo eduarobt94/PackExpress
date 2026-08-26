@@ -92,7 +92,7 @@ const PATRON_PREGUNTA_DE_TIEMPO = /\bcuanto\b[\s\S]*\b(tarda|tardan|demora|demor
  * diccionario completo de jerga.
  */
 const ABREVIACIONES = {
-  q: 'que', qro: 'quiero', xq: 'porque', pq: 'porque',
+  q: 'que', qui: 'que', qro: 'quiero', xq: 'porque', pq: 'porque',
   tb: 'tambien', tmb: 'tambien', dnd: 'donde', hs: 'horas',
   finde: 'fin de semana',
   // 'pa' (por 'para') es muy frecuente en español cubano/rioplatense informal
@@ -404,6 +404,25 @@ function esConsultaHorarioPorDia(textoNormalizado) {
 }
 
 /**
+ * "Demora de envíos / tiempos de entrega", generalizado por RAÍZ de palabra
+ * en vez de por frase exacta — cubre a la vez toda la familia
+ * demora/demoran/demoro, tarda/tardan/tardaria, llega/llegan/llegaria,
+ * entrega/entregan/entregarse, sin necesitar una keyword por cada
+ * conjugación. Dos formas:
+ *   1) palabra interrogativa (cuanto/cuantos/que/cual/cuando — "qui" ya se
+ *      normaliza a "que" en normalizeText) cerca de una de esas raíces:
+ *      "que tiempo demora", "cuando llegan", "cuantos dias tarda".
+ *   2) "demora"/"demoras" como sustantivo pegado a envío/paquete/entrega/
+ *      pedido, sin necesitar pregunta explícita: "demora de los envios",
+ *      "demora del paquete", "cual es la demora".
+ * Solo se evalúa DENTRO del loop de FAQ, en el lugar que le toca a
+ * tiempos_entrega en el array — así un mensaje que ya matchea una FAQ
+ * anterior (ej. documentacion) nunca llega a chequear esto, sin necesidad
+ * de una lista de exclusión.
+ */
+const PATRON_TIEMPOS_ENTREGA = /\b(cuant[oa]s?|que|cual(es)?|cuando)\b[\s\S]{0,25}\b(demor\w*|tard\w*|lleg\w*|entreg\w*|plazo|recib\w*)\b|\bdemor\w*\b[\s\S]{0,15}\b(envio\w*|paquete\w*|entrega\w*|pedido\w*)\b|\bplazo\s+de\s+entrega\b/
+
+/**
  * Frases de confirmación de cobertura hacia un país puntual ("¿envían a
  * Cuba?", "¿llegan a España?"). El país SOLO (sin ninguna de estas frases)
  * no alcanza — evita que cualquier mensaje que mencione un país de pasada
@@ -474,7 +493,8 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
   // aduanero") que tienen su propia respuesta específica y no deben terminar
   // en el flujo de cotización de envíos.
   for (const entrada of FAQ) {
-    if (contieneAlguna(texto, entrada.palabrasClave)) {
+    const matchTiemposGeneralizado = entrada.id === 'tiempos_entrega' && PATRON_TIEMPOS_ENTREGA.test(texto)
+    if (matchTiemposGeneralizado || contieneAlguna(texto, entrada.palabrasClave)) {
       // tiempos_entrega sin país mencionado: preguntamos el destino antes de
       // responder — el tiempo real (nacional 24h vs internacional con
       // escala) depende de eso, y así se evita responder a ciegas.
