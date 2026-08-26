@@ -107,6 +107,9 @@ export const FAQ = [
       'desde que hora abren', 'atienden los domingos', 'trabajan los domingos',
       'trabajan fines de semana', 'que dias trabajan', 'horario de oficina',
       'horario comercial', 'a que hora puedo llamar', 'estan abiertos los sabados',
+      'trabajan sabado', 'trabajan domingo', 'que dias laburan', 'que dias trabajan',
+      'puedo caer hoy', 'puedo pasar hoy', 'puedo ir ahora', 'puedo pasar ahora',
+      'estan atendiendo esta tarde', 'estan atendiendo ahora', 'hasta que hora estan ahi',
     ],
     respuesta: 'Nuestro horario de atención es Lunes a Viernes de 10:00 a 18:00, Sábados de 10:00 a 14:00, y Domingos cerrado.',
   },
@@ -144,7 +147,7 @@ export const FAQ = [
   {
     id: 'documentacion',
     palabrasClave: [
-      'documentacion', 'documentos', 'declaracion jurada', 'que documentos necesito',
+      'documentacion', 'declaracion jurada', 'que documentos necesito',
       'requisitos', 'requisitos para enviar', 'articulos prohibidos',
       'que no puedo enviar', 'que esta prohibido enviar', 'papeles necesarios',
       'que necesito para enviar', 'que no se puede mandar', 'prohibidos', 'prohibido',
@@ -242,6 +245,8 @@ export const FAQ = [
       'cuanto tarda un envio', 'cuanto demora la entrega', 'en cuanto tiempo llega',
       'tiempo de entrega internacional', 'cuantos dias tarda en llegar',
       'cuanto tarda en llegar a destino', 'tiempos de entrega',
+      'cuanto demora', 'cuanto demoran', 'cuanto tarda', 'en cuanto llega',
+      'cuanto tiempo tarda', 'cuanto se tarda', 'que tan rapido llega',
     ],
     respuesta: 'Para envíos internacionales: despachamos ante la Aduana de Uruguay los lunes, el vuelo (con escala en Panamá) sale entre martes y jueves, el transbordo puede demorar de 4 a 7 días, y una vez en destino la entrega local puede tomar hasta 30 días desde que la recibe la aduana de destino. Para envíos nacionales urgentes tenemos entrega express en 24 h.',
   },

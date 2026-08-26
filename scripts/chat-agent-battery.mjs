@@ -53,6 +53,8 @@ function esperarSecuencia(...tiposEsperados) {
 
 const sinFlujo = { flujo: null, ultimoTema: null }
 const conUltimoTema = (tema) => ({ flujo: null, ultimoTema: tema })
+const ZONA_FAKE = { 'España': 'B', 'Cuba': 'E', 'Estados Unidos': 'A' }
+const conCountryZone = { flujo: null, ultimoTema: null, countryZone: ZONA_FAKE }
 
 // ── Saludos ──────────────────────────────────────────────────────────────
 caso('saludo simple', 'hola', sinFlujo, esperarTipo('greeting'))
@@ -200,6 +202,48 @@ caso('ultimo tema: intención propia (whatsapp) gana sobre el heurístico', 'y e
     pasaron++
   }
 }
+
+// ── Typos multi-palabra (fraseFuzzyContigua) ─────────────────────────────
+caso('typo: estan aviertos', 'estan aviertos?', sinFlujo, esperarTipo('horarios'))
+caso('typo: orario de atencion', 'orario de atencion', sinFlujo, esperarTipo('horarios'))
+caso('typo: documentacion nesesaria', 'documentacion nesesaria', sinFlujo, esperarTipo('documentacion'))
+caso('typo NO debe inflar tolerancia en palabras cortas', 'estan aviertas las puertas del cielo', sinFlujo, (_, t) => t[0] !== 'horarios')
+
+// ── Abreviaciones de chat (q, xq, tb, dnd, hs, finde) ────────────────────
+caso('abreviacion: a q hora abren', 'a q hora abren', sinFlujo, esperarTipo('horarios'))
+caso('abreviacion: q horario tienen', 'q horario tienen', sinFlujo, esperarTipo('horarios'))
+caso('abreviacion: dnd estan ubicados', 'dnd estan ubicados', sinFlujo, esperarTipo('ubicacion'))
+caso('abreviacion: tb quiero saber el horario', 'tb quiero saber el horario', sinFlujo, esperarTipo('horarios'))
+
+// ── Lenguaje uruguayo / rioplatense corto ────────────────────────────────
+caso('uruguayo: trabajan sabado (singular)', 'trabajan sabado', sinFlujo, esperarTipo('horarios'))
+caso('uruguayo: puedo caer hoy', 'puedo caer hoy', sinFlujo, esperarTipo('horarios'))
+caso('uruguayo: que dias laburan', 'que dias laburan', sinFlujo, esperarTipo('horarios'))
+
+// ── Tracking: sinónimos nuevos (tracking, guia, incidencias) ─────────────
+caso('rastreo: tracking (anglicismo)', 'tracking', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('rastreo: quiero consultar mi guia', 'quiero consultar mi guia', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('rastreo: no me llego el paquete', 'no me llego el paquete', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('rastreo: el paquete llego dañado', 'el paquete llego dañado', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('rastreo: mi pedido esta perdido', 'mi pedido esta perdido', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+
+// ── Entidades: peso + país combinados → cotizar_directo ──────────────────
+caso('entidad: 10 kg a España', '10 kg a España', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 10 && r[0].pais === 'España')
+caso('entidad: paquete de 3 kg para Cuba', 'tengo un paquete de 3 kg para Cuba', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 3 && r[0].pais === 'Cuba')
+caso('entidad: sin countryZone no activa cotizar_directo', '10 kg a España', sinFlujo, (_, t) => t[0] !== 'cotizar_directo')
+caso('entidad: numero sin unidad de peso NO dispara cotizar_directo', '10 personas viajan a España', conCountryZone, (_, t) => t[0] !== 'cotizar_directo')
+caso('entidad: peso con unidad pero sin país reconocido sigue cotizar_iniciar', 'tengo 10 kg para enviar', conCountryZone, esperarTipo('cotizar_iniciar'))
+
+// ── Ambigüedad de precio (chips de aclaración) ───────────────────────────
+caso('ambiguo: "cuanto cuesta" solo', 'cuanto cuesta', sinFlujo, esperarTipo('ambiguo_precio'))
+caso('ambiguo: "precio" solo', 'precio', sinFlujo, esperarTipo('ambiguo_precio'))
+caso('ambiguo: con contexto de envio ya NO es ambiguo', 'cuanto cuesta el envio', sinFlujo, esperarTipo('cotizar_iniciar'))
+caso('ambiguo: pregunta de tema puntual gana sobre precio ambiguo', 'cuanto cuesta el despacho aduanero', sinFlujo, esperarTipo('despacho_aduanero'))
+
+// ── No debe cruzar de tema (falsos positivos) ────────────────────────────
+caso('NO cruza: cuanto demora el casillero sigue siendo casillero', 'cuanto demora el casillero', sinFlujo, esperarTipo('casillero'))
+caso('NO cruza: "documento" solo no es la FAQ de documentacion', 'documento', sinFlujo, (_, t) => t[0] !== 'documentacion')
+caso('NO cruza: enviar documentos no es la FAQ de documentacion', 'necesito enviar unos documentos', sinFlujo, (_, t) => t[0] !== 'documentacion')
 
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {

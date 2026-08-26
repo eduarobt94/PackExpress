@@ -8,7 +8,7 @@ import {
   detectarIntenciones, parsePeso, matchPais, matchTipo, formatFechaHora, elegirSaludo, normalizeText,
   buscarIntencionDeNegocio,
 } from './intentEngine'
-import { GOODBYE_RESPONSES } from './chatKnowledge'
+import { GOODBYE_RESPONSES, FAQ } from './chatKnowledge'
 import { COUNTRY_ZONE, ZONE_LABELS } from '../../lib/zones'
 import { WHATSAPP_URL } from '../../lib/whatsapp'
 
@@ -156,6 +156,40 @@ export function useChatAgent() {
       procesandoRef.current = false
     }
     return responderConDelay('¡Perfecto! ¿Cuál es el peso aproximado del envío en kg?')
+  }, [responderConDelay])
+
+  /**
+   * Cotizar directo cuando el mensaje ya trae peso Y país juntos (ej. "10 kg
+   * a España") — se salta los pasos de peso/país del wizard y va directo a
+   * preguntar el tipo de envío. El país detectado con el mapa estático
+   * (síncrono) se re-valida contra el mapa dinámico real apenas llega, para
+   * no arrastrar un nombre que no exista en la lista viva de zonas.
+   */
+  const iniciarCotizacionDirecta = useCallback(async (peso, paisDetectado) => {
+    if (procesandoRef.current) return
+    procesandoRef.current = true
+    flujoRef.current = { activo: true, paso: 'tipo', datos: { peso }, intentosFallidos: 0, tipos: [], zonaMap: COUNTRY_ZONE }
+    try {
+      const [tiposRes, zonasRes] = await Promise.all([
+        fetch(`${API}/tarifario.php?action=tipos`),
+        fetch(`${API}/tarifario.php?action=zonas`),
+      ])
+      const tiposJson = await tiposRes.json()
+      flujoRef.current.tipos = tiposJson.ok ? tiposJson.data : []
+
+      const zonasJson = await zonasRes.json()
+      if (zonasJson.ok && Array.isArray(zonasJson.data)) {
+        flujoRef.current.zonaMap = Object.fromEntries(zonasJson.data.map(p => [p.nombre, p.zona_cod]))
+      }
+    } catch {
+      flujoRef.current.tipos = []
+    } finally {
+      procesandoRef.current = false
+    }
+    const paisFinal = matchPais(paisDetectado, flujoRef.current.zonaMap) ?? paisDetectado
+    flujoRef.current.datos.pais = paisFinal
+    const nombresTipos = flujoRef.current.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
+    return responderConDelay(`¡Perfecto! ${peso} kg a ${paisFinal}. ¿Qué tipo de envío es? (${nombresTipos})`)
   }, [responderConDelay])
 
   /**
@@ -314,8 +348,12 @@ export function useChatAgent() {
         return responderConDelay('Decime el número de tu guía y te digo en qué estado está.')
       case 'cotizar_iniciar':
         return iniciarCotizacion()
+      case 'cotizar_directo':
+        return iniciarCotizacionDirecta(intencion.peso, intencion.pais)
       case 'cotizar_respuesta':
         return manejarRespuestaCotizacion(intencion.valor)
+      case 'ambiguo_precio':
+        return responderConDelay('¡Claro! ¿Qué querés consultar?', ['Envío', 'Casillero', 'Despacho', 'Equipaje'])
       case 'greeting':
         return responderConDelay(elegirSaludo())
       case 'goodbye':
@@ -347,7 +385,7 @@ export function useChatAgent() {
         return ofrecerSalidaWhatsapp('Para esta consulta necesito la ayuda de una persona de nuestro equipo. Podés contactarnos por WhatsApp y te ayudamos directamente.')
       }
     }
-  }, [responderConDelay, ofrecerSalidaWhatsapp, manejarRastreo, iniciarCotizacion, manejarRespuestaCotizacion])
+  }, [responderConDelay, ofrecerSalidaWhatsapp, manejarRastreo, iniciarCotizacion, iniciarCotizacionDirecta, manejarRespuestaCotizacion])
 
   const enviarMensaje = useCallback((textoUsuario) => {
     const texto = textoUsuario.trim()
@@ -374,10 +412,32 @@ export function useChatAgent() {
       responderConDelay('Puedo ayudarte con: horarios de atención, cómo funciona el casillero internacional, cobertura de países y departamentos, nuestros servicios, contacto, ubicación y documentación requerida. ¿Sobre cuál querés saber más?')
       return
     }
+    // Chips de la aclaración "ambiguo_precio" (ver procesarIntencion) — cada
+    // una resuelve a lo que ya existe (flujo de cotizar o una FAQ puntual),
+    // sin inventar precios para casillero/despacho/equipaje donde no hay dato.
+    if (texto === 'Envío') {
+      iniciarCotizacion()
+      return
+    }
+    if (texto === 'Casillero') {
+      const faq = FAQ.find(f => f.id === 'casillero')
+      if (faq) responderConDelay(faq.respuesta)
+      return
+    }
+    if (texto === 'Despacho') {
+      const faq = FAQ.find(f => f.id === 'despacho_aduanero')
+      if (faq) responderConDelay(faq.respuesta)
+      return
+    }
+    if (texto === 'Equipaje') {
+      ofrecerSalidaWhatsapp('Para el costo del Equipaje No Acompañado te conecto con nuestro equipo por WhatsApp.')
+      return
+    }
 
     const intenciones = detectarIntenciones(texto, {
       flujo: flujoRef.current.activo ? 'cotizando' : null,
       ultimoTema: contextoRef.current.ultimoTema,
+      countryZone: COUNTRY_ZONE,
     })
 
     const miGen = ++dispatchGenRef.current
@@ -392,7 +452,7 @@ export function useChatAgent() {
         if (dispatchGenRef.current === miGen) setOcupado(false)
       }
     })()
-  }, [agregarMensaje, responderConDelay, procesarIntencion])
+  }, [agregarMensaje, responderConDelay, procesarIntencion, iniciarCotizacion, ofrecerSalidaWhatsapp])
 
   return { mensajes, escribiendo, ocupado, enviarMensaje, iniciarBienvenida }
 }
