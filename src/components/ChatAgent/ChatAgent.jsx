@@ -33,9 +33,10 @@ export default function ChatAgent() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!texto.trim()) return
+    if (!texto.trim() || ocupado) return
     enviarMensaje(texto)
     setTexto('')
+    inputRef.current?.focus()
   }
 
   return (
@@ -150,8 +151,7 @@ export default function ChatAgent() {
                 value={texto}
                 onChange={e => setTexto(e.target.value)}
                 placeholder={ocupado ? 'Esperá la respuesta...' : 'Escribí tu mensaje...'}
-                disabled={ocupado || escribiendo}
-                className="flex-1 h-10 px-3 rounded-lg text-[13px] bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)] outline-none focus:border-[#F07232]/50 transition-colors disabled:opacity-60"
+                className="flex-1 h-10 px-3 rounded-lg text-[13px] bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)] outline-none focus:border-[#F07232]/50 transition-colors"
               />
               <button
                 type="submit"
