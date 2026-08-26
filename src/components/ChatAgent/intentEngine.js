@@ -49,10 +49,19 @@ const PALABRAS_HUMANO = [
   'esto no me esta ayudando', 'necesito que me atienda una persona',
 ]
 
-/** Pedido de rastreo en lenguaje natural (no solo el código pegado y solo). */
-const PALABRAS_RASTREO = [
-  'rastrear', 'rastreo', 'rastreame', 'rastrearlo', 'seguimiento', 'trackear',
-  'tracking', 'guia',
+/**
+ * Palabras sueltas de rastreo genéricas ("seguimiento", "tracking") — a
+ * diferencia de las frases específicas de abajo, estas SOLAS son ambiguas
+ * contra una pregunta general de tiempos ("cuánto tarda el seguimiento"
+ * probablemente pregunta por tiempos de entrega, no pide el número de guía).
+ * Se resuelven en buscarIntencionDeNegocio: si aparecen junto a un patrón de
+ * pregunta de tiempo ("cuánto tarda/demora"), se cede el paso a la FAQ de
+ * tiempos_entrega en vez de pedir el número de guía.
+ */
+const PALABRAS_RASTREO_GENERICAS = ['rastrear', 'rastreo', 'rastreame', 'rastrearlo', 'seguimiento', 'trackear', 'tracking', 'guia']
+
+/** Frases de rastreo con intención inequívoca — sin ambigüedad contra tiempos_entrega. */
+const PALABRAS_RASTREO_ESPECIFICAS = [
   'donde esta mi envio', 'donde esta mi paquete', 'donde esta mi guia',
   'estado de mi envio', 'estado de mi paquete', 'estado de mi guia',
   'donde va mi paquete', 'donde va mi envio', 'quiero saber donde esta mi pedido',
@@ -67,6 +76,9 @@ const PALABRAS_RASTREO = [
   'el paquete esta demorado', 'mi envio esta demorado', 'el paquete llego dañado',
   'me llego el paquete roto', 'mi pedido esta perdido',
 ]
+
+/** "Cuánto tarda"/"cuánto demora(n)"/"cuánto tiempo" — patrón de pregunta general de tiempos. */
+const PATRON_PREGUNTA_DE_TIEMPO = /\bcuanto\b[\s\S]*\b(tarda|tardan|demora|demoran|tiempo)\b/
 
 /**
  * Abreviaciones de chat/WhatsApp reales y frecuentes en Uruguay — se expanden
@@ -356,7 +368,18 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
   if (contieneAlguna(texto, PALABRAS_HUMANO)) {
     return { tipo: 'human_handoff' }
   }
-  if (contieneAlguna(texto, PALABRAS_RASTREO)) {
+  if (contieneAlguna(texto, PALABRAS_RASTREO_ESPECIFICAS)) {
+    const numeroEmbebido = extraerNumeroGuiaEmbebido(textoOriginal)
+    if (numeroEmbebido) return { tipo: 'rastreo', numero: numeroEmbebido }
+    return { tipo: 'rastreo_pedir_numero' }
+  }
+  // Palabra genérica de rastreo ("seguimiento", "tracking") SOLA: si además
+  // el mensaje es una pregunta general de tiempo ("cuánto tarda el
+  // seguimiento"), es más probable que pregunte por tiempos_entrega que por
+  // el estado de un envío puntual — se cede el paso a la FAQ de abajo en vez
+  // de pedir un número de guía que no viene a cuento.
+  const esRastreoGenerico = PALABRAS_RASTREO_GENERICAS.some(p => contieneFrase(texto, p))
+  if (esRastreoGenerico && !PATRON_PREGUNTA_DE_TIEMPO.test(texto)) {
     const numeroEmbebido = extraerNumeroGuiaEmbebido(textoOriginal)
     if (numeroEmbebido) return { tipo: 'rastreo', numero: numeroEmbebido }
     return { tipo: 'rastreo_pedir_numero' }

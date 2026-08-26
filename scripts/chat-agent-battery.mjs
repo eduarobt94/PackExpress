@@ -257,6 +257,17 @@ caso('cobertura_pais: peso+pais gana sobre cobertura', 'tengo 10 kg para enviar 
 // ── "Cuánto pesa" corto → peso_maximo, no cotizar ────────────────────────
 caso('cuanto pesa corto', 'Cuanto pesa?', sinFlujo, esperarTipo('peso_maximo'))
 
+// ── rastreo vs tiempos_entrega: "seguimiento"/"tracking" genéricos ceden
+// el paso a tiempos_entrega cuando el mensaje es una pregunta de tiempo,
+// pero siguen pidiendo el número de guía en cualquier otro caso ──────────
+caso('rastreo/tiempos: cuanto tarda el seguimiento', 'Cuanto tarda el seguimiento?', sinFlujo, esperarTipo('tiempos_entrega'))
+caso('rastreo/tiempos: cuanto demora el seguimiento', 'Cuanto demora el seguimiento', sinFlujo, esperarTipo('tiempos_entrega'))
+caso('rastreo/tiempos: cuanto tarda el tracking', 'Cuanto tarda el tracking?', sinFlujo, esperarTipo('tiempos_entrega'))
+caso('rastreo/tiempos: "seguimiento" solo sigue siendo rastreo', 'Seguimiento', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('rastreo/tiempos: "tracking" solo sigue siendo rastreo', 'tracking', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('rastreo/tiempos: quiero hacer seguimiento sigue siendo rastreo', 'quiero hacer seguimiento', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+caso('rastreo/tiempos: frase especifica no se ve afectada', 'Donde esta mi paquete', sinFlujo, esperarTipo('rastreo_pedir_numero'))
+
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
   const ok = JSON.stringify(obtenido) === JSON.stringify(esperado)
