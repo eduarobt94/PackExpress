@@ -124,9 +124,9 @@ export function useChatAgent() {
         : ''
       const ultimo = (events ?? [])[(events ?? []).length - 1]
       if (!ultimo) {
-        return responderConDelay(`Encontré tu envío #${codigoGuia}, pero todavía no tiene eventos de rastreo registrados.${destino}`)
+        return responderConDelay(`Encontré tu envío ${codigoGuia}, pero todavía no tiene eventos de rastreo registrados.${destino}`)
       }
-      return responderConDelay(`Tu envío #${codigoGuia} está en ${ultimo.hito} desde el ${formatFechaHora(ultimo.fecha_hora)}.${destino}`)
+      return responderConDelay(`Tu envío ${codigoGuia} está en ${ultimo.hito} desde el ${formatFechaHora(ultimo.fecha_hora)}.${destino}`)
     } catch {
       return ofrecerSalidaWhatsapp('Tuve un problema para consultar el rastreo. Probá de nuevo en un momento, o escribinos por WhatsApp.')
     } finally {
