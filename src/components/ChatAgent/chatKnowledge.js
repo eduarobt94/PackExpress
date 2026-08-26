@@ -273,7 +273,7 @@ export const FAQ = [
     // countryZone disponible). Para Uruguay como destino, useChatAgent.js
     // responde con RESPUESTA_TIEMPOS_NACIONAL en su lugar — no tiene sentido
     // mezclar ambos tiempos en la misma respuesta si ya sabemos cuál aplica.
-    respuesta: 'Para envíos internacionales: despachamos ante la Aduana de Uruguay los lunes, el vuelo (con escala en Panamá) sale entre martes y jueves, el transbordo puede demorar de 1 a 3 días, y una vez en destino la entrega local puede tomar hasta 30 días desde que la recibe la aduana de destino.',
+    respuesta: 'Para envíos internacionales: despachamos ante la Aduana de Uruguay los lunes, el vuelo (con escala en Panamá) sale entre martes y jueves, el transbordo puede demorar de 1 a 3 días, y una vez arribado al país de destino la entrega local puede tomar hasta 30 días desde que la recibe la aduana de destino.',
   },
   {
     id: 'despacho_aduanero',
