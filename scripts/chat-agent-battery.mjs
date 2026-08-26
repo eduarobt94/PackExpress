@@ -302,6 +302,27 @@ caso('NO cruza: recogen a domicilio es proceso_envio, no ubicacion', 'recogen a 
   fallaron += rotos
 }
 
+// ── Horarios como entidad "día" (bag-of-words, generaliza sin enumerar) ──
+caso('dia: trabajan el domingo', 'Trabajan el domingo', sinFlujo, esperarTipo('horarios'))
+caso('dia: trabajan los domingos', 'trabajan los domingos', sinFlujo, esperarTipo('horarios'))
+caso('dia: laburan el domingo', 'laburan el domingo', sinFlujo, esperarTipo('horarios'))
+caso('dia: atienden el domingo', 'atienden el domingo', sinFlujo, esperarTipo('horarios'))
+caso('dia: estan abiertos el domingo', 'estan abiertos el domingo', sinFlujo, esperarTipo('horarios'))
+caso('dia: abren el domingo', 'abren el domingo', sinFlujo, esperarTipo('horarios'))
+caso('dia: cierran el domingo', 'cierran el domingo', sinFlujo, esperarTipo('horarios'))
+caso('dia: trabajan sabado', 'trabajan sabado', sinFlujo, esperarTipo('horarios'))
+caso('dia: laburan los sabados', 'laburan los sabados', sinFlujo, esperarTipo('horarios'))
+caso('dia: puedo pasar el domingo', 'puedo pasar el domingo', sinFlujo, esperarTipo('horarios'))
+caso('dia: puedo ir el domingo', 'puedo ir el domingo', sinFlujo, esperarTipo('horarios'))
+caso('dia SOLO no dispara horarios (sin verbo)', 'domingo', sinFlujo, (_, t) => t[0] !== 'horarios')
+
+// ── Cotizar: peso+país como entidades, con y sin flujo activo ────────────
+caso('entidad: 10 kg pa Cuba (informal)', '10 kg pa Cuba', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 10 && r[0].pais === 'Cuba')
+caso('entidad: 10KG para cuba (mayusculas pegado)', '10KG para cuba', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 10 && r[0].pais === 'Cuba')
+caso('entidad: 10kgs para Cuba (plural pegado)', '10kgs para Cuba', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 10 && r[0].pais === 'Cuba')
+caso('entidad: 20 kilos para España', '20 kilos para España', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 20 && r[0].pais === 'España')
+caso('entidad: cuanto cuesta enviar a Cuba trae pais prellenado', 'cuanto cuesta enviar a Cuba', conCountryZone, (r, t) => t[0] === 'cotizar_iniciar' && r[0].paisPrellenado === 'Cuba')
+
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
   const ok = JSON.stringify(obtenido) === JSON.stringify(esperado)

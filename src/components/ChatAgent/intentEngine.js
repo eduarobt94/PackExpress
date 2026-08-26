@@ -358,6 +358,28 @@ export function extraerPesoYPais(textoOriginal, countryZone) {
 }
 
 /**
+ * "domingo"/"sábado" como ENTIDAD (día), no como keyword de una frase exacta.
+ * "trabajan el domingo" no matcheaba horarios antes porque las frases de la
+ * FAQ eran de 2-3 palabras exactas ("trabajan domingo", "trabajan los
+ * domingos") y "trabajan el domingo" tiene una cantidad de palabras distinta
+ * — el chequeo de frase exige mismo orden Y misma cantidad de palabras. En
+ * vez de agregar una frase por cada combinación de "el/los" + verbo + día,
+ * esto detecta la intención por BOLSA DE PALABRAS: ¿aparece un día de la
+ * semana Y un verbo de horario en el mensaje, en cualquier orden y con
+ * cualquier palabra en el medio? Así "trabajan los domingos", "atienden el
+ * domingo", "laburan domingo", "están abiertos el domingo" matchean todas
+ * sin necesitar una frase exacta para cada una.
+ */
+const DIAS_SEMANA = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'sabados', 'domingo', 'domingos']
+const VERBOS_HORARIO = ['trabajan', 'atienden', 'abren', 'cierran', 'abierto', 'abierta', 'abiertos', 'abiertas', 'laburan', 'pasar', 'caer', 'ir']
+
+/** true si el mensaje pregunta por horario de atención en relación a un día puntual. */
+function esConsultaHorarioPorDia(textoNormalizado) {
+  const palabras = tokenizar(textoNormalizado)
+  return DIAS_SEMANA.some(d => palabras.includes(d)) && VERBOS_HORARIO.some(v => palabras.includes(v))
+}
+
+/**
  * Frases de confirmación de cobertura hacia un país puntual ("¿envían a
  * Cuba?", "¿llegan a España?"). El país SOLO (sin ninguna de estas frases)
  * no alcanza — evita que cualquier mensaje que mencione un país de pasada
@@ -415,6 +437,13 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
   if (countryZone) {
     const entidades = extraerPesoYPais(textoOriginal, countryZone)
     if (entidades) return { tipo: 'cotizar_directo', ...entidades }
+  }
+  // Entidad "día" + verbo de horario, en cualquier orden (ver esConsultaHorarioPorDia)
+  // — se chequea antes que el loop de FAQ para no depender de que "horarios"
+  // tenga una frase exacta para cada combinación posible.
+  if (esConsultaHorarioPorDia(texto)) {
+    const horarios = FAQ.find(f => f.id === 'horarios')
+    if (horarios) return { tipo: 'faq', respuesta: horarios.respuesta, temaId: horarios.id, derivaWhatsapp: false }
   }
   // FAQ antes que "cotizar" genérico: palabras como "cuanto cuesta"/"precio"
   // aparecen en preguntas de temas puntuales (ej. "cuanto cuesta el despacho

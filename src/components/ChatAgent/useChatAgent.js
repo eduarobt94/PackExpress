@@ -260,6 +260,11 @@ export function useChatAgent() {
       }
       flujo.datos.peso = peso
       flujo.intentosFallidos = 0
+      // El mismo mensaje puede traer el país junto con el peso ("10kg para
+      // Cuba") aunque el flujo ya esté esperando solo el peso — sin esto se
+      // ignoraba el país y se volvía a preguntar, aun habiéndolo dicho.
+      const paisEnMismoMensaje = matchPais(valor, flujo.zonaMap)
+      if (paisEnMismoMensaje) flujo.datos.pais = paisEnMismoMensaje
       if (flujo.datos.pais) {
         flujo.paso = 'tipo'
         return responderConDelay(`¡Perfecto! ${peso} kg a ${flujo.datos.pais}. ¿Qué tipo de envío es? (${nombresTipos})`)
