@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, MapPin, Search, ChevronRight } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
-import { useTheme } from '../context/ThemeContext'
+import { useTheme } from '../hooks/useTheme'
 
 const LINKS = [
   { label: 'Servicios',   href: '#servicios' },

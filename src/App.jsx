@@ -69,13 +69,15 @@ const ChatAgent    = lazy(() => import('./components/ChatAgent/ChatAgent'))
 export default function App() {
   useLenis()
 
-  const [cotizarOpen, setCotizarOpen] = useState(false)
+  // Entrar directo por #tarifas abre el cotizador: se resuelve en el estado
+  // inicial, no con un setState dentro del efecto (que provocaba un render
+  // extra en cascada solo para abrirlo).
+  const [cotizarOpen, setCotizarOpen] = useState(() => window.location.hash === '#tarifas')
   const [legalType,   setLegalType]   = useState(null)
 
   useEffect(() => {
     const open = () => startTransition(() => setCotizarOpen(true))
     window.addEventListener('openCotizar', open)
-    if (window.location.hash === '#tarifas') setCotizarOpen(true)
     return () => window.removeEventListener('openCotizar', open)
   }, [])
 

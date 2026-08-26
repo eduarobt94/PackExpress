@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { MapPin, Search, Globe, Zap, Shield } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
+import { MapPin, Globe, Zap, Shield } from 'lucide-react'
+import { useTheme } from '../hooks/useTheme'
 
 /* â”€â”€ Three.js dot-map canvas "” Three.js se carga dinámicamente â”€â”€â”€â”€ */
 function DotMap({ onReady }) {

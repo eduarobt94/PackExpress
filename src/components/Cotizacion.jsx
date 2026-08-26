@@ -429,8 +429,18 @@ export default function Cotizacion({ onClose }) {
     setCountry(''); setDescuento(''); setResult(null); setApiError('')
   }
 
-  /* Reset result when inputs change */
-  useEffect(() => { setResult(null); setApiError('') }, [weight, largo, ancho, alto, country, tipo])
+  /* Reset result when inputs change.
+   * Se compara contra el valor previo DURANTE el render (patrón recomendado
+   * por React para "ajustar estado cuando cambian las entradas") en vez de
+   * usar un efecto: el efecto pintaba un render intermedio con el resultado
+   * viejo — ya inválido para los nuevos datos — antes de limpiarlo. */
+  const inputsKey = JSON.stringify([weight, largo, ancho, alto, country, tipo])
+  const [prevInputsKey, setPrevInputsKey] = useState(inputsKey)
+  if (prevInputsKey !== inputsKey) {
+    setPrevInputsKey(inputsKey)
+    setResult(null)
+    setApiError('')
+  }
 
   return (
     <div className="bg-[var(--bg-alt)] border border-[var(--bd-1)] rounded-2xl shadow-[var(--shadow-modal)]">

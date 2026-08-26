@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, FileText, AlertTriangle, Phone, Mail, MapPin, MessageCircle, Send, CheckCircle, ArrowUpRight, UserRound, Plane, Briefcase, X } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
+import { useTheme } from '../hooks/useTheme'
 
 const MAP_EMBED = 'https://maps.google.com/maps?q=-34.907382,-56.188793&z=15&output=embed'
 const MAP_FULL  = 'https://maps.google.com/maps?q=-34.907382,-56.188793&z=16&output=embed'

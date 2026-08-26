@@ -1,5 +1,5 @@
 import { MapPin, Phone, Mail, MessageCircle, ArrowUpRight, ArrowRight } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
+import { useTheme } from '../hooks/useTheme'
 import { WHATSAPP_URL } from '../lib/whatsapp'
 
 const COLS = [

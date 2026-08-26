@@ -103,7 +103,10 @@ function StepsDisplay({ flow, inView }) {
 
     doStep()
     return () => clearTimeout(pending)
-  }, [inView])
+    // steps.length es estable dentro de una instancia montada: StepsDisplay
+    // se renderiza con key={flow.id}, así que cambiar de flujo remonta el
+    // componente en vez de mutar `steps` en caliente.
+  }, [inView, steps.length])
 
   const activateStep = (i) => {
     setPaused(true)

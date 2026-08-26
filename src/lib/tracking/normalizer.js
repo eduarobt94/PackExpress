@@ -150,7 +150,7 @@ export function formatRawEventDate(fecha) {
   // Copa Courier: "26-abr.-2026 22:45" | "26-abr-2026 22:45"
   const copa = s.match(/^(\d{1,2})-([a-záéíóúüñ.]+)-(\d{4})(?:\s+(\d{1,2}:\d{2}))?/iu)
   if (copa) {
-    const [, day, rawMon, year, time] = copa
+    const [, day, rawMon, year] = copa
     const monKey = rawMon.toLowerCase().replace(/\.$/, '')
     const m = MONTHS_ES_COPA[monKey] ?? '01'
     const mName = MONTH_NAMES[parseInt(m, 10)]

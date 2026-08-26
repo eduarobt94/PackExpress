@@ -80,7 +80,7 @@ const item = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
 }
 
-function FeaturedCard({ service, inView }) {
+function FeaturedCard({ service }) {
   const { Icon, title, desc, tag, stats } = service
   return (
     <motion.div
@@ -244,7 +244,7 @@ export default function Services() {
           animate={inView ? 'visible' : 'hidden'}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          <FeaturedCard service={featured} inView={inView} />
+          <FeaturedCard service={featured} />
           {rest.map(s => <ServiceCard key={s.id} service={s} />)}
         </motion.div>
 

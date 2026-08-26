@@ -13,7 +13,7 @@ const MESES = [
 
 /** Parsea 'YYYY-MM-DD' sin pasar por Date() para evitar corrimientos por timezone. */
 function parseFechaLocal(fecha) {
-  const [y, m, d] = fecha.split('-').map(Number)
+  const [, m, d] = fecha.split('-').map(Number)
   return { dia: d, mes: MESES[m - 1] }
 }
 
