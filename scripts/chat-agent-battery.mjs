@@ -410,6 +410,17 @@ caso('pago gen: como se realiza el pago', 'como se realiza el pago', sinFlujo, e
 caso('pago gen: como abono mi envio', 'como abono mi envio', sinFlujo, esperarTipo('sin_info_pago'))
 caso('pago gen NO cruza: cuanto me cobran por enviar sigue siendo cotizar', 'cuanto me cobran por enviar', sinFlujo, esperarTipo('cotizar_iniciar'))
 
+// ── articulos_prohibidos: expansión semántica generalizada (raíz de palabra) ──
+caso('prohibidos gen: que no se puede enviar', 'que no se puede enviar', sinFlujo, esperarTipo('articulos_prohibidos'))
+caso('prohibidos gen: que articulos no puedo mandar', 'que articulos no puedo mandar', sinFlujo, esperarTipo('articulos_prohibidos'))
+caso('prohibidos gen: cuales cosas no puedo enviar', 'cuales cosas no puedo enviar', sinFlujo, esperarTipo('articulos_prohibidos'))
+caso('prohibidos gen: que no se puede llevar', 'que no se puede llevar', sinFlujo, esperarTipo('articulos_prohibidos'))
+caso('prohibidos gen: con destino sigue siendo prohibidos', 'que no se puede mandar a Cuba', conCountryZone, esperarTipo('articulos_prohibidos'))
+// El interrogativo inicial es lo que separa prohibidos de una cobertura en negativo
+caso('prohibidos NO cruza: cobertura en negativo', 'no se puede mandar para Cuba?', conCountryZone, esperarTipo('cobertura_pais'))
+caso('prohibidos NO cruza: "que puedo mandar" sigue siendo servicios', 'que puedo mandar', sinFlujo, esperarTipo('servicios'))
+caso('prohibidos NO cruza: "cuanto puedo enviar" sigue siendo peso', 'cuanto puedo enviar', sinFlujo, esperarTipo('peso_maximo'))
+
 // ── matchPais: gana la ÚLTIMA mención del texto, no el orden del mapa ────
 // (sin esto, "no es Cuba, es España" resolvía a Cuba porque Cuba está antes
 // que España en zones.js — justo al revés de lo que el usuario dijo)

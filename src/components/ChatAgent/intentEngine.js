@@ -493,6 +493,18 @@ const PATRON_TIEMPOS_ENTREGA = /\b(cuant[oa]s?|que|cual(es)?|cuando)\b[\s\S]{0,2
 const PATRON_PAGO = /\b(como|de que forma|de que manera|cual es la forma)\b[\s\S]{0,30}\b(pag\w*|abon\w*)\b/
 
 /**
+ * "¿Qué NO se puede enviar?" generalizado por raíz — cubre la familia
+ * enviar/envío, mandar/mando, llevar en cualquier conjugación, y las formas
+ * "no puedo / no se puede / no podemos", sin enumerar cada combinación.
+ *
+ * Exige un interrogativo inicial (que/cuál/cuáles) a propósito: es lo que
+ * separa "¿QUÉ no se puede mandar?" (artículos prohibidos) de "¿no se puede
+ * mandar para Cuba?" (cobertura). Sin ese ancla, una pregunta de cobertura en
+ * negativo caería acá, porque el loop de FAQ corre antes que cobertura_pais.
+ */
+const PATRON_PROHIBIDOS = /\b(que|cual(es)?)\b[\s\S]{0,25}\bno\s+(?:se\s+)?pued\w*\b[\s\S]{0,20}\b(envi\w*|mand\w*|llev\w*)\b/
+
+/**
  * Frases de confirmación de cobertura hacia un país puntual ("¿envían a
  * Cuba?", "¿llegan a España?"). El país SOLO (sin ninguna de estas frases)
  * no alcanza — evita que cualquier mensaje que mencione un país de pasada
@@ -565,7 +577,8 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
   for (const entrada of FAQ) {
     const matchTiemposGeneralizado = entrada.id === 'tiempos_entrega' && PATRON_TIEMPOS_ENTREGA.test(texto)
     const matchPagoGeneralizado = entrada.id === 'sin_info_pago' && PATRON_PAGO.test(texto)
-    if (matchTiemposGeneralizado || matchPagoGeneralizado || contieneAlguna(texto, entrada.palabrasClave)) {
+    const matchProhibidosGeneralizado = entrada.id === 'articulos_prohibidos' && PATRON_PROHIBIDOS.test(texto)
+    if (matchTiemposGeneralizado || matchPagoGeneralizado || matchProhibidosGeneralizado || contieneAlguna(texto, entrada.palabrasClave)) {
       // tiempos_entrega sin país mencionado: preguntamos el destino antes de
       // responder — el tiempo real (nacional 24h vs internacional con
       // escala) depende de eso, y así se evita responder a ciegas.
