@@ -151,7 +151,7 @@ caso('redes instagram', 'tienen instagram', sinFlujo, esperarTipo('redes_sociale
 caso('redes cual es', 'cual es el instagram', sinFlujo, esperarTipo('redes_sociales'))
 
 // ── FAQ: sin_info_* (derivan a WhatsApp) ─────────────────────────────────
-caso('pago metodos', 'metodos de pago', sinFlujo, (r, t) => t[0] === 'sin_info_pago' && r[0].derivaWhatsapp === true)
+caso('pago metodos', 'metodos de pago', sinFlujo, (r, t) => t[0] === 'sin_info_pago' && r[0].respuesta.includes('efectivo'))
 caso('pago tarjeta credito', 'puedo pagar con tarjeta de credito', sinFlujo, esperarTipo('sin_info_pago'))
 caso('cancelacion directo', 'quiero cancelar', sinFlujo, (r, t) => t[0] === 'sin_info_cancelacion' && r[0].derivaWhatsapp === true)
 caso('cancelacion reclamo', 'quiero hacer un reclamo', sinFlujo, esperarTipo('sin_info_cancelacion'))

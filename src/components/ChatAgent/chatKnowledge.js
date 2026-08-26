@@ -301,7 +301,6 @@ export const FAQ = [
   },
   {
     id: 'sin_info_pago',
-    derivaWhatsapp: true,
     palabrasClave: [
       'metodos de pago', 'como pago', 'formas de pago', 'aceptan tarjeta',
       'aceptan transferencia', 'se puede pagar en efectivo', 'como se paga',
@@ -309,7 +308,7 @@ export const FAQ = [
       'se puede pagar por transferencia', 'como abono el envio', 'donde pago',
       'aceptan mercado pago', 'puedo pagar en dolares',
     ],
-    respuesta: 'Para confirmarte las formas de pago disponibles según tu envío, mejor te conecto con nuestro equipo por WhatsApp.',
+    respuesta: 'Podés pagar en efectivo, con tarjeta de crédito o débito, tanto en dólares (USD) como en pesos uruguayos.',
   },
   {
     id: 'sin_info_cancelacion',
