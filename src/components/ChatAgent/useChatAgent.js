@@ -15,6 +15,8 @@ import { WHATSAPP_URL } from '../../lib/whatsapp'
 const API = '/pack-sistema/api/v1'
 const STORAGE_KEY = 'pe_chat_history'
 const MAX_INTENTOS_FALLIDOS = 2
+/** Tope de mensajes en cola — evita acumular una avalancha si algo se traba. */
+const MAX_COLA = 5
 
 /** Pesos de referencia para armar una tabla cuando el usuario pide "todas las tarifas" en vez de un peso puntual. */
 const PESOS_TABLA = [1, 3, 5, 10, 20]
@@ -109,6 +111,10 @@ export function useChatAgent() {
   const procesandoRef = useRef(false)
   const dispatchGenRef = useRef(0)
   const bienvenidaEnviadaRef = useRef(false)
+  // Mensajes que llegaron mientras el bot respondía: se procesan al terminar,
+  // en orden, en vez de descartarse (ver enviarMensaje).
+  const colaRef = useRef([])
+  const despacharRef = useRef(null)
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(mensajes))
@@ -469,19 +475,12 @@ export function useChatAgent() {
     }
   }, [responderConDelay, ofrecerSalidaWhatsapp, manejarRastreo, iniciarCotizacion, iniciarCotizacionDirecta, manejarRespuestaCotizacion])
 
-  const enviarMensaje = useCallback((textoUsuario) => {
-    const texto = textoUsuario.trim()
-    if (!texto) return
-    // Guard contra doble envío: el input queda deshabilitado mientras `ocupado`
-    // es true (ver ChatAgent.jsx), pero esto cubre el caso borde de un envío
-    // que ya estaba en vuelo (ej. tecla Enter) justo cuando el bot empieza a
-    // procesar — sin esto, el mensaje quedaba agregado a la conversación pero
-    // se ignoraba en silencio (ni error ni respuesta), confundiendo al usuario.
-    if (procesandoRef.current) {
-      return
-    }
-    agregarMensaje('user', texto)
-
+  /**
+   * Resuelve UN mensaje ya agregado a la conversación. Separado de
+   * enviarMensaje para poder invocarlo también al drenar la cola (ver abajo),
+   * sin volver a agregar el mensaje del usuario.
+   */
+  const despachar = useCallback((texto) => {
     if (texto === 'Hablar por WhatsApp') {
       window.open(WHATSAPP_URL, '_blank', 'noopener')
       return
@@ -539,10 +538,36 @@ export function useChatAgent() {
           await procesarIntencion(intencion)
         }
       } finally {
-        if (dispatchGenRef.current === miGen) setOcupado(false)
+        if (dispatchGenRef.current === miGen) {
+          setOcupado(false)
+          // Drenar lo que haya llegado mientras respondíamos, en orden.
+          const siguiente = colaRef.current.shift()
+          if (siguiente) despacharRef.current?.(siguiente)
+        }
       }
     })()
-  }, [agregarMensaje, responderConDelay, procesarIntencion, iniciarCotizacion, ofrecerSalidaWhatsapp])
+  }, [responderConDelay, procesarIntencion, iniciarCotizacion, ofrecerSalidaWhatsapp])
+
+  // Ref al último `despachar` para poder encadenar el drenado de la cola sin
+  // crear una dependencia circular en el useCallback de arriba.
+  useEffect(() => { despacharRef.current = despachar }, [despachar])
+
+  const enviarMensaje = useCallback((textoUsuario) => {
+    const texto = textoUsuario.trim()
+    if (!texto) return
+    agregarMensaje('user', texto)
+
+    // El bot está a mitad de una respuesta (el input se deshabilita mientras
+    // tanto, pero un envío ya en vuelo puede colarse igual). Antes el mensaje
+    // se descartaba en silencio: el usuario lo veía en la conversación y no
+    // pasaba nada más. Ahora se encola y se responde apenas termine lo actual,
+    // en orden — así "10kg" seguido de "para Cuba" no pierde el peso.
+    if (procesandoRef.current) {
+      if (colaRef.current.length < MAX_COLA) colaRef.current.push(texto)
+      return
+    }
+    despachar(texto)
+  }, [agregarMensaje, despachar])
 
   return { mensajes, escribiendo, ocupado, enviarMensaje, iniciarBienvenida }
 }
