@@ -328,6 +328,13 @@ caso('peso en palabras: medio kilo en flujo directo', 'Cuanto cuesta un envio a 
 caso('peso en palabras: 20 kilos y medio', '20 kilos y medio a Cuba', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 20.5)
 caso('peso en palabras: 20 kilos y media', '20 kilos y media a Cuba', conCountryZone, (r, t) => t[0] === 'cotizar_directo' && r[0].peso === 20.5)
 
+// ── Contexto "esperandoGuia": responder el número embebido tras pedirlo ──
+const conEsperandoGuia = { flujo: null, ultimoTema: null, esperandoGuia: true }
+caso('esperandoGuia: "es este CM...PK" con contexto', 'es este CM000001224PK', conEsperandoGuia, (r, t) => t[0] === 'rastreo' && r[0].numero.toUpperCase() === 'CM000001224PK')
+caso('esperandoGuia: "el numero es 123456" con contexto', 'el numero es 123456', conEsperandoGuia, (r, t) => t[0] === 'rastreo' && r[0].numero === '123456')
+caso('esperandoGuia: sin el contexto NO se extrae embebido', 'es este CM000001224PK', sinFlujo, esperarTipo('desconocido'))
+caso('esperandoGuia: otra intención real sigue funcionando con el contexto activo', 'en realidad quiero cotizar', conEsperandoGuia, esperarTipo('cotizar_iniciar'))
+
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
   const ok = JSON.stringify(obtenido) === JSON.stringify(esperado)

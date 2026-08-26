@@ -263,10 +263,12 @@ export function extraerNumeroGuia(texto) {
  * Busca un número de guía EN CUALQUIER PARTE del texto (a diferencia de
  * extraerNumeroGuia, no exige que sea el mensaje entero). Solo se usa cuando
  * ya hay una intención explícita de rastreo en el mensaje (ver
- * PALABRAS_RASTREO) — así no se reintroduce el falso positivo original de
- * confundir cualquier número suelto ("500 gramos") con un código de guía.
+ * PALABRAS_RASTREO) o cuando el bot acaba de pedir el número de guía
+ * (estado.esperandoGuia en detectarIntenciones) — así no se reintroduce el
+ * falso positivo original de confundir cualquier número suelto ("500
+ * gramos") con un código de guía.
  */
-function extraerNumeroGuiaEmbebido(texto) {
+export function extraerNumeroGuiaEmbebido(texto) {
   const compacto = texto.replace(/\s+/g, '')
   const matchCodigo = compacto.match(/cm0*(\d+)pk/i)
   if (matchCodigo) return matchCodigo[0]
@@ -518,6 +520,16 @@ export function detectarIntenciones(textoOriginal, estado) {
   const numeroGuia = extraerNumeroGuia(textoOriginal)
   if (numeroGuia) {
     return [{ tipo: 'rastreo', numero: numeroGuia }]
+  }
+
+  // El bot acaba de pedir el número de guía ("Decime el número de tu
+  // guía..."): la respuesta real casi nunca es SOLO el código pegado (ver
+  // extraerNumeroGuia arriba) — suele venir con texto alrededor ("es este
+  // CM000001224PK", "el numero es 123456"). Con este contexto puntual alcanza
+  // con que el código aparezca en cualquier parte del mensaje.
+  if (estado?.esperandoGuia) {
+    const numeroEmbebido = extraerNumeroGuiaEmbebido(textoOriginal)
+    if (numeroEmbebido) return [{ tipo: 'rastreo', numero: numeroEmbebido }]
   }
 
   const texto = normalizeText(textoOriginal)

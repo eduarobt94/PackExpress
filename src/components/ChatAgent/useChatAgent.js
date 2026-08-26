@@ -45,7 +45,7 @@ function flujoVacio() {
 }
 
 function contextoVacio() {
-  return { ultimoTema: null, nivelFallback: 0 }
+  return { ultimoTema: null, nivelFallback: 0, esperandoGuia: false }
 }
 
 export function useChatAgent() {
@@ -388,6 +388,10 @@ export function useChatAgent() {
     if (intencion.tipo !== 'desconocido') {
       contextoRef.current.nivelFallback = 0
     }
+    // Se marca (o se limpia) en cada intención resuelta, no solo al pedir el
+    // número: así una respuesta real a otra pregunta ("en realidad quiero
+    // cotizar") no queda arrastrando el contexto de rastreo.
+    contextoRef.current.esperandoGuia = intencion.tipo === 'rastreo_pedir_numero'
 
     switch (intencion.tipo) {
       case 'rastreo':
@@ -491,6 +495,7 @@ export function useChatAgent() {
     const intenciones = detectarIntenciones(texto, {
       flujo: flujoRef.current.activo ? 'cotizando' : null,
       ultimoTema: contextoRef.current.ultimoTema,
+      esperandoGuia: contextoRef.current.esperandoGuia,
       countryZone: COUNTRY_ZONE,
     })
 
