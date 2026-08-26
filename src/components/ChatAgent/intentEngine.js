@@ -309,9 +309,18 @@ export function matchPais(texto, countryZone) {
 /** Busca en la lista de tipos de servicio (de la API) el que matchea el texto por nombre o código. */
 export function matchTipo(texto, tipos) {
   const norm = normalizeText(texto)
+  const palabrasTexto = norm.split(/\s+/)
   return tipos.find(t => {
     const nombreNorm = normalizeText(t.nombre)
-    return norm.includes(nombreNorm) || nombreNorm.includes(norm) || norm.includes(normalizeText(t.codigo))
+    if (norm.includes(nombreNorm) || nombreNorm.includes(norm) || norm.includes(normalizeText(t.codigo))) return true
+    // Coincidencia por raíz de palabra (>=4 letras): "paquete" -> "Paquetería",
+    // "documento" -> "Documentos" — sin esto, un mensaje que ya menciona el
+    // tipo de forma natural ("un paquete de 10kg a Cuba") no lo reconocía
+    // porque no calzaba como substring exacto de "Paquetería".
+    const palabrasNombre = nombreNorm.split(/\s+/)
+    return palabrasTexto.some(pt => pt.length >= 4 && palabrasNombre.some(pn =>
+      pn.length >= 4 && (pn.startsWith(pt) || pt.startsWith(pn)),
+    ))
   }) ?? null
 }
 
@@ -436,7 +445,7 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
   }
   if (countryZone) {
     const entidades = extraerPesoYPais(textoOriginal, countryZone)
-    if (entidades) return { tipo: 'cotizar_directo', ...entidades }
+    if (entidades) return { tipo: 'cotizar_directo', ...entidades, textoOriginal }
   }
   // Entidad "día" + verbo de horario, en cualquier orden (ver esConsultaHorarioPorDia)
   // — se chequea antes que el loop de FAQ para no depender de que "horarios"
@@ -451,7 +460,7 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
   // en el flujo de cotización de envíos.
   for (const entrada of FAQ) {
     if (contieneAlguna(texto, entrada.palabrasClave)) {
-      return { tipo: 'faq', respuesta: entrada.respuesta, temaId: entrada.id, derivaWhatsapp: !!entrada.derivaWhatsapp }
+      return { tipo: 'faq', respuesta: entrada.respuesta, temaId: entrada.id, derivaWhatsapp: !!entrada.derivaWhatsapp, chips: entrada.chips ?? null }
     }
   }
   // Precio ultra genérico y SOLO eso (sin mención de envío/paquete/kg/país):
@@ -525,7 +534,7 @@ export function detectarIntenciones(textoOriginal, estado) {
   if (estado?.ultimoTema && palabrasMensaje.length >= 2 && palabrasMensaje.length < 6) {
     const temaPrevio = FAQ.find(f => f.id === estado.ultimoTema)
     if (temaPrevio) {
-      return [{ tipo: 'faq', respuesta: temaPrevio.respuesta, temaId: temaPrevio.id, derivaWhatsapp: !!temaPrevio.derivaWhatsapp }]
+      return [{ tipo: 'faq', respuesta: temaPrevio.respuesta, temaId: temaPrevio.id, derivaWhatsapp: !!temaPrevio.derivaWhatsapp, chips: temaPrevio.chips ?? null }]
     }
   }
 

@@ -99,9 +99,9 @@ caso('cobertura variante nueva', 'hacen envios a europa', sinFlujo, esperarTipo(
 
 // ── FAQ: documentacion / prohibidos ─────────────────────────────────────
 caso('documentacion directo', 'documentacion', sinFlujo, esperarTipo('documentacion'))
-caso('articulos prohibidos exacto', 'articulos prohibidos', sinFlujo, esperarTipo('documentacion'))
-caso('articulos prohibidos con typo (prhobibidos)', 'articulos prhobibidos', sinFlujo, esperarTipo('documentacion'))
-caso('cuales son los articulos prohibidos', 'cuales son los articulos prohibidos', sinFlujo, esperarTipo('documentacion'))
+caso('articulos prohibidos exacto', 'articulos prohibidos', sinFlujo, esperarTipo('articulos_prohibidos'))
+caso('articulos prohibidos con typo (prhobibidos)', 'articulos prhobibidos', sinFlujo, esperarTipo('articulos_prohibidos'))
+caso('cuales son los articulos prohibidos', 'cuales son los articulos prohibidos', sinFlujo, esperarTipo('articulos_prohibidos'))
 caso('declaracion jurada', 'que es la declaracion jurada', sinFlujo, esperarTipo('documentacion'))
 
 // ── FAQ: peso_maximo (el más parchado esta sesión) ──────────────────────

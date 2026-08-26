@@ -147,15 +147,25 @@ export const FAQ = [
     respuesta: 'Tenemos cobertura en los 19 departamentos de Uruguay y hacemos envíos internacionales a más de 50 países en América, Europa, Asia y Oceanía.',
   },
   {
+    id: 'articulos_prohibidos',
+    // Contenido real resumido de LegalModal.jsx (clave 'prohibidos') — no
+    // se inventa nada, es la misma lista que ve el usuario en el modal.
+    palabrasClave: [
+      'articulos prohibidos', 'que no puedo enviar', 'que esta prohibido enviar',
+      'que no se puede mandar', 'prohibidos', 'prohibido', 'lista de prohibidos',
+      'cosas prohibidas', 'que no puedo mandar', 'hay una lista de articulos prohibidos',
+      'que cosas no se pueden enviar', 'que no se puede enviar al exterior',
+      'que puedo mandar en el paquete', 'que no puedo enviar en el paquete',
+    ],
+    respuesta: 'No podés enviar: materiales peligrosos o inflamables (baterías de litio, fuegos artificiales, municiones, gasolina, aerosoles), armas y sustancias tóxicas, corrosivas o radiactivas, dinero en efectivo o tarjetas bancarias, joyas y antigüedades, animales vivos, medicamentos sin comprobante de compra, y cualquier objeto cuya importación o exportación esté prohibida por la ley uruguaya. Podés ver el detalle completo acá.',
+    chips: ['Ver lista completa'],
+  },
+  {
     id: 'documentacion',
     palabrasClave: [
       'documentacion', 'declaracion jurada', 'que documentos necesito',
-      'requisitos', 'requisitos para enviar', 'articulos prohibidos',
-      'que no puedo enviar', 'que esta prohibido enviar', 'papeles necesarios',
-      'que necesito para enviar', 'que no se puede mandar', 'prohibidos', 'prohibido',
-      'lista de prohibidos', 'cosas prohibidas', 'que no puedo mandar',
-      'hay una lista de articulos prohibidos', 'que cosas no se pueden enviar',
-      'que no se puede enviar al exterior', 'necesito factura para enviar',
+      'requisitos', 'requisitos para enviar', 'papeles necesarios',
+      'que necesito para enviar', 'necesito factura para enviar',
       'que papeles pido para enviar internacional', 'requisitos courier',
       'que es la declaracion jurada', 'necesito algun documento',
     ],

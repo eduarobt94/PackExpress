@@ -170,13 +170,71 @@ export function useChatAgent() {
   }, [responderConDelay])
 
   /**
-   * Cotizar directo cuando el mensaje ya trae peso Y país juntos (ej. "10 kg
-   * a España") — se salta los pasos de peso/país del wizard y va directo a
-   * preguntar el tipo de envío. El país detectado con el mapa estático
-   * (síncrono) se re-valida contra el mapa dinámico real apenas llega, para
-   * no arrastrar un nombre que no exista en la lista viva de zonas.
+   * Ejecuta la cotización real (o la tabla de referencia) una vez que ya se
+   * tienen peso, país y tipo resueltos, y responde. Compartido por el paso
+   * "tipo" del wizard y por los atajos que resuelven el tipo de una sola vez
+   * (cotizar_directo cuando el propio mensaje ya lo menciona, ej. "un
+   * paquete de 10kg a Cuba" — "paquete" ya identifica Paquetería).
    */
-  const iniciarCotizacionDirecta = useCallback(async (peso, paisDetectado) => {
+  const cotizarYResponder = useCallback(async ({ peso, pais, zonaMap, modoTabla }, tipo) => {
+    const zonaCod = zonaMap[pais]
+    if (modoTabla) {
+      try {
+        const jsons = await Promise.all(
+          PESOS_TABLA.map(p => fetch(`${API}/tarifario.php?action=cotizar_todas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ peso: p, tipo_servicio_id: tipo.id }),
+          }).then(r => r.json())),
+        )
+        flujoRef.current = flujoVacio()
+        const filas = jsons.map((json, i) => {
+          if (!json.ok) return null
+          const fila = json.data.zonas.find(z => z.zona_cod === zonaCod)
+          if (!fila || !fila.disponible) return null
+          return `${PESOS_TABLA[i]} kg — USD ${fila.total.toFixed(2)}`
+        }).filter(Boolean)
+        if (filas.length === 0) {
+          return responderConDelay(`No tengo tarifas disponibles para ${pais} en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
+        }
+        return responderConDelay(`Precios de referencia para ${pais} (${ZONE_LABELS[zonaCod]}):\n${filas.join('\n')}\n\nSon precios estimados por peso, se confirman al gestionar el envío. Si me decís tu peso exacto te lo cotizo directo.`)
+      } catch {
+        flujoRef.current = flujoVacio()
+        return ofrecerSalidaWhatsapp('Tuve un problema calculando las tarifas. Probá de nuevo, o escribinos por WhatsApp.')
+      }
+    }
+    try {
+      const res  = await fetch(`${API}/tarifario.php?action=cotizar_todas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ peso, tipo_servicio_id: tipo.id }),
+      })
+      const json = await res.json()
+      flujoRef.current = flujoVacio()
+      if (!json.ok) {
+        return abrirCotizadorCompleto('Tuve un problema calculando la cotización. Te abrí el cotizador completo para que puedas intentarlo ahí.')
+      }
+      const fila = json.data.zonas.find(z => z.zona_cod === zonaCod)
+      if (!fila || !fila.disponible) {
+        return responderConDelay(`No tengo una tarifa disponible para ${pais} con ${peso} kg en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
+      }
+      return responderConDelay(`Envío de ${peso} kg a ${pais} (${ZONE_LABELS[zonaCod]}): USD ${fila.total.toFixed(2)}. Este precio es estimado, se confirma al gestionar el envío.`)
+    } catch {
+      flujoRef.current = flujoVacio()
+      return ofrecerSalidaWhatsapp('Tuve un problema calculando la cotización. Probá de nuevo, o escribinos por WhatsApp.')
+    }
+  }, [responderConDelay, ofrecerSalidaWhatsapp, abrirCotizadorCompleto])
+
+  /**
+   * Cotizar directo cuando el mensaje ya trae peso Y país juntos (ej. "10 kg
+   * a España") — se salta los pasos de peso/país del wizard. El país
+   * detectado con el mapa estático (síncrono) se re-valida contra el mapa
+   * dinámico real apenas llega, para no arrastrar un nombre que no exista en
+   * la lista viva de zonas. Si el mismo mensaje además menciona el tipo de
+   * envío ("un paquete de 10kg a Cuba" -> Paquetería), se cotiza directo sin
+   * preguntar nada más.
+   */
+  const iniciarCotizacionDirecta = useCallback(async (peso, paisDetectado, textoOriginal) => {
     if (procesandoRef.current) return
     procesandoRef.current = true
     flujoRef.current = { activo: true, paso: 'tipo', datos: { peso }, intentosFallidos: 0, tipos: [], zonaMap: COUNTRY_ZONE }
@@ -199,9 +257,15 @@ export function useChatAgent() {
     }
     const paisFinal = matchPais(paisDetectado, flujoRef.current.zonaMap) ?? paisDetectado
     flujoRef.current.datos.pais = paisFinal
+
+    const tipoDetectado = textoOriginal ? matchTipo(textoOriginal, flujoRef.current.tipos) : null
+    if (tipoDetectado) {
+      return cotizarYResponder({ peso, pais: paisFinal, zonaMap: flujoRef.current.zonaMap, modoTabla: false }, tipoDetectado)
+    }
+
     const nombresTipos = flujoRef.current.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
     return responderConDelay(`¡Perfecto! ${peso} kg a ${paisFinal}. ¿Qué tipo de envío es? (${nombresTipos})`)
-  }, [responderConDelay])
+  }, [responderConDelay, cotizarYResponder])
 
   /**
    * Si el usuario, en medio del flujo de cotización, en vez de contestar el
@@ -301,67 +365,12 @@ export function useChatAgent() {
         }
         return responderConDelay('No reconocí ese tipo de envío, ¿podés elegir uno de la lista?')
       }
-
-      const { peso, pais, modoTabla } = flujo.datos
-      const zonaMap = flujo.zonaMap
-      const zonaCod = zonaMap[pais]
-
-      if (modoTabla) {
-        try {
-          const jsons = await Promise.all(
-            PESOS_TABLA.map(p => fetch(`${API}/tarifario.php?action=cotizar_todas`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ peso: p, tipo_servicio_id: tipo.id }),
-            }).then(r => r.json())),
-          )
-          flujoRef.current = flujoVacio()
-
-          const filas = jsons.map((json, i) => {
-            if (!json.ok) return null
-            const fila = json.data.zonas.find(z => z.zona_cod === zonaCod)
-            if (!fila || !fila.disponible) return null
-            return `${PESOS_TABLA[i]} kg — USD ${fila.total.toFixed(2)}`
-          }).filter(Boolean)
-
-          if (filas.length === 0) {
-            return responderConDelay(`No tengo tarifas disponibles para ${pais} en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
-          }
-          return responderConDelay(`Precios de referencia para ${pais} (${ZONE_LABELS[zonaCod]}):\n${filas.join('\n')}\n\nSon precios estimados por peso, se confirman al gestionar el envío. Si me decís tu peso exacto te lo cotizo directo.`)
-        } catch {
-          flujoRef.current = flujoVacio()
-          return ofrecerSalidaWhatsapp('Tuve un problema calculando las tarifas. Probá de nuevo, o escribinos por WhatsApp.')
-        }
-      }
-
-      try {
-        const res  = await fetch(`${API}/tarifario.php?action=cotizar_todas`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ peso, tipo_servicio_id: tipo.id }),
-        })
-        const json = await res.json()
-        flujoRef.current = flujoVacio()
-
-        if (!json.ok) {
-          return abrirCotizadorCompleto('Tuve un problema calculando la cotización. Te abrí el cotizador completo para que puedas intentarlo ahí.')
-        }
-
-        const fila = json.data.zonas.find(z => z.zona_cod === zonaCod)
-
-        if (!fila || !fila.disponible) {
-          return responderConDelay(`No tengo una tarifa disponible para ${pais} con ${peso} kg en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
-        }
-        return responderConDelay(`Envío de ${peso} kg a ${pais} (${ZONE_LABELS[zonaCod]}): USD ${fila.total.toFixed(2)}. Este precio es estimado, se confirma al gestionar el envío.`)
-      } catch {
-        flujoRef.current = flujoVacio()
-        return ofrecerSalidaWhatsapp('Tuve un problema calculando la cotización. Probá de nuevo, o escribinos por WhatsApp.')
-      }
+      return cotizarYResponder({ ...flujo.datos, zonaMap: flujo.zonaMap }, tipo)
     }
     } finally {
       procesandoRef.current = false
     }
-  }, [responderConDelay, abrirCotizadorCompleto, ofrecerSalidaWhatsapp, intentarResponderInterrupcion])
+  }, [responderConDelay, abrirCotizadorCompleto, intentarResponderInterrupcion, cotizarYResponder])
 
   /** Procesa UNA intención ya detectada (puede haber varias por mensaje, ver enviarMensaje). */
   const procesarIntencion = useCallback(async (intencion) => {
@@ -377,7 +386,7 @@ export function useChatAgent() {
       case 'cotizar_iniciar':
         return iniciarCotizacion(intencion.paisPrellenado)
       case 'cotizar_directo':
-        return iniciarCotizacionDirecta(intencion.peso, intencion.pais)
+        return iniciarCotizacionDirecta(intencion.peso, intencion.pais, intencion.textoOriginal)
       case 'cobertura_pais':
         return responderConDelay(`Sí, hacemos envíos a ${intencion.pais}. En total llegamos a más de 50 países en América, Europa, Asia y Oceanía.`)
       case 'cotizar_respuesta':
@@ -398,7 +407,7 @@ export function useChatAgent() {
         if (intencion.derivaWhatsapp) {
           return responderConDelay(intencion.respuesta, ['Hablar por WhatsApp'])
         }
-        return responderConDelay(intencion.respuesta)
+        return responderConDelay(intencion.respuesta, intencion.chips ?? null)
       default: {
         contextoRef.current.nivelFallback += 1
         const nivel = contextoRef.current.nivelFallback
@@ -461,6 +470,10 @@ export function useChatAgent() {
     }
     if (texto === 'Equipaje') {
       ofrecerSalidaWhatsapp('Para el costo del Equipaje No Acompañado te conecto con nuestro equipo por WhatsApp.')
+      return
+    }
+    if (texto === 'Ver lista completa') {
+      window.dispatchEvent(new CustomEvent('openLegal', { detail: 'prohibidos' }))
       return
     }
 
