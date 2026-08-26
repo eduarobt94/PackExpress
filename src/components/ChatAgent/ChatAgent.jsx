@@ -4,7 +4,7 @@ import { Bot, X, Send } from 'lucide-react'
 import { useChatAgent } from './useChatAgent'
 
 const TEXTAREA_MIN_HEIGHT = 40 // 1 línea — mismo alto que el input de antes
-const TEXTAREA_MAX_HEIGHT = 88 // ~3 líneas — de ahí en más aparece scroll interno
+const TEXTAREA_MAX_HEIGHT = 104 // ~4 líneas — de ahí en más aparece scroll interno
 
 export default function ChatAgent() {
   const [open, setOpen] = useState(false)
