@@ -1,7 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bot, X, Send } from 'lucide-react'
 import { useChatAgent } from './useChatAgent'
+
+const TEXTAREA_MIN_HEIGHT = 40 // 1 línea — mismo alto que el input de antes
+const TEXTAREA_MAX_HEIGHT = 88 // ~3 líneas — de ahí en más aparece scroll interno
 
 export default function ChatAgent() {
   const [open, setOpen] = useState(false)
@@ -31,12 +34,26 @@ export default function ChatAgent() {
     }
   }, [mensajes, escribiendo, open])
 
+  useLayoutEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.max(TEXTAREA_MIN_HEIGHT, Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT))}px`
+  }, [texto])
+
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!texto.trim() || ocupado) return
     enviarMensaje(texto)
     setTexto('')
     inputRef.current?.focus()
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e)
+    }
   }
 
   return (
@@ -144,14 +161,16 @@ export default function ChatAgent() {
               )}
             </div>
 
-            <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 border-t border-[var(--bd-1)] shrink-0">
-              <input
-                type="text"
+            <form onSubmit={handleSubmit} className="flex items-end gap-2 p-3 border-t border-[var(--bd-1)] shrink-0">
+              <textarea
                 ref={inputRef}
+                rows={1}
                 value={texto}
                 onChange={e => setTexto(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder={ocupado ? 'Esperá la respuesta...' : 'Escribí tu mensaje...'}
-                className="flex-1 h-10 px-3 rounded-lg text-[13px] bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)] outline-none focus:border-[#F07232]/50 transition-colors"
+                style={{ height: TEXTAREA_MIN_HEIGHT, maxHeight: TEXTAREA_MAX_HEIGHT }}
+                className="flex-1 resize-none overflow-y-auto px-3 py-2.5 rounded-lg text-[13px] leading-relaxed bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)] outline-none focus:border-[#F07232]/50 transition-colors"
               />
               <button
                 type="submit"
