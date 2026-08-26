@@ -401,6 +401,14 @@ caso('tiempos: Uruguay con el contexto activo resuelve pais=Uruguay', 'Uruguay',
 caso('tiempos: cuanto demora a Uruguay en el mismo mensaje resuelve pais=Uruguay', 'cuanto demora a Uruguay', conCountryZone, (r, t) => t[0] === 'tiempos_entrega' && r[0].pais === 'Uruguay')
 caso('tiempos: respuesta internacional NO menciona el express nacional', 'cuanto demora a Cuba', conCountryZone, (r) => !r[0].respuesta.toLowerCase().includes('express'))
 
+// ── sin_info_pago: expansión semántica generalizada (raíz de palabra) ────
+caso('pago gen: como se puede efectuar el pago', 'Como se puede efectuar el pago', sinFlujo, esperarTipo('sin_info_pago'))
+caso('pago gen: como puedo pagar', 'como puedo pagar', sinFlujo, esperarTipo('sin_info_pago'))
+caso('pago gen: de que forma puedo pagar', 'de que forma puedo pagar', sinFlujo, esperarTipo('sin_info_pago'))
+caso('pago gen: como se realiza el pago', 'como se realiza el pago', sinFlujo, esperarTipo('sin_info_pago'))
+caso('pago gen: como abono mi envio', 'como abono mi envio', sinFlujo, esperarTipo('sin_info_pago'))
+caso('pago gen NO cruza: cuanto me cobran por enviar sigue siendo cotizar', 'cuanto me cobran por enviar', sinFlujo, esperarTipo('cotizar_iniciar'))
+
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
   const ok = JSON.stringify(obtenido) === JSON.stringify(esperado)

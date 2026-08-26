@@ -435,6 +435,14 @@ function matchDestinoTiempos(textoOriginal, countryZone) {
 const PATRON_TIEMPOS_ENTREGA = /\b(cuant[oa]s?|que|cual(es)?|cuando)\b[\s\S]{0,25}\b(demor\w*|tard\w*|lleg\w*|entreg\w*|plazo|recib\w*)\b|\bdemor\w*\b[\s\S]{0,15}\b(envio\w*|paquete\w*|entrega\w*|pedido\w*)\b|\bplazo\s+de\s+entrega\b/
 
 /**
+ * "¿Cómo puedo pagar?" generalizado por raíz de palabra, mismo mecanismo que
+ * PATRON_TIEMPOS_ENTREGA — cubre pagar/pagan/pago/paga/abonar/abono en
+ * cualquier conjugación sin necesitar una frase por cada una. Se evalúa
+ * solo en el slot de sin_info_pago dentro del loop de FAQ.
+ */
+const PATRON_PAGO = /\b(como|de que forma|de que manera|cual es la forma)\b[\s\S]{0,30}\b(pag\w*|abon\w*)\b/
+
+/**
  * Frases de confirmación de cobertura hacia un país puntual ("¿envían a
  * Cuba?", "¿llegan a España?"). El país SOLO (sin ninguna de estas frases)
  * no alcanza — evita que cualquier mensaje que mencione un país de pasada
@@ -506,7 +514,8 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
   // en el flujo de cotización de envíos.
   for (const entrada of FAQ) {
     const matchTiemposGeneralizado = entrada.id === 'tiempos_entrega' && PATRON_TIEMPOS_ENTREGA.test(texto)
-    if (matchTiemposGeneralizado || contieneAlguna(texto, entrada.palabrasClave)) {
+    const matchPagoGeneralizado = entrada.id === 'sin_info_pago' && PATRON_PAGO.test(texto)
+    if (matchTiemposGeneralizado || matchPagoGeneralizado || contieneAlguna(texto, entrada.palabrasClave)) {
       // tiempos_entrega sin país mencionado: preguntamos el destino antes de
       // responder — el tiempo real (nacional 24h vs internacional con
       // escala) depende de eso, y así se evita responder a ciegas.
