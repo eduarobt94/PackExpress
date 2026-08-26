@@ -38,7 +38,12 @@ export default function ChatAgent() {
     const el = inputRef.current
     if (!el) return
     el.style.height = 'auto'
-    el.style.height = `${Math.max(TEXTAREA_MIN_HEIGHT, Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT))}px`
+    // scrollHeight no incluye el borde (box-sizing: border-box), así que
+    // asignarlo directo a `height` deja la caja un par de px más chica de lo
+    // necesario y aparece un scroll interno permanente incluso con una sola
+    // línea. Se compensa sumando el borde real (offsetHeight - clientHeight).
+    const borde = el.offsetHeight - el.clientHeight
+    el.style.height = `${Math.max(TEXTAREA_MIN_HEIGHT, Math.min(el.scrollHeight + borde, TEXTAREA_MAX_HEIGHT))}px`
   }, [texto])
 
   const handleSubmit = (e) => {
