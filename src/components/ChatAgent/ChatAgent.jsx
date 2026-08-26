@@ -37,14 +37,25 @@ export default function ChatAgent() {
   useLayoutEffect(() => {
     const el = inputRef.current
     if (!el) return
+    el.style.overflowY = 'hidden'
     el.style.height = 'auto'
     // scrollHeight no incluye el borde (box-sizing: border-box), así que
     // asignarlo directo a `height` deja la caja un par de px más chica de lo
     // necesario y aparece un scroll interno permanente incluso con una sola
     // línea. Se compensa sumando el borde real (offsetHeight - clientHeight).
     const borde = el.offsetHeight - el.clientHeight
-    el.style.height = `${Math.max(TEXTAREA_MIN_HEIGHT, Math.min(el.scrollHeight + borde, TEXTAREA_MAX_HEIGHT))}px`
-  }, [texto])
+    const alturaNecesaria = el.scrollHeight + borde
+    el.style.height = `${Math.max(TEXTAREA_MIN_HEIGHT, Math.min(alturaNecesaria, TEXTAREA_MAX_HEIGHT))}px`
+    // El scroll interno (y el scrollbar que reserva algunos navegadores en
+    // los textarea apenas overflow-y no es "hidden") solo debe existir
+    // cuando el contenido realmente no entra en las ~4 líneas máximas.
+    el.style.overflowY = alturaNecesaria > TEXTAREA_MAX_HEIGHT ? 'auto' : 'hidden'
+    // `open` también en las dependencias: el <textarea> no existe en el DOM
+    // hasta que el panel se abre (render condicional), así que sin `open`
+    // este efecto corría una única vez con la ref en null (early return) y
+    // nunca se repetía hasta que el usuario tipeaba algo — hasta entonces
+    // quedaba con el overflow-y por defecto del navegador ("auto").
+  }, [texto, open])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -175,7 +186,7 @@ export default function ChatAgent() {
                 onKeyDown={handleKeyDown}
                 placeholder={ocupado ? 'Esperá la respuesta...' : 'Escribí tu mensaje...'}
                 style={{ height: TEXTAREA_MIN_HEIGHT, maxHeight: TEXTAREA_MAX_HEIGHT }}
-                className="flex-1 resize-none overflow-y-auto px-3 py-2.5 rounded-lg text-[13px] leading-relaxed bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)] outline-none focus:border-[#F07232]/50 transition-colors"
+                className="flex-1 resize-none px-3 py-2.5 rounded-lg text-[13px] leading-relaxed bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)] outline-none focus:border-[#F07232]/50 transition-colors"
               />
               <button
                 type="submit"
