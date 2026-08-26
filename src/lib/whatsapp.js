@@ -10,4 +10,4 @@ export const WHATSAPP_URL = 'https://wa.me/59893594297?text=Hola%2C%20me%20gusta
  * operativo, así que los CTA de casillero captan interesados por acá en vez
  * de prometer una cuenta que aún no existe.
  */
-export const CASILLERO_WHATSAPP_URL = 'https://wa.me/59893594297?text=Hola%2C%20quiero%20que%20me%20avisen%20cuando%20est%C3%A9%20disponible%20el%20Casillero%20Internacional.'
+export const CASILLERO_WHATSAPP_URL = 'https://wa.me/59893594297?text=Hola%2C%20me%20interesa%20el%20Casillero%20Internacional.%20%C2%BFMe%20avisan%20cuando%20est%C3%A9%20disponible%3F'

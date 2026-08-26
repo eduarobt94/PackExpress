@@ -457,7 +457,7 @@ export default function Hero() {
                          bg-[#527ED8]/[0.06] backdrop-blur-2xl hover:bg-[#527ED8]/[0.12]
                          hover:shadow-[0_0_24px_rgba(59,126,248,0.18)]"
             >
-              Avisame cuando esté el casillero
+              Me interesa el casillero
             </a>
           </motion.div>
 

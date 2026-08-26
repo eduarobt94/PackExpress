@@ -119,7 +119,7 @@ export default function Footer() {
                            transition-[color,background-color,border-color,box-shadow] duration-200 tracking-wide whitespace-nowrap
                            hover:bg-[#527ED8]/[0.07] hover:shadow-[0_0_24px_rgba(59,126,248,0.18)]"
               >
-                Avisame del casillero <ArrowRight size={14} />
+                Me interesa el casillero <ArrowRight size={14} />
               </a>
             </div>
           </div>
