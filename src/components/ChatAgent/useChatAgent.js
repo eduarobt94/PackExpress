@@ -350,6 +350,8 @@ export function useChatAgent() {
         return iniciarCotizacion()
       case 'cotizar_directo':
         return iniciarCotizacionDirecta(intencion.peso, intencion.pais)
+      case 'cobertura_pais':
+        return responderConDelay(`Sí, hacemos envíos a ${intencion.pais}. En total llegamos a más de 50 países en América, Europa, Asia y Oceanía.`)
       case 'cotizar_respuesta':
         return manejarRespuestaCotizacion(intencion.valor)
       case 'ambiguo_precio':

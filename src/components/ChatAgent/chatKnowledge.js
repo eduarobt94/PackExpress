@@ -173,7 +173,7 @@ export const FAQ = [
       'cuanto pesa maximo un paquete', 'tienen limite de peso por envio',
       'cuanto puedo mandar de peso', 'hay un maximo de peso',
       'cuantas libras puedo enviar', 'libras extra', 'peso en libras',
-      'limite de libras', 'cuantas libras maximo',
+      'limite de libras', 'cuantas libras maximo', 'cuanto pesa',
     ],
     respuesta: 'No tenemos un límite máximo fijo de peso: cada tarifa incluye un peso base, y lo que excede ese peso se cobra como kilo adicional según la zona y el tipo de envío. Para saber el costo exacto con tu peso, puedo cotizarlo ahora mismo — escribí "cotizar" — o te lo confirma nuestro equipo por WhatsApp.',
   },

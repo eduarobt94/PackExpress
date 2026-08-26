@@ -322,6 +322,27 @@ export function extraerPesoYPais(textoOriginal, countryZone) {
 }
 
 /**
+ * Frases de confirmación de cobertura hacia un país puntual ("¿envían a
+ * Cuba?", "¿llegan a España?"). El país SOLO (sin ninguna de estas frases)
+ * no alcanza — evita que cualquier mensaje que mencione un país de pasada
+ * dispare esto. Se chequea DESPUÉS de PALABRAS_COTIZAR en
+ * buscarIntencionDeNegocio a propósito: "cuánto cuesta enviar a Cuba" debe
+ * seguir siendo cotizar, no cobertura — el orden es lo que evita la
+ * colisión, no una lista de exclusión de palabras.
+ */
+const PATRONES_COBERTURA_PAIS = [
+  'envian a', 'envian al', 'mandan a', 'llegan a', 'hacen envios a',
+  'puedo enviar a', 'puedo mandar a', 'tienen envios a', 'cubren',
+]
+
+/** Devuelve el país si el mensaje pregunta por cobertura hacia ese país puntual, o null. */
+export function detectarCoberturaPais(textoOriginal, countryZone) {
+  const texto = normalizeText(textoOriginal)
+  if (!PATRONES_COBERTURA_PAIS.some(p => texto.includes(p))) return null
+  return matchPais(textoOriginal, countryZone)
+}
+
+/**
  * Busca UNA intención "de negocio" (rastreo en lenguaje natural, humano,
  * cotizar, o FAQ). No incluye cotizar_respuesta (se resuelve antes, en
  * detectarIntenciones) ni greeting/small_talk/goodbye (se resuelven aparte).
@@ -361,6 +382,10 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
   }
   if (contieneAlguna(texto, PALABRAS_COTIZAR)) {
     return { tipo: 'cotizar_iniciar' }
+  }
+  if (countryZone) {
+    const paisCobertura = detectarCoberturaPais(textoOriginal, countryZone)
+    if (paisCobertura) return { tipo: 'cobertura_pais', pais: paisCobertura }
   }
   return null
 }

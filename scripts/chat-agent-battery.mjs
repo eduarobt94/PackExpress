@@ -245,6 +245,18 @@ caso('NO cruza: cuanto demora el casillero sigue siendo casillero', 'cuanto demo
 caso('NO cruza: "documento" solo no es la FAQ de documentacion', 'documento', sinFlujo, (_, t) => t[0] !== 'documentacion')
 caso('NO cruza: enviar documentos no es la FAQ de documentacion', 'necesito enviar unos documentos', sinFlujo, (_, t) => t[0] !== 'documentacion')
 
+// ── Cobertura por país puntual (entidad país + frase de cobertura) ───────
+caso('cobertura_pais: envian a Cuba', 'Envian a Cuba?', conCountryZone, (r, t) => t[0] === 'cobertura_pais' && r[0].pais === 'Cuba')
+caso('cobertura_pais: puedo enviar a Cuba', 'Puedo enviar a Cuba', conCountryZone, esperarTipo('cobertura_pais'))
+caso('cobertura_pais: mandan a Cuba', 'Mandan a Cuba?', conCountryZone, esperarTipo('cobertura_pais'))
+caso('cobertura_pais: llegan a Estados Unidos', 'Llegan a Estados Unidos?', conCountryZone, esperarTipo('cobertura_pais'))
+caso('cobertura_pais: pais SOLO no dispara nada', 'Cuba', conCountryZone, esperarTipo('desconocido'))
+caso('cobertura_pais: cotizar con precio gana sobre cobertura', 'Cuanto cuesta enviar a Cuba?', conCountryZone, esperarTipo('cotizar_iniciar'))
+caso('cobertura_pais: peso+pais gana sobre cobertura', 'tengo 10 kg para enviar a Cuba', conCountryZone, esperarTipo('cotizar_directo'))
+
+// ── "Cuánto pesa" corto → peso_maximo, no cotizar ────────────────────────
+caso('cuanto pesa corto', 'Cuanto pesa?', sinFlujo, esperarTipo('peso_maximo'))
+
 // ── Extracción de guía / peso (funciones puras auxiliares) ──────────────
 function assertPure(descripcion, obtenido, esperado) {
   const ok = JSON.stringify(obtenido) === JSON.stringify(esperado)
