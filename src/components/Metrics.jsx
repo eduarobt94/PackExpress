@@ -1,8 +1,12 @@
 import { useRef, useEffect, useState } from 'react'
 import { motion, useInView } from 'framer-motion'
 
+/** Piso histórico si la API no responde — el mismo `base` que devuelve el endpoint. */
+const ENVIOS_BASE = 50000
+const METRICAS_ENDPOINT = '/pack-sistema/api/v1/metricas.php?action=envios'
+
 const STATS = [
-  { end: 50000, suffix: '+',  label: 'Envíos completados',       prefix: '', blue: false },
+  { id: 'envios', end: ENVIOS_BASE, suffix: '+', label: 'Envíos completados', prefix: '', blue: false },
   { end: 50,    suffix: '+',  label: 'Destinos internacionales', prefix: '', blue: true  },
   { end: 5,     suffix: '',   label: 'Años operando',            prefix: '', blue: false },
   { end: 98,    suffix: '%',  label: 'Índice de satisfacción',   prefix: '', blue: false },
@@ -38,6 +42,32 @@ function Counter({ end, suffix, prefix, active }) {
 export default function Metrics() {
   const ref    = useRef(null)
   const inView = useInView(ref, { once: true, margin: '-80px' })
+  const [enviosReales, setEnviosReales] = useState(null)
+
+  // El contador de envíos suma las guías reales de la base al piso histórico.
+  // Queda en null hasta resolverse (con éxito o no) para que la animación
+  // arranque una sola vez y ya con el número final: si se dejara animar hacia
+  // el piso y el dato llegara después, el contador se reiniciaría a la vista.
+  // Ante cualquier fallo cae al piso histórico — es un número decorativo y no
+  // debe romper la sección ni mostrar un 0.
+  useEffect(() => {
+    let cancelado = false
+    const resolver = (valor) => { if (!cancelado) setEnviosReales(valor) }
+
+    // Red de seguridad: si la API no contesta, no dejar el contador en blanco.
+    const timeout = setTimeout(() => resolver(ENVIOS_BASE), 3000)
+
+    fetch(METRICAS_ENDPOINT)
+      .then(res => res.json())
+      .then(json => {
+        const total = Number(json?.data?.total)
+        resolver(json?.ok && Number.isFinite(total) && total > 0 ? total : ENVIOS_BASE)
+      })
+      .catch(() => resolver(ENVIOS_BASE))
+      .finally(() => clearTimeout(timeout))
+
+    return () => { cancelado = true; clearTimeout(timeout) }
+  }, [])
 
   return (
     <section className="relative bg-[var(--bg-base)] border-y border-[var(--bd-1)]">
@@ -70,7 +100,11 @@ export default function Metrics() {
               <div className="font-display font-bold mb-3
                               text-[clamp(2rem,5vw,4rem)] leading-none tracking-tight"
                    style={{ color: s.blue ? '#527ED8' : 'var(--fg-1)' }}>
-                <Counter {...s} active={inView} />
+                <Counter
+                  {...s}
+                  end={s.id === 'envios' && enviosReales != null ? enviosReales : s.end}
+                  active={inView && (s.id !== 'envios' || enviosReales != null)}
+                />
               </div>
 
               <p className="text-[12px] text-[var(--fg-3)] uppercase tracking-[0.2em] leading-relaxed">
