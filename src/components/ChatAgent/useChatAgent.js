@@ -324,12 +324,17 @@ export function useChatAgent() {
       }
       flujo.datos.peso = peso
       flujo.intentosFallidos = 0
-      // El mismo mensaje puede traer el país junto con el peso ("10kg para
-      // Cuba") aunque el flujo ya esté esperando solo el peso — sin esto se
-      // ignoraba el país y se volvía a preguntar, aun habiéndolo dicho.
+      // El mismo mensaje puede traer el país y/o el tipo junto con el peso
+      // ("10kg para Cuba", "20 kg de paquetería") aunque el flujo ya esté
+      // esperando solo el peso — sin esto se ignoraban y se volvían a
+      // preguntar, aun habiéndolos dicho.
       const paisEnMismoMensaje = matchPais(valor, flujo.zonaMap)
       if (paisEnMismoMensaje) flujo.datos.pais = paisEnMismoMensaje
       if (flujo.datos.pais) {
+        const tipoEnMismoMensaje = matchTipo(valor, flujo.tipos)
+        if (tipoEnMismoMensaje) {
+          return cotizarYResponder({ ...flujo.datos, zonaMap: flujo.zonaMap }, tipoEnMismoMensaje)
+        }
         flujo.paso = 'tipo'
         return responderConDelay(`¡Perfecto! ${peso} kg a ${flujo.datos.pais}. ¿Qué tipo de envío es? (${nombresTipos})`)
       }
@@ -348,8 +353,14 @@ export function useChatAgent() {
         return responderConDelay('No reconocí ese país, ¿podés escribirlo de nuevo? Por ejemplo: Estados Unidos, España, Cuba.')
       }
       flujo.datos.pais = pais
-      flujo.paso = 'tipo'
       flujo.intentosFallidos = 0
+      // Igual que en el paso "peso": el mismo mensaje puede traer el tipo
+      // junto con el país ("Cuba, es paquetería").
+      const tipoEnMismoMensaje = matchTipo(valor, flujo.tipos)
+      if (tipoEnMismoMensaje) {
+        return cotizarYResponder({ ...flujo.datos, zonaMap: flujo.zonaMap }, tipoEnMismoMensaje)
+      }
+      flujo.paso = 'tipo'
       const nombresTipos = flujo.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
       return responderConDelay(`¿Qué tipo de envío es? (${nombresTipos})`)
     }
