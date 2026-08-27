@@ -295,16 +295,31 @@ function RoutesOverlay({ visible, isDark }) {
 }
 
 /* â”€â”€ Hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/** Debe calzar con el breakpoint `min-[1100px]` usado más abajo para mostrar el mapa. */
+const MAPA_MIN_ANCHO = 1100
+
 export default function Hero() {
   const ref = useRef(null)
   const [mapReady, setMapReady] = useState(false)
   const [trackingValue, setTrackingValue] = useState('')
+  // Lazy init: en SSR/primer render sin window no hay forma de saber el
+  // ancho real, así que se asume angosto (mobile-first) — se corrige solo
+  // en el primer resize si hiciera falta.
+  const [mapaVisible, setMapaVisible] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth >= MAPA_MIN_ANCHO)
 
+  // Bajo MAPA_MIN_ANCHO, el mapa de Three.js/WebGL NI SIQUIERA se monta (no
+  // alcanza con ocultarlo por CSS): un <canvas> con un contexto WebGL activo
+  // sigue corriendo su loop de render aunque el contenedor tenga
+  // `display:none` — en navegadores con aceleración por GPU real (a
+  // diferencia de este entorno de pruebas, que no la tiene) eso puede
+  // filtrarse como una franja/artefacto visual sobre el resto de la página.
   // Al redimensionar: ocultar overlay → partículas se reposicionan →
   // re-mostrar overlay cuando el mapa ya está re-formado (~1500 ms).
   useEffect(() => {
     let timer = null
     const handleResize = () => {
+      setMapaVisible(window.innerWidth >= MAPA_MIN_ANCHO)
       setMapReady(false)
       clearTimeout(timer)
       timer = setTimeout(() => setMapReady(true), 1500)
@@ -361,13 +376,15 @@ export default function Hero() {
         <rect width="100%" height="100%" fill="url(#bg-dots)" />
       </svg>
 
-      <motion.div
-        className="absolute inset-0 pointer-events-none hidden min-[1100px]:block"
-        style={{ y}}
-      >
-        <DotMap onReady={() => setMapReady(true)} />
-        <RoutesOverlay visible={mapReady} isDark={isDark} />
-      </motion.div>
+      {mapaVisible && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          style={{ y}}
+        >
+          <DotMap onReady={() => setMapReady(true)} />
+          <RoutesOverlay visible={mapReady} isDark={isDark} />
+        </motion.div>
+      )}
 
       {/* Vignette "” fades only left/right/bottom edges */}
       <div
