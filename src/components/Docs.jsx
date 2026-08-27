@@ -308,10 +308,11 @@ export default function Docs() {
                 </Field>
                 <button type="submit" disabled={sending}
                   className="flex items-center justify-center gap-2 rounded-xl mx-auto
+                             w-full max-w-[280px]
                              bg-[#527ED8] hover:bg-[#6B90DC] text-white text-[14px] font-semibold
                              transition-[background-color,box-shadow] duration-200 disabled:opacity-60 tracking-wide
                              hover:shadow-[0_0_24px_rgba(59,126,248,0.30)]"
-                  style={{ width: 280, height: 49 }}>
+                  style={{ height: 49 }}>
                   {sending ? (
                     <span className="flex items-center gap-2">
                       <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />

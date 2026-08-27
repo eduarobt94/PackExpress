@@ -331,7 +331,9 @@ export default function Process() {
             initial={{ opacity: 0, y: 12 }}
             animate={headerInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="inline-flex bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-full p-1 mb-10"
+            className="inline-flex bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-full p-1 mb-10
+                       max-[480px]:flex max-[480px]:flex-col max-[480px]:w-full max-[480px]:max-w-[320px]
+                       max-[480px]:mx-auto max-[480px]:rounded-2xl max-[480px]:gap-1"
             role="tablist"
             aria-label="Seleccionar flujo"
           >
@@ -343,6 +345,7 @@ export default function Process() {
                 onClick={() => setActiveFlow(i)}
                 className={`relative px-5 sm:px-7 py-2 sm:py-2.5 rounded-full text-[12px] font-semibold
                             tracking-wide transition-colors duration-300 whitespace-nowrap
+                            max-[480px]:w-full max-[480px]:whitespace-normal
                             ${activeFlow === i ? 'text-white' : 'text-[var(--fg-4)] hover:text-[var(--fg-2)]'}`}
               >
                 {activeFlow === i && (
