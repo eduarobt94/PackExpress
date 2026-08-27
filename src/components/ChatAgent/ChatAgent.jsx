@@ -186,7 +186,7 @@ export default function ChatAgent() {
                 onKeyDown={handleKeyDown}
                 placeholder={ocupado ? 'Esperá la respuesta...' : 'Escribí tu mensaje...'}
                 style={{ height: TEXTAREA_MIN_HEIGHT, maxHeight: TEXTAREA_MAX_HEIGHT }}
-                className="flex-1 resize-none px-3 py-2.5 rounded-lg text-[13px] leading-relaxed bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)] outline-none focus:border-[#F07232]/50 transition-colors"
+                className="chat-input flex-1 resize-none px-3 py-2.5 rounded-lg text-[13px] leading-relaxed bg-[var(--bg-elevated)] border border-[var(--bd-1)] text-[var(--fg-1)] outline-none focus:border-[#F07232] transition-colors"
               />
               <button
                 type="submit"

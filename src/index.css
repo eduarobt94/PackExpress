@@ -138,6 +138,15 @@ body {
   outline: none;
 }
 
+/* El input del chat ya indica el foco pintando su propio borde de naranja
+   (focus:border-[#F07232]), así que el outline global de arriba quedaba como
+   un segundo anillo por fuera de la caja. Se suprime SOLO acá — el resto del
+   sitio conserva el indicador de foco para navegación por teclado, y este
+   input mantiene el suyo en el borde. */
+.chat-input:focus-visible {
+  outline: none;
+}
+
 ::-webkit-scrollbar        { width: 4px; }
 ::-webkit-scrollbar-track  { background: var(--bg-base); }
 ::-webkit-scrollbar-thumb  { background: var(--bd-3); border-radius: 99px; }
