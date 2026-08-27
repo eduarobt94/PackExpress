@@ -391,15 +391,21 @@ export default function Hero() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full mb-8
+            className="inline-flex items-center gap-2.5 max-[480px]:flex-wrap max-[480px]:gap-y-1.5 px-3 py-1.5 max-[480px]:rounded-2xl rounded-full mb-8
                        border border-[#F07232]/30 bg-[#F07232]/[0.06]
                        text-[9px] sm:text-[12px] font-semibold max-[430px]:tracking-[-0.06em] tracking-[0.06em] sm:tracking-[0.10em] uppercase"
           >
             <span className="text-[#E8823C] whitespace-nowrap">Courier</span>
-            <span className="text-[var(--fg-5)]">·</span>
-            <span className="text-[#6B90DC] whitespace-nowrap">Casillero Internacional (pronto)</span>
-            <span className="text-[var(--fg-5)]">·</span>
-            <span className="text-[var(--fg-2)] whitespace-nowrap">Distribución Nacional</span>
+            {/* separador + frase agrupados: al hacer wrap en pantallas muy
+                angostas, el "·" nunca queda solo al final de una línea */}
+            <span className="inline-flex items-center gap-2.5 whitespace-nowrap">
+              <span className="text-[var(--fg-5)]">·</span>
+              <span className="text-[#6B90DC]">Casillero Internacional (pronto)</span>
+            </span>
+            <span className="inline-flex items-center gap-2.5 whitespace-nowrap">
+              <span className="text-[var(--fg-5)]">·</span>
+              <span className="text-[var(--fg-2)]">Distribución Nacional</span>
+            </span>
           </motion.div>
 
           <motion.h1
