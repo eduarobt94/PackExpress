@@ -354,7 +354,10 @@ export default function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen flex items-center overflow-hidden bg-[var(--bg-base)]"
+      /* flex-col (no items-center) para que el indicador "Scroll" viva en el
+         FLUJO, después del contenido, en vez de flotar en absolute sobre él:
+         asi nunca puede superponerse, sea cual sea el alto del viewport. */
+      className="relative min-h-screen flex flex-col overflow-hidden bg-[var(--bg-base)]"
     >
       <div
         className="absolute inset-0 pointer-events-none"
@@ -398,8 +401,11 @@ export default function Hero() {
       />
 
       <motion.div
+        /* flex-1 + items-center: ocupa el alto sobrante y mantiene el bloque
+           centrado como antes cuando la pantalla es alta; cuando es baja se
+           encoge a su alto natural y el indicador queda debajo, no encima. */
         className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 lg:px-8 pt-20 sm:pt-24 lg:pt-32 pb-14 sm:pb-20 w-full
-                   flex justify-end"
+                   flex flex-1 items-center justify-end"
         style={{ opacity }}
       >
         <div className="w-full lg:w-[55%] text-left">
@@ -549,7 +555,10 @@ export default function Hero() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.8 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        /* En flujo (ya no absolute): shrink-0 para que nunca se comprima y
+           self-center para centrarlo horizontalmente dentro del section
+           flex-col. pb-8 conserva la separación que daba bottom-8. */
+        className="relative z-10 shrink-0 self-center pb-8 flex flex-col items-center gap-2"
       >
         <span className="text-[10px] tracking-[0.22em] text-[var(--fg-5)] uppercase">Scroll</span>
         <motion.div
