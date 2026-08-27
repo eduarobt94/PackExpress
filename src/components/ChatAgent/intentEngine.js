@@ -301,6 +301,18 @@ export function parsePeso(texto) {
 }
 
 /**
+ * Grupos de formas equivalentes para nombrar un país que el USUARIO usa pero
+ * que no coinciden textualmente con el nombre que el BACKEND real usa como
+ * clave (p.ej. el catálogo de tarifario.php llama "EE UU" a lo que cualquier
+ * persona escribiría como "Estados Unidos"/"EEUU"/"USA"). El fallback estático
+ * de zones.js sí usa el nombre amigable, así que esto no rompe nada ahí — solo
+ * entra en juego cuando ninguna forma del grupo es ya una clave de countryZone.
+ */
+const ALIAS_PAISES = [
+  ['estados unidos', 'eeuu', 'ee uu', 'ee.uu', 'usa', 'united states', 'eua', 'norteamerica'],
+]
+
+/**
  * Busca el nombre de país (clave de countryZone) que mejor matchea el texto.
  * Primero intenta match exacto, después "el texto contiene el nombre del país"
  * con límite de palabra. Sin fuzzy matching acá a propósito: el flujo de
@@ -310,6 +322,7 @@ export function parsePeso(texto) {
 export function matchPais(texto, countryZone) {
   const norm = normalizeText(texto)
   const paises = Object.keys(countryZone)
+  const paisesPorNorm = new Map(paises.map(pais => [normalizeText(pais), pais]))
 
   const exacto = paises.find(pais => normalizeText(pais) === norm)
   if (exacto) return exacto
@@ -321,14 +334,30 @@ export function matchPais(texto, countryZone) {
   // La última mención es la interpretación correcta para correcciones.
   let elegido = null
   let mejorPos = -1
+  const considerar = (nombreEnMapa, posicion) => {
+    if (posicion > mejorPos) {
+      mejorPos = posicion
+      elegido = nombreEnMapa
+    }
+  }
+
   for (const pais of paises) {
     const paisNorm = normalizeText(pais)
     const match = norm.match(new RegExp(`\\b${paisNorm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`))
-    if (match && match.index > mejorPos) {
-      mejorPos = match.index
-      elegido = pais
+    if (match) considerar(pais, match.index)
+  }
+
+  // Alias: el usuario mencionó una forma del grupo, y el mapa de países tiene
+  // como clave OTRA forma del mismo grupo (el nombre real del backend).
+  for (const grupo of ALIAS_PAISES) {
+    const nombreEnMapa = grupo.map(f => paisesPorNorm.get(f)).find(Boolean)
+    if (!nombreEnMapa) continue
+    for (const forma of grupo) {
+      const match = norm.match(new RegExp(`\\b${forma.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`))
+      if (match) considerar(nombreEnMapa, match.index)
     }
   }
+
   return elegido
 }
 

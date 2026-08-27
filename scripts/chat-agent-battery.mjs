@@ -49,6 +49,7 @@ import {
   detectarIntenciones, buscarIntencionDeNegocio, normalizeText, extraerNumeroGuia, parsePeso,
   matchPais, extraerEntidadesCotizacion,
 } from '../src/components/ChatAgent/intentEngine.js'
+import { COUNTRY_ZONE } from '../src/lib/zones.js'
 
 const API = 'http://localhost/pack-sistema/api/v1'
 
@@ -430,6 +431,18 @@ assertPure('matchPais: correccion con puntuacion', matchPais('no, no es Cuba. Es
 assertPure('matchPais: un solo pais sigue igual (Cuba)', matchPais('Cuba', ZONA_ORDEN), 'Cuba')
 assertPure('matchPais: un solo pais sigue igual (España)', matchPais('quiero enviar a España', ZONA_ORDEN), 'España')
 assertPure('matchPais: sin pais devuelve null', matchPais('no se', ZONA_ORDEN), null)
+
+// ── matchPais: alias "Estados Unidos" contra el nombre real del backend ──
+// El catálogo real de tarifario.php llama "EE UU" a lo que cualquier usuario
+// escribe como "Estados Unidos"/"EEUU"/"USA" — sin alias, matchPais fallaba
+// apenas se cargaba el mapa de zonas real (reemplaza al fallback estático de
+// zones.js, que sí usa "Estados Unidos" como clave).
+const ZONA_REAL_EEUU = { 'EE UU': 'E', 'Cuba': 'E', 'España': 'G' }
+assertPure('matchPais alias: Estados Unidos -> EE UU (mapa real)', matchPais('Estados Unidos', ZONA_REAL_EEUU), 'EE UU')
+assertPure('matchPais alias: EEUU -> EE UU (mapa real)', matchPais('EEUU', ZONA_REAL_EEUU), 'EE UU')
+assertPure('matchPais alias: USA -> EE UU (mapa real)', matchPais('para USA', ZONA_REAL_EEUU), 'EE UU')
+assertPure('matchPais alias: sigue funcionando contra el fallback (ya tiene "Estados Unidos" como clave)', matchPais('Estados Unidos', COUNTRY_ZONE), 'Estados Unidos')
+assertPure('matchPais alias: no roba Cuba cuando se menciona con EE UU', matchPais('no es Cuba es Estados Unidos', ZONA_REAL_EEUU), 'EE UU')
 
 // ── extraerEntidadesCotizacion: una pasada, todas las entidades ──────────
 const TIPOS_FAKE = [
