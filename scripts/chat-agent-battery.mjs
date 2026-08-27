@@ -380,6 +380,17 @@ caso('tiempos: con pais en el mismo mensaje responde directo', 'cuanto demora un
 caso('tiempos: pais solo con el contexto activo responde tiempos', 'Cuba', conEsperandoPaisTiempos, esperarTipo('tiempos_entrega'))
 caso('tiempos: pais solo SIN el contexto no dispara nada', 'Cuba', conCountryZone, esperarTipo('desconocido'))
 
+// ── tiempos: typo en el país mientras se lo espera — tolera UN error de tipeo ──
+// (bug reportado: "Cuab" en vez de "Cuba" perdía el contexto y caía en fallback)
+caso('tiempos+typo: "Cuab" (transposicion) reconoce Cuba', 'Cuab', conEsperandoPaisTiempos, (r, t) => t[0] === 'tiempos_entrega' && r[0].pais === 'Cuba')
+caso('tiempos+typo: "espnaa" (transposicion) reconoce España', 'espnaa', conEsperandoPaisTiempos, (r, t) => t[0] === 'tiempos_entrega' && r[0].pais === 'España')
+caso('tiempos+typo: mayusculas sueltas "CUba" sigue reconociendo', 'CUba', conEsperandoPaisTiempos, (r, t) => t[0] === 'tiempos_entrega' && r[0].pais === 'Cuba')
+caso('tiempos+typo: texto sin relacion NO cae en "desconocido" (mantiene el contexto)', 'xyz123', conEsperandoPaisTiempos, esperarTipo('tiempos_pais_no_reconocido'))
+caso('tiempos+typo: un cambio de tema real (rastreo) sigue funcionando con el contexto activo', 'quiero rastrear mi envio', conEsperandoPaisTiempos, esperarTipo('rastreo_pedir_numero'))
+// El fuzzy no debe inventar países muy distintos entre sí: si el usuario
+// escribe otro país real (no un typo), debe reconocer ESE país, no un vecino.
+caso('tiempos+typo: NO confunde Cuba con Aruba (paises reales distintos)', 'Aruba', { flujo: null, ultimoTema: null, countryZone: { ...ZONA_FAKE, Aruba: 'D' }, esperandoPaisTiempos: true }, (r, t) => t[0] === 'tiempos_entrega' && r[0].pais === 'Aruba')
+
 // ── tiempos_entrega: expansión semántica generalizada (raíz de palabra) ──
 caso('tiempos gen: demora de los envios (sin interrogativo)', 'demora de los envios', conCountryZone, esperarTipo('tiempos_pedir_pais'))
 caso('tiempos gen: demora de envio', 'demora de envio', conCountryZone, esperarTipo('tiempos_pedir_pais'))

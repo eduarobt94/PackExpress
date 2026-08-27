@@ -136,6 +136,33 @@ function levenshtein(a, b) {
   return fila[n]
 }
 
+/**
+ * Distancia de edición que además cuenta una transposición de dos letras
+ * ADYACENTES ("cuab" vs "cuba") como UN solo cambio, no dos — a diferencia de
+ * `levenshtein`, que la cuenta como dos sustituciones. Es el error de tipeo
+ * más común al escribir rápido (dedos cruzados) y con `levenshtein` puro
+ * quedaba fuera de cualquier tolerancia razonable para palabras cortas
+ * (p.ej. país: "Cuba" es una de las respuestas más típicas y más cortas).
+ * Solo se usa donde el resultado NO calcula un precio (ver matchPaisTolerante).
+ */
+function distanciaConTransposicion(a, b) {
+  const m = a.length
+  const n = b.length
+  const d = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
+  for (let i = 0; i <= m; i++) d[i][0] = i
+  for (let j = 0; j <= n; j++) d[0][j] = j
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const costo = a[i - 1] === b[j - 1] ? 0 : 1
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + costo)
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1)
+      }
+    }
+  }
+  return d[m][n]
+}
+
 /** Tolerancia de errores según el largo de la palabra objetivo: 0 para <4, 1 para 4-7, 2 para 8+. */
 function toleranciaPara(largo) {
   if (largo < 4) return 0
@@ -522,9 +549,36 @@ function esConsultaHorarioPorDia(textoNormalizado) {
  * le agrega Uruguay ahí solo para esto). Se resuelve aparte, antes de
  * intentar matchPais.
  */
+/**
+ * Como matchPais, pero tolerando UN error de tipeo (incluida una transposición
+ * de letras adyacentes: "Cuab" -> "Cuba") en países de una sola palabra.
+ * matchPais no tiene fuzzy A PROPÓSITO porque decide una tarifa real — acá no:
+ * solo decide qué texto informativo mostrar (tiempos de entrega), así que el
+ * riesgo de un falso positivo es mucho menor y vale la pena tolerarlo.
+ * Restringido a UNA palabra de texto contra UN país de una sola palabra (no
+ * "Costa Rica"): comparar frases enteras con esta tolerancia multiplicaría el
+ * riesgo de falsos positivos sin necesidad — un típo en un país de una sola
+ * palabra ("Cuba", "Chile", "México") es el caso real y común.
+ */
+function matchPaisTolerante(textoOriginal, countryZone) {
+  const exacto = matchPais(textoOriginal, countryZone)
+  if (exacto) return exacto
+  const palabras = tokenizar(normalizeText(textoOriginal))
+  const paisesUnaPalabra = Object.keys(countryZone).filter(p => !p.trim().includes(' '))
+  for (const palabra of palabras) {
+    if (palabra.length < 4) continue
+    const pais = paisesUnaPalabra.find(p => {
+      const pNorm = normalizeText(p)
+      return Math.abs(palabra.length - pNorm.length) <= 1 && distanciaConTransposicion(palabra, pNorm) <= 1
+    })
+    if (pais) return pais
+  }
+  return null
+}
+
 function matchDestinoTiempos(textoOriginal, countryZone) {
   if (/\buruguay\b/.test(normalizeText(textoOriginal))) return 'Uruguay'
-  return matchPais(textoOriginal, countryZone)
+  return matchPaisTolerante(textoOriginal, countryZone)
 }
 
 /**
@@ -748,6 +802,17 @@ export function detectarIntenciones(textoOriginal, estado) {
     if (temaPrevio) {
       return [{ tipo: 'faq', respuesta: temaPrevio.respuesta, temaId: temaPrevio.id, derivaWhatsapp: !!temaPrevio.derivaWhatsapp, chips: temaPrevio.chips ?? null }]
     }
+  }
+
+  // Se llegó hasta acá (nada matcheó: ni el país con tolerancia arriba, ni
+  // ninguna otra intención real) mientras se esperaba el país para tiempos de
+  // entrega — no se cae en el fallback genérico y se pierde el contexto: se
+  // pide el país de nuevo, MANTENIENDO `esperandoPaisTiempos` activo (a
+  // diferencia de 'desconocido', que useChatAgent.js usa para limpiarlo).
+  // Si el usuario cambió de tema de verdad, ya se resolvió arriba (rastreo,
+  // otra FAQ, cotizar, etc.) — nunca se llega hasta acá en ese caso.
+  if (estado?.esperandoPaisTiempos) {
+    return [{ tipo: 'tiempos_pais_no_reconocido' }]
   }
 
   return [{ tipo: 'desconocido' }]

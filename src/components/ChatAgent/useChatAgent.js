@@ -47,7 +47,7 @@ function flujoVacio() {
 }
 
 function contextoVacio() {
-  return { ultimoTema: null, nivelFallback: 0, esperandoGuia: false, esperandoPaisTiempos: false }
+  return { ultimoTema: null, nivelFallback: 0, esperandoGuia: false, esperandoPaisTiempos: false, intentosPaisTiempos: 0 }
 }
 
 /* ── Slot filling del flujo de cotización ─────────────────────────────────
@@ -433,7 +433,9 @@ export function useChatAgent() {
     // número: así una respuesta real a otra pregunta ("en realidad quiero
     // cotizar") no queda arrastrando el contexto de rastreo.
     contextoRef.current.esperandoGuia = intencion.tipo === 'rastreo_pedir_numero'
-    contextoRef.current.esperandoPaisTiempos = intencion.tipo === 'tiempos_pedir_pais'
+    const siguePidiendoPaisTiempos = intencion.tipo === 'tiempos_pedir_pais' || intencion.tipo === 'tiempos_pais_no_reconocido'
+    contextoRef.current.esperandoPaisTiempos = siguePidiendoPaisTiempos
+    if (!siguePidiendoPaisTiempos) contextoRef.current.intentosPaisTiempos = 0
 
     switch (intencion.tipo) {
       case 'rastreo':
@@ -442,6 +444,20 @@ export function useChatAgent() {
         return responderConDelay('Decime el número de tu guía y te digo en qué estado está.')
       case 'tiempos_pedir_pais':
         return responderConDelay('¿A qué país enviamos? Así te cuento los tiempos estimados (varían bastante entre un envío nacional y uno internacional).')
+      case 'tiempos_pais_no_reconocido': {
+        // Se llega acá con un error de tipeo que ni la tolerancia de
+        // matchDestinoTiempos pudo resolver (ver intentEngine.js) — se
+        // reintenta MANTENIENDO el contexto (a diferencia de 'desconocido',
+        // que lo limpia), hasta el mismo tope de intentos que usa el wizard
+        // de cotización, para no insistir para siempre.
+        contextoRef.current.intentosPaisTiempos += 1
+        if (contextoRef.current.intentosPaisTiempos > MAX_INTENTOS_FALLIDOS) {
+          contextoRef.current.esperandoPaisTiempos = false
+          contextoRef.current.intentosPaisTiempos = 0
+          return responderConDelay('No logré reconocer el país. Te recomiendo escribirnos por WhatsApp y te confirmamos los tiempos ahí.', ['Hablar por WhatsApp'])
+        }
+        return responderConDelay('No reconocí ese país, ¿podés escribirlo de nuevo? Por ejemplo: Cuba, España, Estados Unidos.')
+      }
       case 'cotizar_iniciar':
         return iniciarCotizacion(intencion.paisPrellenado, intencion.pesoPrellenado)
       case 'cotizar_directo':
