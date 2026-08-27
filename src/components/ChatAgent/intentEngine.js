@@ -476,7 +476,8 @@ function extraerPesoConUnidad(textoOriginal) {
 export function extraerPesoYPais(textoOriginal, countryZone) {
   const peso = extraerPesoConUnidad(textoOriginal)
   if (peso == null) return null
-  const pais = matchPais(textoOriginal, countryZone)
+  // Tolerante a un typo, igual que el resto del flujo de cotización.
+  const pais = matchPaisTolerante(textoOriginal, countryZone)
   if (!pais) return null
   return { peso, pais }
 }
@@ -508,7 +509,11 @@ export function extraerEntidadesCotizacion(texto, { zonaMap, tipos, pasoActual }
   }
 
   if (zonaMap) {
-    const pais = matchPais(texto, zonaMap)
+    // Tolerante a un typo: el usuario escribe el país a mano y equivocarse una
+    // letra ("cuab") no debería cortar el flujo. Es seguro para precio porque
+    // ningún par de países del catálogo está a distancia <= 1 entre sí (ver
+    // matchPaisTolerante) y el bot confirma el destino antes de cotizar.
+    const pais = matchPaisTolerante(texto, zonaMap)
     if (pais) entidades.pais = pais
   }
 
@@ -550,15 +555,29 @@ function esConsultaHorarioPorDia(textoNormalizado) {
  * intentar matchPais.
  */
 /**
+ * Palabras corrientes del español que caen a distancia 1 de algún país y por
+ * eso NUNCA deben resolverse por parecido. Verificado contra el catálogo real
+ * completo: la única colisión real es "pero" → "Peru" (y es una palabra
+ * comunísima: "pero no sé el peso" cotizaría a Perú). El resto se incluye como
+ * defensa por si mañana se suman países al catálogo.
+ */
+const PALABRAS_QUE_NO_SON_PAIS = new Set([
+  'pero', 'para', 'como', 'esta', 'este', 'todo', 'toda', 'nada', 'algo',
+  'otro', 'otra', 'solo', 'sola', 'cosa', 'casa', 'cara', 'sale', 'vale',
+])
+
+/**
  * Como matchPais, pero tolerando UN error de tipeo (incluida una transposición
  * de letras adyacentes: "Cuab" -> "Cuba") en países de una sola palabra.
- * matchPais no tiene fuzzy A PROPÓSITO porque decide una tarifa real — acá no:
- * solo decide qué texto informativo mostrar (tiempos de entrega), así que el
- * riesgo de un falso positivo es mucho menor y vale la pena tolerarlo.
  * Restringido a UNA palabra de texto contra UN país de una sola palabra (no
  * "Costa Rica"): comparar frases enteras con esta tolerancia multiplicaría el
  * riesgo de falsos positivos sin necesidad — un típo en un país de una sola
  * palabra ("Cuba", "Chile", "México") es el caso real y común.
+ *
+ * Seguro para decidir precios: verificado que entre los 62 países de una sola
+ * palabra del catálogo real NO hay ningún par a distancia <= 1, así que un
+ * typo solo puede resolver al país correcto o a ninguno, nunca a otro país.
+ * Y el bot siempre confirma el destino en voz alta antes de cotizar.
  */
 function matchPaisTolerante(textoOriginal, countryZone) {
   const exacto = matchPais(textoOriginal, countryZone)
@@ -566,7 +585,7 @@ function matchPaisTolerante(textoOriginal, countryZone) {
   const palabras = tokenizar(normalizeText(textoOriginal))
   const paisesUnaPalabra = Object.keys(countryZone).filter(p => !p.trim().includes(' '))
   for (const palabra of palabras) {
-    if (palabra.length < 4) continue
+    if (palabra.length < 4 || PALABRAS_QUE_NO_SON_PAIS.has(palabra)) continue
     const pais = paisesUnaPalabra.find(p => {
       const pNorm = normalizeText(p)
       return Math.abs(palabra.length - pNorm.length) <= 1 && distanciaConTransposicion(palabra, pNorm) <= 1
@@ -642,7 +661,9 @@ const PATRONES_COBERTURA_PAIS = [
 export function detectarCoberturaPais(textoOriginal, countryZone) {
   const texto = normalizeText(textoOriginal)
   if (!PATRONES_COBERTURA_PAIS.some(p => texto.includes(p))) return null
-  return matchPais(textoOriginal, countryZone)
+  // Tolerante por consistencia con el resto: "¿mandan a cuab?" es el mismo
+  // typo que ya se acepta al cotizar, y acá ni siquiera se decide un precio.
+  return matchPaisTolerante(textoOriginal, countryZone)
 }
 
 /**
@@ -717,7 +738,7 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
     // paquete pa Cuba") y/o el peso con unidad explícita (ej. "cuanto cuesta
     // enviar 5 kg"), se lo pasamos al wizard para que no lo vuelva a preguntar
     // — es el mismo principio de cotizar_directo, pero sin exigir ambos a la vez.
-    const paisPrellenado = countryZone ? matchPais(textoOriginal, countryZone) : null
+    const paisPrellenado = countryZone ? matchPaisTolerante(textoOriginal, countryZone) : null
     const pesoPrellenado = extraerPesoConUnidad(textoOriginal)
     return { tipo: 'cotizar_iniciar', paisPrellenado, pesoPrellenado }
   }

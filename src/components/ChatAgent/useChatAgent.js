@@ -60,7 +60,18 @@ function contextoVacio() {
 const SLOTS_COTIZACION = ['peso', 'pais', 'tipo']
 
 function nombresTiposDe(flujo) {
-  return flujo.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
+  return flujo.tipos.map(t => t.nombre).join(', ')
+}
+
+/**
+ * Sin catálogo de tipos (la API falló) la cotización NO puede completarse:
+ * cotizar_todas necesita un tipo_servicio_id real, y matchTipo no tiene contra
+ * qué comparar, así que rechazaría cualquier respuesta. Antes el texto de
+ * respaldo ofrecía "(paquete, documento)" y después rechazaba "paquete" — un
+ * callejón sin salida. Se detecta acá para derivar en vez de preguntar.
+ */
+function sinCatalogoDeTipos(flujo) {
+  return flujo.tipos.length === 0
 }
 
 /** Slots todavía sin completar. En modo tabla el peso no hace falta: se cotizan varios. */
@@ -229,12 +240,16 @@ export function useChatAgent() {
     if (pesoPrellenado != null) {
       flujoRef.current.datos.peso = pesoPrellenado
     }
+    if (sinCatalogoDeTipos(flujoRef.current)) {
+      flujoRef.current = flujoVacio()
+      return ofrecerSalidaWhatsapp('No pude cargar los tipos de envío en este momento, así que no puedo cotizarte acá. Escribinos por WhatsApp y te pasamos el precio enseguida.')
+    }
     const faltan = slotsFaltantes(flujoRef.current)
     flujoRef.current.paso = faltan[0]
     const pregunta = preguntaDeSlot(faltan[0], flujoRef.current)
     const resumen = resumenEntidades(flujoRef.current.datos)
     return responderConDelay(resumen ? `¡Perfecto! ${resumen}. ${pregunta}` : pregunta)
-  }, [responderConDelay])
+  }, [responderConDelay, ofrecerSalidaWhatsapp])
 
   /**
    * Ejecuta la cotización real (o la tabla de referencia) una vez que ya se
@@ -333,9 +348,12 @@ export function useChatAgent() {
       return cotizarYResponder({ peso, pais: paisFinal, zonaMap: flujoRef.current.zonaMap, modoTabla: false }, tipoDetectado)
     }
 
-    const nombresTipos = flujoRef.current.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
-    return responderConDelay(`¡Perfecto! ${peso} kg a ${nombrePaisParaMostrar(paisFinal)}. ¿Qué tipo de envío es? (${nombresTipos})`)
-  }, [responderConDelay, cotizarYResponder])
+    if (sinCatalogoDeTipos(flujoRef.current)) {
+      flujoRef.current = flujoVacio()
+      return ofrecerSalidaWhatsapp('No pude cargar los tipos de envío en este momento, así que no puedo cotizarte acá. Escribinos por WhatsApp y te pasamos el precio enseguida.')
+    }
+    return responderConDelay(`¡Perfecto! ${peso} kg a ${nombrePaisParaMostrar(paisFinal)}. ¿Qué tipo de envío es? (${nombresTiposDe(flujoRef.current)})`)
+  }, [responderConDelay, cotizarYResponder, ofrecerSalidaWhatsapp])
 
   /**
    * Si el usuario, en medio del flujo de cotización, en vez de contestar el

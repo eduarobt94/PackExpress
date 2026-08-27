@@ -475,6 +475,20 @@ assertPure('matchPais alias: sigue funcionando contra el fallback (ya tiene "Est
 assertPure('matchPais alias: no roba Cuba cuando se menciona con EE UU', matchPais('no es Cuba es Estados Unidos', ZONA_REAL_EEUU), 'Miami')
 assertPure('matchPais alias: "Miami" dicho literal sigue siendo Miami', matchPais('Miami', ZONA_REAL_EEUU), 'Miami')
 
+// ── País de cotización tolerante a UN typo (decide precio: ver colisiones) ──
+// Reportado: "Quiero enviar unpaquete de 5 kg a cuab" no reconocia el destino.
+const ZONA_TYPO = { 'Cuba': 'E', 'Chile': 'E', 'Peru': 'E', 'España': 'G' }
+const paisDe = (txt) => extraerEntidadesCotizacion(txt, { zonaMap: ZONA_TYPO, tipos: [], pasoActual: 'pais' }).pais ?? null
+assertPure('cotizar+typo: "cuab" -> Cuba', paisDe('cuab'), 'Cuba')
+assertPure('cotizar+typo: typo dentro de una frase larga', paisDe('Quiero enviar unpaquete de 5 kg a cuab'), 'Cuba')
+assertPure('cotizar+typo: "chiel" -> Chile', paisDe('chiel'), 'Chile')
+assertPure('cotizar+typo: sin typo sigue exacto', paisDe('a Cuba'), 'Cuba')
+// "pero" esta a distancia 1 de "Peru" y es palabra comunisima: jamas debe
+// cotizar a Peru por parecido (seria un PRECIO equivocado, no solo un texto).
+assertPure('cotizar+typo: "pero" NO se confunde con Peru', paisDe('pero no se el peso todavia'), null)
+assertPure('cotizar+typo: "pero" al inicio tampoco', paisDe('pero cuanto sale'), null)
+assertPure('cotizar+typo: "para" no dispara pais', paisDe('para saber el costo'), null)
+
 // ── extraerEntidadesCotizacion: una pasada, todas las entidades ──────────
 const TIPOS_FAKE = [
   { id: 1, codigo: 'DOC', nombre: 'Documentos' },
@@ -562,6 +576,19 @@ await checkApi('GET tipos es accesible SIN sesión (lo llama iniciarCotizacion d
     throw new Error('401 No autenticado — "tipos" no está en la lista de endpoints públicos de tarifario.php (solo zonas/cotizar_todas lo están). Un visitante anónimo de la landing NO puede cotizar hoy: tanto el chat como el cotizador completo (Cotizacion.jsx) llaman a este endpoint sin sesión.')
   }
   return json.ok && Array.isArray(json.data) && json.data.length > 0 && 'id' in json.data[0] && 'nombre' in json.data[0]
+})
+
+// Al abrir 'tipos' al público, lo que importa es no haber abierto nada más:
+// el resto de tarifario.php (tarifas por línea, versiones) sigue siendo privado.
+await checkApi('tarifario: los endpoints privados siguen exigiendo sesión (401)', async () => {
+  const privados = ['lineas', 'cotizar', '']
+  for (const action of privados) {
+    const res = await fetch(`${API}/tarifario.php?action=${action}`)
+    if (res.status !== 401) {
+      throw new Error(`action="${action}" devolvió ${res.status} en vez de 401 — se expuso un endpoint privado al abrir "tipos".`)
+    }
+  }
+  return true
 })
 
 await checkApi('POST cotizar_todas: data.zonas es array (no data directo)', async () => {
