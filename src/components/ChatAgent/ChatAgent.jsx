@@ -105,7 +105,7 @@ export default function ChatAgent() {
             data-lenis-prevent
             className="fixed z-40 bottom-[144px] sm:bottom-[156px] right-4 sm:right-6 left-4 sm:left-auto
                        sm:w-[360px] h-[65vh] sm:h-[520px] max-h-[600px]
-                       rounded-2xl border border-[var(--bd-2)] overflow-hidden
+                       rounded-2xl border border-[var(--chat-bd)] overflow-hidden
                        flex flex-col bg-[var(--bg-card)] backdrop-blur-xl
                        shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
           >

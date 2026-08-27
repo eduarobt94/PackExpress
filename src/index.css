@@ -62,6 +62,12 @@
   --bd-2: rgba(255,255,255,0.08);
   --bd-3: rgba(255,255,255,0.12);
   --bd-4: rgba(255,255,255,0.20);
+
+  /* Borde del panel del chat: en oscuro usa el naranja apagado de la marca
+     (#B85D2C, el mismo del degradado del banner de promos) para despegarlo
+     del fondo sin el brillo del naranja principal. En claro vuelve al borde
+     neutro — ver [data-theme="light"] más abajo. */
+  --chat-bd: rgba(184, 93, 44, 0.55);
 }
 
 [data-theme="light"] {
@@ -96,6 +102,9 @@
   --bd-2: rgba(0,0,0,0.11);
   --bd-3: rgba(0,0,0,0.18);
   --bd-4: rgba(0,0,0,0.26);
+
+  /* En claro el panel del chat mantiene el borde neutro de siempre. */
+  --chat-bd: rgba(0,0,0,0.11);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
