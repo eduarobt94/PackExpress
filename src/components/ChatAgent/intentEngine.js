@@ -552,7 +552,7 @@ const PATRON_TIEMPOS_ENTREGA = /\b(cuant[oa]s?|que|cual(es)?|cuando)\b[\s\S]{0,2
  * cualquier conjugación sin necesitar una frase por cada una. Se evalúa
  * solo en el slot de sin_info_pago dentro del loop de FAQ.
  */
-const PATRON_PAGO = /\b(como|de que forma|de que manera|cual es la forma)\b[\s\S]{0,30}\b(pag\w*|abon\w*)\b/
+const PATRON_PAGO = /\b(como|de que forma|de que manera|cual es la forma|que medi\w*|que form\w*|que metod\w*)\b[\s\S]{0,30}\b(pag\w*|abon\w*)\b/
 
 /**
  * "¿Qué NO se puede enviar?" generalizado por raíz — cubre la familia

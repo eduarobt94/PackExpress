@@ -421,6 +421,12 @@ caso('pago gen: como se realiza el pago', 'como se realiza el pago', sinFlujo, e
 caso('pago gen: como abono mi envio', 'como abono mi envio', sinFlujo, esperarTipo('sin_info_pago'))
 caso('pago gen NO cruza: cuanto me cobran por enviar sigue siendo cotizar', 'cuanto me cobran por enviar', sinFlujo, esperarTipo('cotizar_iniciar'))
 
+// ── pago: "medios de pago" (bug reportado — solo "metodos"/"formas" matcheaban) ──
+caso('pago gen: que medios de pago tienen', 'que medios de pago tienen', sinFlujo, esperarTipo('sin_info_pago'))
+caso('pago gen: medios de pago (frase sola)', 'medios de pago', sinFlujo, esperarTipo('sin_info_pago'))
+caso('pago gen: que medio de pago usan (singular)', 'que medio de pago usan', sinFlujo, esperarTipo('sin_info_pago'))
+caso('pago NO cruza: que formas de envio tienen sigue sin matchear pago', 'que formas de envio tienen', sinFlujo, (_, t) => t[0] !== 'sin_info_pago')
+
 // ── articulos_prohibidos: expansión semántica generalizada (raíz de palabra) ──
 caso('prohibidos gen: que no se puede enviar', 'que no se puede enviar', sinFlujo, esperarTipo('articulos_prohibidos'))
 caso('prohibidos gen: que articulos no puedo mandar', 'que articulos no puedo mandar', sinFlujo, esperarTipo('articulos_prohibidos'))

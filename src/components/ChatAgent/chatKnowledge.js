@@ -308,7 +308,7 @@ export const FAQ = [
   {
     id: 'sin_info_pago',
     palabrasClave: [
-      'metodos de pago', 'como pago', 'formas de pago', 'aceptan tarjeta',
+      'metodos de pago', 'medios de pago', 'como pago', 'formas de pago', 'aceptan tarjeta',
       'aceptan transferencia', 'se puede pagar en efectivo', 'como se paga',
       'puedo pagar con tarjeta de credito', 'aceptan paypal',
       'se puede pagar por transferencia', 'como abono el envio', 'donde pago',
