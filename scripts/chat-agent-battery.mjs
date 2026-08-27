@@ -433,16 +433,20 @@ assertPure('matchPais: un solo pais sigue igual (España)', matchPais('quiero en
 assertPure('matchPais: sin pais devuelve null', matchPais('no se', ZONA_ORDEN), null)
 
 // ── matchPais: alias "Estados Unidos" contra el nombre real del backend ──
-// El catálogo real de tarifario.php llama "EE UU" a lo que cualquier usuario
-// escribe como "Estados Unidos"/"EEUU"/"USA" — sin alias, matchPais fallaba
-// apenas se cargaba el mapa de zonas real (reemplaza al fallback estático de
-// zones.js, que sí usa "Estados Unidos" como clave).
-const ZONA_REAL_EEUU = { 'EE UU': 'E', 'Cuba': 'E', 'España': 'G' }
-assertPure('matchPais alias: Estados Unidos -> EE UU (mapa real)', matchPais('Estados Unidos', ZONA_REAL_EEUU), 'EE UU')
-assertPure('matchPais alias: EEUU -> EE UU (mapa real)', matchPais('EEUU', ZONA_REAL_EEUU), 'EE UU')
-assertPure('matchPais alias: USA -> EE UU (mapa real)', matchPais('para USA', ZONA_REAL_EEUU), 'EE UU')
+// El catálogo real (tabla cod_pais) tiene DOS filas para EE.UU.: "Miami"
+// (Zona A, tarifario real y detallado) y "EE UU" (Zona E, precio plano sin
+// uso histórico, agrupado junto a Cuba/Argentina). Confirmado con el negocio:
+// "Miami" es la tarifa correcta para un destino EE.UU. genérico — es lo que
+// el panel administrativo ya trata como "el" destino EE.UU. "EE UU" queda
+// como respaldo por si algún día se retira la fila "Miami" del catálogo.
+const ZONA_REAL_EEUU = { 'Miami': 'A', 'EE UU': 'E', 'Cuba': 'E', 'España': 'G' }
+assertPure('matchPais alias: Estados Unidos -> Miami (Zona A, no "EE UU"/Zona E)', matchPais('Estados Unidos', ZONA_REAL_EEUU), 'Miami')
+assertPure('matchPais alias: EEUU -> Miami', matchPais('EEUU', ZONA_REAL_EEUU), 'Miami')
+assertPure('matchPais alias: USA -> Miami', matchPais('para USA', ZONA_REAL_EEUU), 'Miami')
+assertPure('matchPais alias: sin fila Miami, respalda en "EE UU"', matchPais('Estados Unidos', { 'EE UU': 'E', 'Cuba': 'E' }), 'EE UU')
 assertPure('matchPais alias: sigue funcionando contra el fallback (ya tiene "Estados Unidos" como clave)', matchPais('Estados Unidos', COUNTRY_ZONE), 'Estados Unidos')
-assertPure('matchPais alias: no roba Cuba cuando se menciona con EE UU', matchPais('no es Cuba es Estados Unidos', ZONA_REAL_EEUU), 'EE UU')
+assertPure('matchPais alias: no roba Cuba cuando se menciona con EE UU', matchPais('no es Cuba es Estados Unidos', ZONA_REAL_EEUU), 'Miami')
+assertPure('matchPais alias: "Miami" dicho literal sigue siendo Miami', matchPais('Miami', ZONA_REAL_EEUU), 'Miami')
 
 // ── extraerEntidadesCotizacion: una pasada, todas las entidades ──────────
 const TIPOS_FAKE = [

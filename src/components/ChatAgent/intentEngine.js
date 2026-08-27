@@ -301,16 +301,39 @@ export function parsePeso(texto) {
 }
 
 /**
- * Grupos de formas equivalentes para nombrar un país que el USUARIO usa pero
- * que no coinciden textualmente con el nombre que el BACKEND real usa como
- * clave (p.ej. el catálogo de tarifario.php llama "EE UU" a lo que cualquier
- * persona escribiría como "Estados Unidos"/"EEUU"/"USA"). El fallback estático
- * de zones.js sí usa el nombre amigable, así que esto no rompe nada ahí — solo
- * entra en juego cuando ninguna forma del grupo es ya una clave de countryZone.
+ * Formas en que el USUARIO nombra un país que no coinciden textualmente con
+ * ninguna clave del BACKEND real, más a qué clave real debe resolver.
+ *
+ * Caso "Estados Unidos": el catálogo real (tabla cod_pais) tiene DOS filas
+ * para EE.UU. — "Miami" (Zona A, tarifario real y detallado) y "EE UU" (Zona
+ * E, precio plano sin uso histórico real, agrupado junto a Cuba/Argentina).
+ * Confirmado con el negocio: "Miami" es la tarifa correcta para un destino
+ * EE.UU. genérico sin ciudad específica — es lo que el panel administrativo
+ * ya trata como "el" destino EE.UU. Se prueba "Miami" primero y "EE UU" solo
+ * como respaldo por si algún día se retira la fila "Miami" del catálogo.
+ * El fallback estático de zones.js (que usa "Estados Unidos" como clave) no
+ * necesita esto — ya matchea directo antes de llegar acá.
  */
 const ALIAS_PAISES = [
-  ['estados unidos', 'eeuu', 'ee uu', 'ee.uu', 'usa', 'united states', 'eua', 'norteamerica'],
+  {
+    formas: ['estados unidos', 'eeuu', 'ee uu', 'ee.uu', 'usa', 'united states', 'eua', 'norteamerica'],
+    destinoPreferido: ['Miami', 'EE UU'],
+    // Al usuario se le confirma "Estados Unidos", nunca la fila interna
+    // resuelta ("Miami"): esa es un detalle de tarifario, no lo que escribió.
+    mostrarComo: 'Estados Unidos',
+  },
 ]
+
+/**
+ * Para mostrarle al usuario el país que escribió, no la fila interna del
+ * tarifario que `matchPais` resolvió para calcular el precio (p.ej. calcula
+ * con "Miami" pero se le confirma "Estados Unidos" — son la misma tarifa,
+ * pero "Miami" es un detalle interno que el usuario nunca escribió).
+ */
+export function nombrePaisParaMostrar(pais) {
+  const alias = ALIAS_PAISES.find(a => a.destinoPreferido.includes(pais))
+  return alias?.mostrarComo ?? pais
+}
 
 /**
  * Busca el nombre de país (clave de countryZone) que mejor matchea el texto.
@@ -347,12 +370,14 @@ export function matchPais(texto, countryZone) {
     if (match) considerar(pais, match.index)
   }
 
-  // Alias: el usuario mencionó una forma del grupo, y el mapa de países tiene
-  // como clave OTRA forma del mismo grupo (el nombre real del backend).
-  for (const grupo of ALIAS_PAISES) {
-    const nombreEnMapa = grupo.map(f => paisesPorNorm.get(f)).find(Boolean)
+  // Alias: el usuario mencionó una de las formas coloquiales, y se resuelve al
+  // primer nombre de `destinoPreferido` que exista como clave real en el mapa.
+  for (const { formas, destinoPreferido } of ALIAS_PAISES) {
+    const nombreEnMapa = destinoPreferido
+      .map(destino => paisesPorNorm.get(normalizeText(destino)))
+      .find(Boolean)
     if (!nombreEnMapa) continue
-    for (const forma of grupo) {
+    for (const forma of formas) {
       const match = norm.match(new RegExp(`\\b${forma.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`))
       if (match) considerar(nombreEnMapa, match.index)
     }

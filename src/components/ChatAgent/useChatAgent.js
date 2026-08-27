@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   detectarIntenciones, matchPais, matchTipo, formatFechaHora, elegirSaludo, normalizeText,
-  buscarIntencionDeNegocio, extraerEntidadesCotizacion,
+  buscarIntencionDeNegocio, extraerEntidadesCotizacion, nombrePaisParaMostrar,
 } from './intentEngine'
 import { GOODBYE_RESPONSES, FAQ, RESPUESTA_TIEMPOS_NACIONAL } from './chatKnowledge'
 import { COUNTRY_ZONE, ZONE_LABELS } from '../../lib/zones'
@@ -84,9 +84,9 @@ function noEntendiSlot(slot) {
 /** Confirma lo que se acaba de entender: "10 kg a Cuba", "15 kg", "destino España". */
 function resumenEntidades(nuevas) {
   const partes = []
-  if (nuevas.peso != null && nuevas.pais) partes.push(`${nuevas.peso} kg a ${nuevas.pais}`)
+  if (nuevas.peso != null && nuevas.pais) partes.push(`${nuevas.peso} kg a ${nombrePaisParaMostrar(nuevas.pais)}`)
   else if (nuevas.peso != null) partes.push(`${nuevas.peso} kg`)
-  else if (nuevas.pais) partes.push(`destino ${nuevas.pais}`)
+  else if (nuevas.pais) partes.push(`destino ${nombrePaisParaMostrar(nuevas.pais)}`)
   if (nuevas.tipo) partes.push(nuevas.tipo.nombre)
   return partes.join(', ')
 }
@@ -236,6 +236,9 @@ export function useChatAgent() {
    */
   const cotizarYResponder = useCallback(async ({ peso, pais, zonaMap, modoTabla }, tipo) => {
     const zonaCod = zonaMap[pais]
+    // `pais` es la fila interna del tarifario (puede ser "Miami"); al usuario
+    // se le habla siempre del país que escribió ("Estados Unidos").
+    const paisMostrado = nombrePaisParaMostrar(pais)
     if (modoTabla) {
       try {
         const jsons = await Promise.all(
@@ -253,9 +256,9 @@ export function useChatAgent() {
           return `${PESOS_TABLA[i]} kg — USD ${fila.total.toFixed(2)}`
         }).filter(Boolean)
         if (filas.length === 0) {
-          return responderConDelay(`No tengo tarifas disponibles para ${pais} en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
+          return responderConDelay(`No tengo tarifas disponibles para ${paisMostrado} en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
         }
-        return responderConDelay(`Precios de referencia para ${pais} (${ZONE_LABELS[zonaCod]}):\n${filas.join('\n')}\n\nSon precios estimados por peso, se confirman al gestionar el envío. Si me decís tu peso exacto te lo cotizo directo.`)
+        return responderConDelay(`Precios de referencia para ${paisMostrado} (${ZONE_LABELS[zonaCod]}):\n${filas.join('\n')}\n\nSon precios estimados por peso, se confirman al gestionar el envío. Si me decís tu peso exacto te lo cotizo directo.`)
       } catch {
         flujoRef.current = flujoVacio()
         return ofrecerSalidaWhatsapp('Tuve un problema calculando las tarifas. Probá de nuevo, o escribinos por WhatsApp.')
@@ -274,9 +277,9 @@ export function useChatAgent() {
       }
       const fila = json.data.zonas.find(z => z.zona_cod === zonaCod)
       if (!fila || !fila.disponible) {
-        return responderConDelay(`No tengo una tarifa disponible para ${pais} con ${peso} kg en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
+        return responderConDelay(`No tengo una tarifa disponible para ${paisMostrado} con ${peso} kg en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
       }
-      return responderConDelay(`Envío de ${peso} kg a ${pais} (${ZONE_LABELS[zonaCod]}): USD ${fila.total.toFixed(2)}. Este precio es estimado, se confirma al gestionar el envío.`)
+      return responderConDelay(`Envío de ${peso} kg a ${paisMostrado} (${ZONE_LABELS[zonaCod]}): USD ${fila.total.toFixed(2)}. Este precio es estimado, se confirma al gestionar el envío.`)
     } catch {
       flujoRef.current = flujoVacio()
       return ofrecerSalidaWhatsapp('Tuve un problema calculando la cotización. Probá de nuevo, o escribinos por WhatsApp.')
@@ -322,7 +325,7 @@ export function useChatAgent() {
     }
 
     const nombresTipos = flujoRef.current.tipos.map(t => t.nombre).join(', ') || 'paquete, documento'
-    return responderConDelay(`¡Perfecto! ${peso} kg a ${paisFinal}. ¿Qué tipo de envío es? (${nombresTipos})`)
+    return responderConDelay(`¡Perfecto! ${peso} kg a ${nombrePaisParaMostrar(paisFinal)}. ¿Qué tipo de envío es? (${nombresTipos})`)
   }, [responderConDelay, cotizarYResponder])
 
   /**
@@ -435,7 +438,7 @@ export function useChatAgent() {
       case 'cotizar_directo':
         return iniciarCotizacionDirecta(intencion.peso, intencion.pais, intencion.textoOriginal)
       case 'cobertura_pais':
-        return responderConDelay(`Sí, hacemos envíos a ${intencion.pais}. En total llegamos a más de 50 países en América, Europa, Asia y Oceanía.`)
+        return responderConDelay(`Sí, hacemos envíos a ${nombrePaisParaMostrar(intencion.pais)}. En total llegamos a más de 50 países en América, Europa, Asia y Oceanía.`)
       case 'cotizar_respuesta':
         return manejarRespuestaCotizacion(intencion.valor)
       case 'ambiguo_precio':
