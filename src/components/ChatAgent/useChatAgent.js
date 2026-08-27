@@ -193,13 +193,15 @@ export function useChatAgent() {
   }, [responderConDelay, ofrecerSalidaWhatsapp])
 
   /**
-   * `paisPrellenado`: si el mensaje que disparó la cotización ya mencionaba
-   * el país destino (ej. "quiero mandar un paquete pa Cuba"), se lo guarda
-   * de una vez y se salta el paso "país" del wizard más adelante — el país
-   * se re-valida contra el mapa dinámico real recién llegado, igual que en
-   * iniciarCotizacionDirecta.
+   * `paisPrellenado`/`pesoPrellenado`: si el mensaje que disparó la
+   * cotización ya mencionaba el país destino (ej. "quiero mandar un paquete
+   * pa Cuba") y/o el peso con unidad explícita (ej. "cuanto cuesta enviar 5
+   * kg"), se guardan de una vez y el wizard salta directo al primer slot que
+   * todavía falte — el país se re-valida contra el mapa dinámico real recién
+   * llegado, igual que en iniciarCotizacionDirecta. "tipo" nunca llega
+   * prellenado por esta vía, así que siempre queda al menos un slot pendiente.
    */
-  const iniciarCotizacion = useCallback(async (paisPrellenado) => {
+  const iniciarCotizacion = useCallback(async (paisPrellenado, pesoPrellenado) => {
     if (procesandoRef.current) return
     procesandoRef.current = true
     flujoRef.current = { activo: true, paso: 'peso', datos: {}, intentosFallidos: 0, tipos: [], zonaMap: COUNTRY_ZONE }
@@ -224,7 +226,14 @@ export function useChatAgent() {
       const paisFinal = matchPais(paisPrellenado, flujoRef.current.zonaMap) ?? paisPrellenado
       flujoRef.current.datos.pais = paisFinal
     }
-    return responderConDelay('¡Perfecto! ¿Cuál es el peso aproximado del envío en kg?')
+    if (pesoPrellenado != null) {
+      flujoRef.current.datos.peso = pesoPrellenado
+    }
+    const faltan = slotsFaltantes(flujoRef.current)
+    flujoRef.current.paso = faltan[0]
+    const pregunta = preguntaDeSlot(faltan[0], flujoRef.current)
+    const resumen = resumenEntidades(flujoRef.current.datos)
+    return responderConDelay(resumen ? `¡Perfecto! ${resumen}. ${pregunta}` : pregunta)
   }, [responderConDelay])
 
   /**
@@ -434,7 +443,7 @@ export function useChatAgent() {
       case 'tiempos_pedir_pais':
         return responderConDelay('¿A qué país enviamos? Así te cuento los tiempos estimados (varían bastante entre un envío nacional y uno internacional).')
       case 'cotizar_iniciar':
-        return iniciarCotizacion(intencion.paisPrellenado)
+        return iniciarCotizacion(intencion.paisPrellenado, intencion.pesoPrellenado)
       case 'cotizar_directo':
         return iniciarCotizacionDirecta(intencion.peso, intencion.pais, intencion.textoOriginal)
       case 'cobertura_pais':

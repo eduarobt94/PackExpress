@@ -260,6 +260,16 @@ caso('entidad: sin countryZone no activa cotizar_directo', '10 kg a España', si
 caso('entidad: numero sin unidad de peso NO dispara cotizar_directo', '10 personas viajan a España', conCountryZone, (_, t) => t[0] !== 'cotizar_directo')
 caso('entidad: peso con unidad pero sin país reconocido sigue cotizar_iniciar', 'tengo 10 kg para enviar', conCountryZone, esperarTipo('cotizar_iniciar'))
 
+// ── pesoPrellenado: "cuanto cuesta enviar 5 kg" no debe volver a preguntar el peso ──
+// (bug reportado: el mensaje ya trae el peso pero, al no traer país, caía en
+// cotizar_iniciar genérico y el peso se descartaba silenciosamente)
+caso('pesoPrellenado: "cuanto cuesta enviar 5 kg"', 'cuanto cuesta enviar 5 kg', conCountryZone, (r, t) => t[0] === 'cotizar_iniciar' && r[0].pesoPrellenado === 5)
+caso('pesoPrellenado: variante "kilos"', 'cuanto cuesta enviar 5 kilos', conCountryZone, (r, t) => t[0] === 'cotizar_iniciar' && r[0].pesoPrellenado === 5)
+caso('pesoPrellenado: variante "kilo" (singular)', 'cuanto cuesta enviar 5 kilo', conCountryZone, (r, t) => t[0] === 'cotizar_iniciar' && r[0].pesoPrellenado === 5)
+caso('pesoPrellenado: sin espacio "5kg"', 'cuanto cuesta enviar 5kg', conCountryZone, (r, t) => t[0] === 'cotizar_iniciar' && r[0].pesoPrellenado === 5)
+caso('pesoPrellenado: sin peso mencionado sigue null', 'quiero cotizar', conCountryZone, (r, t) => t[0] === 'cotizar_iniciar' && r[0].pesoPrellenado == null)
+caso('pesoPrellenado: peso Y país juntos siguen siendo cotizar_directo (no cotizar_iniciar)', '5 kg a España', conCountryZone, esperarTipo('cotizar_directo'))
+
 // ── Ambigüedad de precio (chips de aclaración) ───────────────────────────
 caso('ambiguo: "cuanto cuesta" solo', 'cuanto cuesta', sinFlujo, esperarTipo('ambiguo_precio'))
 caso('ambiguo: "precio" solo', 'precio', sinFlujo, esperarTipo('ambiguo_precio'))

@@ -436,11 +436,19 @@ export function elegirSaludo(fecha = new Date()) {
  * pidiendo a la API al iniciar la cotización, esto solo decide si conviene
  * saltar directo al paso "tipo").
  */
-export function extraerPesoYPais(textoOriginal, countryZone) {
+/** Peso con unidad EXPLÍCITA pegada ("5kg", "10 kilos") en cualquier punto del
+ * texto — a diferencia de parsePeso, no toma cualquier número suelto: evita
+ * confundir un peso real con, por ejemplo, un número de guía o de teléfono. */
+function extraerPesoConUnidad(textoOriginal) {
   const matchPeso = expandirPesoInformal(textoOriginal).match(PATRON_PESO_CON_UNIDAD)
   if (!matchPeso) return null
   const peso = parseFloat(matchPeso[1].replace(',', '.'))
-  if (!(peso > 0)) return null
+  return peso > 0 ? peso : null
+}
+
+export function extraerPesoYPais(textoOriginal, countryZone) {
+  const peso = extraerPesoConUnidad(textoOriginal)
+  if (peso == null) return null
   const pais = matchPais(textoOriginal, countryZone)
   if (!pais) return null
   return { peso, pais }
@@ -652,10 +660,12 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
   }
   if (contieneAlguna(texto, PALABRAS_COTIZAR)) {
     // Si el mismo mensaje ya menciona el país destino (ej. "quiero mandar un
-    // paquete pa Cuba"), se lo pasamos al wizard para que no lo vuelva a
-    // preguntar — es el mismo principio de cotizar_directo pero sin peso.
+    // paquete pa Cuba") y/o el peso con unidad explícita (ej. "cuanto cuesta
+    // enviar 5 kg"), se lo pasamos al wizard para que no lo vuelva a preguntar
+    // — es el mismo principio de cotizar_directo, pero sin exigir ambos a la vez.
     const paisPrellenado = countryZone ? matchPais(textoOriginal, countryZone) : null
-    return { tipo: 'cotizar_iniciar', paisPrellenado }
+    const pesoPrellenado = extraerPesoConUnidad(textoOriginal)
+    return { tipo: 'cotizar_iniciar', paisPrellenado, pesoPrellenado }
   }
   if (countryZone) {
     const paisCobertura = detectarCoberturaPais(textoOriginal, countryZone)
