@@ -30,6 +30,28 @@ export const organizationSchema = {
   },
   telephone: '+59893594297',
   email: 'packexpress2021@gmail.com',
+  contactPoint: [
+    {
+      '@type': 'ContactPoint',
+      contactType: 'customer service',
+      telephone: '+59893594297',
+      email: 'packexpress2021@gmail.com',
+      areaServed: 'UY',
+      availableLanguage: ['Spanish'],
+      hoursAvailable: [
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '10:00', closes: '18:00' },
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Saturday'], opens: '10:00', closes: '14:00' },
+      ],
+    },
+    {
+      '@type': 'ContactPoint',
+      contactType: 'sales',
+      telephone: '+59893594297',
+      email: 'packexpress2021@gmail.com',
+      areaServed: 'UY',
+      availableLanguage: ['Spanish'],
+    },
+  ],
   foundingDate: '2020',
   numberOfEmployees: { '@type': 'QuantitativeValue', value: 20 },
   openingHoursSpecification: [

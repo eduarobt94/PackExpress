@@ -112,5 +112,8 @@ A: Todavía no está operativo, así que no hay un flujo disponible. Se puede de
 ## Fuentes autorizadas
 - Sitio oficial: https://packexpress.com.uy
 - Home en Markdown: https://packexpress.com.uy/index.md
+- Sobre nosotros: https://packexpress.com.uy/about/
+- Contacto: https://packexpress.com.uy/contact/
+- Privacidad: https://packexpress.com.uy/privacy/
 - Sitemap: https://packexpress.com.uy/sitemap.xml
 - Robots: https://packexpress.com.uy/robots.txt

@@ -7,6 +7,8 @@
  *   3. Accept: text/markdown — Content-Type correcto, Vary: Accept, 406, q-values
  *   4. JSON-LD            — structured data en el HTML crudo
  *   5. llms.txt           — sección "cuándo usar" con casos concretos
+ *   6. Organization schema — contactPoint (email/phone/contactType) + address
+ *   7. Páginas de confianza — /about, /contact, /privacy reales, 200, >=500 chars
  *
  * Uso:
  *   node scripts/agent-readiness-check.mjs                 -> valida dist/ (offline)
@@ -117,6 +119,22 @@ if (htmlLocal) {
     const nombres = bloques.map(([, c]) => { try { const o = JSON.parse(c); return o['@type'] === 'Service' ? o.name : null } catch { return null } }).filter(Boolean)
     return nombres.some(n => /casillero/i.test(n)) ? `declarado como Service: ${nombres}` : true
   })
+
+  console.log('\n== 6. Organization schema completo ==')
+  const org = bloques.map(([, c]) => { try { return JSON.parse(c) } catch { return null } }).find(o => o?.['@type'] === 'Organization')
+  check('el bloque Organization existe', () => org ? true : 'ningún bloque es @type Organization')
+  if (org) {
+    check('tiene address (PostalAddress)', () => org.address?.['@type'] === 'PostalAddress' ? true : 'falta address o no es PostalAddress')
+    check('tiene contactPoint', () => Array.isArray(org.contactPoint) && org.contactPoint.length > 0 ? true : 'falta contactPoint')
+    check('cada contactPoint tiene contactType + (email o telephone)', () => {
+      if (!Array.isArray(org.contactPoint)) return 'falta contactPoint'
+      for (const cp of org.contactPoint) {
+        if (!cp.contactType) return 'un contactPoint no tiene contactType'
+        if (!cp.email && !cp.telephone) return 'un contactPoint no tiene email ni telephone'
+      }
+      return true
+    })
+  }
 }
 
 console.log('\n== 5. llms.txt con "cuándo usar" ==')
@@ -128,6 +146,33 @@ if (llms) {
   check('dice explícitamente para qué NO sirve', () => /NO es la fuente correcta/i.test(llms) ? true : 'no acota los casos fuera de alcance')
   check('el casillero figura como NO disponible', () =>
     /NO disponible|NO está operativo|EN PREPARACIÓN/i.test(llms) ? true : 'sigue descrito como servicio activo')
+}
+
+console.log('\n== 7. Páginas de confianza (about / contact / privacy) ==')
+for (const slug of ['about', 'contact', 'privacy']) {
+  const rutaLocal = `dist/${slug}/index.html`
+  const localHtml = existsSync(rutaLocal) ? readFileSync(rutaLocal, 'utf8') : null
+  check(`dist/${slug}/index.html existe`, () => localHtml ? true : `no existe (corré "pnpm run build")`)
+  if (localHtml) {
+    check(`/${slug}/ tiene un <h1>`, () => /<h1[\s>]/i.test(localHtml) ? true : 'sin <h1>')
+    check(`/${slug}/ tiene >= 500 caracteres de texto`, () => {
+      const n = textoDe(localHtml).length
+      return n >= 500 ? true : `solo ${n} caracteres`
+    })
+  }
+  await checkAsync(`https://.../${slug}/ responde 200 (no 404, no shell vacío)`, async () => {
+    if (!base) return 'skip'
+    const r = await traer(`/${slug}/`)
+    if (r.status !== 200) return `status ${r.status}`
+    return textoDe(r.body).length >= 500 ? true : `solo ${textoDe(r.body).length} caracteres`
+  })
+  await checkAsync(`https://.../${slug} (sin barra final) también resuelve`, async () => {
+    if (!base) return 'skip'
+    const r = await traer(`/${slug}`)
+    // Apache normalmente 301 a la barra final (mod_dir); cualquiera de las dos
+    // vale, lo que NO puede pasar es un 404.
+    return r.status === 404 ? '404 — la ruta sin barra no resuelve' : true
+  })
 }
 
 console.log('\n== 2. 404 amigable para agentes ==')

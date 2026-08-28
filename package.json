@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/inject-jsonld.mjs",
+    "build": "vite build && node scripts/inject-jsonld.mjs && node scripts/build-trust-pages.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:chat": "node scripts/chat-agent-battery.mjs",
