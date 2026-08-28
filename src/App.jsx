@@ -3,40 +3,8 @@ import { ThemeProvider } from './context/ThemeContext'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { useLenis } from './hooks/useLenis'
 import SEO from './components/SEO'
-import {
-  organizationSchema,
-  localBusinessSchema,
-  websiteSchema,
-  faqSchema,
-  serviceSchema,
-} from './seo/schemas'
-
-const servicesSchemas = [
-  serviceSchema(
-    'Courier Internacional',
-    'Envíos internacionales desde Uruguay a más de 50 países. Gestión aduanera, seguimiento en tiempo real y entrega garantizada.',
-    '/#servicios'
-  ),
-  // El casillero todavía no se presta: no se declara como Service en el
-  // structured data (eso le diría a Google que es un servicio disponible).
-  // Su estado real se explica en las FAQ de schemas.js. Reactivar este bloque
-  // cuando el servicio esté operativo.
-  serviceSchema(
-    'Distribución Nacional Uruguay',
-    'Cobertura logística en los 19 departamentos de Uruguay. Entrega estándar en 48 horas hábiles y express en 24 horas en Montevideo.',
-    '/#servicios'
-  ),
-  serviceSchema(
-    'Equipaje No Acompañado',
-    'Transporte de maletas y pertenencias personales dentro de Uruguay y hacia el exterior, con gestión aduanera completa.',
-    '/#servicios'
-  ),
-  serviceSchema(
-    'Envío de Documentos',
-    'Gestión segura de documentación oficial, contratos y correspondencia con cadena de custodia certificada, nacional e internacional.',
-    '/#servicios'
-  ),
-]
+// El JSON-LD ya no se importa acá: vive en seo/schemas.js y lo escribe
+// estático en el HTML scripts/inject-jsonld.mjs durante el build.
 
 // Above-fold — eager
 import Navbar     from './components/Navbar'
@@ -107,9 +75,11 @@ export default function App() {
     <ThemeProvider>
     <MotionConfig reducedMotion="user">
     <>
-      <SEO
-        schemas={[organizationSchema, localBusinessSchema, websiteSchema, faqSchema, ...servicesSchemas]}
-      />
+      {/* Sin `schemas`: el JSON-LD ya va ESTÁTICO en el HTML del build
+          (scripts/inject-jsonld.mjs). Inyectarlo también acá lo duplicaría en
+          el DOM, y la versión estática es la única que ven los crawlers que no
+          ejecutan JavaScript. */}
+      <SEO />
 
       <div className="min-h-screen bg-[var(--bg-base)]">
         {/* ── Skip to content (accesibilidad) ── */}

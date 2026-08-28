@@ -244,3 +244,46 @@ export const serviceSchema = (name, description, url) => ({
   ],
   url: `${BASE_URL}${url}`,
 })
+
+/**
+ * Schemas de los servicios que efectivamente se prestan hoy.
+ *
+ * Vive acá (y no en App.jsx) para que sea UNA sola fuente de verdad: la app
+ * los inyecta en runtime y `scripts/inject-jsonld.mjs` los escribe estáticos
+ * en el HTML del build, que es lo que ven los crawlers que no ejecutan JS.
+ *
+ * El Casillero Internacional NO se declara como Service a propósito: todavía
+ * no está operativo y declararlo le diría a Google/agentes que es un servicio
+ * disponible. Su estado real se explica en las FAQ de faqSchema.
+ */
+export const servicesSchemas = [
+  serviceSchema(
+    'Courier Internacional',
+    'Envíos internacionales desde Uruguay a más de 50 países. Gestión aduanera, seguimiento en tiempo real y entrega garantizada.',
+    '/#servicios',
+  ),
+  serviceSchema(
+    'Distribución Nacional Uruguay',
+    'Cobertura logística en los 19 departamentos de Uruguay. Entrega estándar en 48 horas hábiles y express en 24 horas en Montevideo.',
+    '/#servicios',
+  ),
+  serviceSchema(
+    'Equipaje No Acompañado',
+    'Transporte de maletas y pertenencias personales dentro de Uruguay y hacia el exterior, con gestión aduanera completa.',
+    '/#servicios',
+  ),
+  serviceSchema(
+    'Envío de Documentos',
+    'Gestión segura de documentación oficial, contratos y correspondencia con cadena de custodia certificada, nacional e internacional.',
+    '/#servicios',
+  ),
+]
+
+/** Todos los schemas de la home, en el orden en que se emiten. */
+export const homeSchemas = [
+  organizationSchema,
+  localBusinessSchema,
+  websiteSchema,
+  faqSchema,
+  ...servicesSchemas,
+]

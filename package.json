@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/inject-jsonld.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:chat": "node scripts/chat-agent-battery.mjs"
+    "test:chat": "node scripts/chat-agent-battery.mjs",
+    "test:agents": "node scripts/agent-readiness-check.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
