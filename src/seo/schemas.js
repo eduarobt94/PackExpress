@@ -30,6 +30,28 @@ export const organizationSchema = {
   },
   telephone: '+59893594297',
   email: 'packexpress2021@gmail.com',
+  contactPoint: [
+    {
+      '@type': 'ContactPoint',
+      contactType: 'customer service',
+      telephone: '+59893594297',
+      email: 'packexpress2021@gmail.com',
+      areaServed: 'UY',
+      availableLanguage: ['Spanish'],
+      hoursAvailable: [
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '10:00', closes: '18:00' },
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Saturday'], opens: '10:00', closes: '14:00' },
+      ],
+    },
+    {
+      '@type': 'ContactPoint',
+      contactType: 'sales',
+      telephone: '+59893594297',
+      email: 'packexpress2021@gmail.com',
+      areaServed: 'UY',
+      availableLanguage: ['Spanish'],
+    },
+  ],
   foundingDate: '2020',
   numberOfEmployees: { '@type': 'QuantitativeValue', value: 20 },
   openingHoursSpecification: [
@@ -200,18 +222,22 @@ export const faqSchema = {
     },
     {
       '@type': 'Question',
-      name: '¿Qué es el casillero internacional de Pack Express?',
+      // El casillero TODAVÍA NO está operativo. Estas respuestas se redactan
+      // en futuro a propósito: declarar en structured data un servicio que no
+      // se presta es contenido que no coincide con la página, y Google lo
+      // penaliza. Actualizar a presente recién cuando el servicio esté activo.
+      name: '¿Pack Express tiene casillero internacional?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'El casillero internacional de Pack Express te permite comprar en tiendas de EE.UU., Europa, Asia y más, usando nuestra dirección como destino de envío y recibir tus compras en Uruguay. Gestionamos la recepción, consolidación y despacho con trámites aduaneros incluidos.',
+        text: 'El casillero internacional de Pack Express todavía no está disponible: es un servicio que estamos preparando para incorporar. Cuando esté activo vas a poder comprar en tiendas del exterior usando nuestra dirección como destino y recibir tus compras en Uruguay. Mientras tanto ofrecemos paquetería courier nacional e internacional, equipaje no acompañado, envío de documentos y distribución nacional.',
       },
     },
     {
       '@type': 'Question',
-      name: '¿Cómo funciona el casillero internacional para comprar en el exterior desde Uruguay?',
+      name: '¿Cómo va a funcionar el casillero internacional de Pack Express?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Solicitás tu dirección de casillero, realizás tus compras en tiendas extranjeras indicando esa dirección como destino, Pack Express recibe tus paquetes, los consolida si son varios y los despacha hacia Uruguay con gestión aduanera completa.',
+        text: 'El servicio está en preparación y todavía no se encuentra disponible. Cuando se active, vas a solicitar tu dirección de casillero, hacer tus compras en tiendas extranjeras indicando esa dirección como destino, y Pack Express va a recibir tus paquetes, consolidarlos si son varios y despacharlos hacia Uruguay con gestión aduanera.',
       },
     },
   ],
@@ -240,3 +266,46 @@ export const serviceSchema = (name, description, url) => ({
   ],
   url: `${BASE_URL}${url}`,
 })
+
+/**
+ * Schemas de los servicios que efectivamente se prestan hoy.
+ *
+ * Vive acá (y no en App.jsx) para que sea UNA sola fuente de verdad: la app
+ * los inyecta en runtime y `scripts/inject-jsonld.mjs` los escribe estáticos
+ * en el HTML del build, que es lo que ven los crawlers que no ejecutan JS.
+ *
+ * El Casillero Internacional NO se declara como Service a propósito: todavía
+ * no está operativo y declararlo le diría a Google/agentes que es un servicio
+ * disponible. Su estado real se explica en las FAQ de faqSchema.
+ */
+export const servicesSchemas = [
+  serviceSchema(
+    'Courier Internacional',
+    'Envíos internacionales desde Uruguay a más de 50 países. Gestión aduanera, seguimiento en tiempo real y entrega garantizada.',
+    '/#servicios',
+  ),
+  serviceSchema(
+    'Distribución Nacional Uruguay',
+    'Cobertura logística en los 19 departamentos de Uruguay. Entrega estándar en 48 horas hábiles y express en 24 horas en Montevideo.',
+    '/#servicios',
+  ),
+  serviceSchema(
+    'Equipaje No Acompañado',
+    'Transporte de maletas y pertenencias personales dentro de Uruguay y hacia el exterior, con gestión aduanera completa.',
+    '/#servicios',
+  ),
+  serviceSchema(
+    'Envío de Documentos',
+    'Gestión segura de documentación oficial, contratos y correspondencia con cadena de custodia certificada, nacional e internacional.',
+    '/#servicios',
+  ),
+]
+
+/** Todos los schemas de la home, en el orden en que se emiten. */
+export const homeSchemas = [
+  organizationSchema,
+  localBusinessSchema,
+  websiteSchema,
+  faqSchema,
+  ...servicesSchemas,
+]

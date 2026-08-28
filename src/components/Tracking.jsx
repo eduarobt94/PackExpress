@@ -113,7 +113,9 @@ function GuiaInfoBand({ state }) {
 function StatusHeader({ state, isSyncing }) {
   if (!state) return null
 
-  const { statusLabel, statusVariant, completedCount, totalCount, syncSummary, isDelivered } = state
+  // statusVariant existe en el estado normalizado pero acá no se usa: el color
+  // se decide con isDelivered (ver accent* abajo).
+  const { statusLabel, completedCount, totalCount, syncSummary, isDelivered } = state
   const pct = (completedCount / totalCount) * 100
 
   // Verde desaturado enterprise — evita el neón eléctrico
@@ -418,7 +420,7 @@ function HitosTimeline({ state }) {
 export default function Tracking() {
   const [inputValue, setInputValue] = useState('')
   const [inputError, setInputError] = useState('')
-  const { phase, trackingState, error, syncStep: _syncStep, track, reset } = useTracking()
+  const { phase, trackingState, error, track, reset } = useTracking()
 
   /* ── Evento externo desde Hero ("Rastrear mi envío") ─────────── */
   useEffect(() => {

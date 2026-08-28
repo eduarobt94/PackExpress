@@ -145,8 +145,8 @@ export default function Testimonials() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-[var(--fg-3)] text-[13px] leading-relaxed mt-4 max-w-md mx-auto"
         >
-          Courier nacional, envíos internacionales y casillero:
-          clientes de todo Uruguay eligen Pack Express.
+          Courier nacional y envíos internacionales: clientes de todo
+          Uruguay eligen Pack Express.
         </motion.p>
       </div>
 

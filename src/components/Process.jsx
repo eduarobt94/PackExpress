@@ -49,14 +49,16 @@ const FLOWS = [
   {
     id:     'casillero',
     accent: 'blue',
-    tab:    'Recibís del exterior',
+    tab:    'Recibís del exterior (pronto)',
     h2:     ['Comprá afuera.', 'Recibí en Uruguay.'],
-    sub:    'En cuatro pasos, tenés tus compras internacionales en la puerta de tu casa.',
+    // Servicio en preparación: el copy va en futuro y lo aclara explícitamente,
+    // para que el flujo se lea como un adelanto y no como algo ya disponible.
+    sub:    'Es el servicio que estamos preparando. Así va a funcionar, en cuatro pasos.',
     steps: [
-      { Icon: Globe,        title: 'Tu dirección en el exterior', desc: 'Activá tu casillero y obtenés una dirección personal internacional para usar en cualquier tienda.' },
-      { Icon: ShoppingCart, title: 'Comprás donde querás',        desc: 'Realizás tus compras usando tu casillero como dirección de entrega.' },
-      { Icon: ScanLine,     title: 'Recibimos y procesamos',      desc: 'Recibimos tus paquetes, los registramos y te notificamos cuando están listos.' },
-      { Icon: Truck,        title: 'Lo enviamos a Uruguay',       desc: 'Consolidamos tus compras y las despachamos. Retirás en sede o las recibís en tu domicilio.' },
+      { Icon: Globe,        title: 'Tu dirección en el exterior', desc: 'Vas a activar tu casillero y obtener una dirección personal internacional para usar en cualquier tienda.' },
+      { Icon: ShoppingCart, title: 'Comprás donde querás',        desc: 'Vas a hacer tus compras usando tu casillero como dirección de entrega.' },
+      { Icon: ScanLine,     title: 'Recibimos y procesamos',      desc: 'Vamos a recibir tus paquetes, registrarlos y avisarte cuando estén listos.' },
+      { Icon: Truck,        title: 'Lo enviamos a Uruguay',       desc: 'Vamos a consolidar tus compras y despacharlas. Vas a poder retirarlas en sede o recibirlas en tu domicilio.' },
     ],
   },
 ]
@@ -103,7 +105,10 @@ function StepsDisplay({ flow, inView }) {
 
     doStep()
     return () => clearTimeout(pending)
-  }, [inView])
+    // steps.length es estable dentro de una instancia montada: StepsDisplay
+    // se renderiza con key={flow.id}, así que cambiar de flujo remonta el
+    // componente en vez de mutar `steps` en caliente.
+  }, [inView, steps.length])
 
   const activateStep = (i) => {
     setPaused(true)
@@ -326,7 +331,9 @@ export default function Process() {
             initial={{ opacity: 0, y: 12 }}
             animate={headerInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="inline-flex bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-full p-1 mb-10"
+            className="inline-flex bg-[var(--bg-card)] border border-[var(--bd-1)] rounded-full p-1 mb-10
+                       max-[480px]:flex max-[480px]:flex-col max-[480px]:w-full max-[480px]:max-w-[320px]
+                       max-[480px]:mx-auto max-[480px]:rounded-2xl max-[480px]:gap-1"
             role="tablist"
             aria-label="Seleccionar flujo"
           >
@@ -338,6 +345,7 @@ export default function Process() {
                 onClick={() => setActiveFlow(i)}
                 className={`relative px-5 sm:px-7 py-2 sm:py-2.5 rounded-full text-[12px] font-semibold
                             tracking-wide transition-colors duration-300 whitespace-nowrap
+                            max-[480px]:w-full max-[480px]:whitespace-normal
                             ${activeFlow === i ? 'text-white' : 'text-[var(--fg-4)] hover:text-[var(--fg-2)]'}`}
               >
                 {activeFlow === i && (

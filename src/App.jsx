@@ -3,47 +3,15 @@ import { ThemeProvider } from './context/ThemeContext'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion'
 import { useLenis } from './hooks/useLenis'
 import SEO from './components/SEO'
-import {
-  organizationSchema,
-  localBusinessSchema,
-  websiteSchema,
-  faqSchema,
-  serviceSchema,
-} from './seo/schemas'
-
-const servicesSchemas = [
-  serviceSchema(
-    'Courier Internacional',
-    'Envíos internacionales desde Uruguay a más de 50 países. Gestión aduanera, seguimiento en tiempo real y entrega garantizada.',
-    '/#servicios'
-  ),
-  serviceSchema(
-    'Casillero Internacional',
-    'Servicio de casillero para comprar en tiendas de EE.UU., Europa y Asia desde Uruguay. Recepción, consolidación y despacho con trámites aduaneros incluidos.',
-    '/#servicios'
-  ),
-  serviceSchema(
-    'Distribución Nacional Uruguay',
-    'Cobertura logística en los 19 departamentos de Uruguay. Entrega estándar en 48 horas hábiles y express en 24 horas en Montevideo.',
-    '/#servicios'
-  ),
-  serviceSchema(
-    'Equipaje No Acompañado',
-    'Transporte de maletas y pertenencias personales dentro de Uruguay y hacia el exterior, con gestión aduanera completa.',
-    '/#servicios'
-  ),
-  serviceSchema(
-    'Envío de Documentos',
-    'Gestión segura de documentación oficial, contratos y correspondencia con cadena de custodia certificada, nacional e internacional.',
-    '/#servicios'
-  ),
-]
+// El JSON-LD ya no se importa acá: vive en seo/schemas.js y lo escribe
+// estático en el HTML scripts/inject-jsonld.mjs durante el build.
 
 // Above-fold — eager
-import Navbar    from './components/Navbar'
-import Hero      from './components/Hero'
+import Navbar     from './components/Navbar'
+import PromoBanner from './components/PromoBanner'
+import Hero       from './components/Hero'
 import LegalModal from './components/LegalModal'
-import NotFound  from './components/NotFound'
+import NotFound   from './components/NotFound'
 
 // Rutas válidas del SPA — cualquier otra devuelve 404
 const VALID_PATHS = new Set(['/', '/index.html'])
@@ -63,17 +31,20 @@ const Coverage     = lazy(() => import('./components/Coverage'))
 const Docs         = lazy(() => import('./components/Docs'))
 const Testimonials = lazy(() => import('./components/Testimonials'))
 const Footer       = lazy(() => import('./components/Footer'))
+const ChatAgent    = lazy(() => import('./components/ChatAgent/ChatAgent'))
 
 export default function App() {
   useLenis()
 
-  const [cotizarOpen, setCotizarOpen] = useState(false)
+  // Entrar directo por #tarifas abre el cotizador: se resuelve en el estado
+  // inicial, no con un setState dentro del efecto (que provocaba un render
+  // extra en cascada solo para abrirlo).
+  const [cotizarOpen, setCotizarOpen] = useState(() => window.location.hash === '#tarifas')
   const [legalType,   setLegalType]   = useState(null)
 
   useEffect(() => {
     const open = () => startTransition(() => setCotizarOpen(true))
     window.addEventListener('openCotizar', open)
-    if (window.location.hash === '#tarifas') setCotizarOpen(true)
     return () => window.removeEventListener('openCotizar', open)
   }, [])
 
@@ -104,9 +75,11 @@ export default function App() {
     <ThemeProvider>
     <MotionConfig reducedMotion="user">
     <>
-      <SEO
-        schemas={[organizationSchema, localBusinessSchema, websiteSchema, faqSchema, ...servicesSchemas]}
-      />
+      {/* Sin `schemas`: el JSON-LD ya va ESTÁTICO en el HTML del build
+          (scripts/inject-jsonld.mjs). Inyectarlo también acá lo duplicaría en
+          el DOM, y la versión estática es la única que ven los crawlers que no
+          ejecutan JavaScript. */}
+      <SEO />
 
       <div className="min-h-screen bg-[var(--bg-base)]">
         {/* ── Skip to content (accesibilidad) ── */}
@@ -118,6 +91,8 @@ export default function App() {
         >
           Ir al contenido principal
         </a>
+
+        <PromoBanner />
 
         <header role="banner">
           <Navbar />
@@ -142,6 +117,10 @@ export default function App() {
           <footer role="contentinfo">
             <Footer />
           </footer>
+        </Suspense>
+
+        <Suspense fallback={null}>
+          <ChatAgent />
         </Suspense>
       </div>
 

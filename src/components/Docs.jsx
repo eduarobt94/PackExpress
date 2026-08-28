@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, FileText, AlertTriangle, Phone, Mail, MapPin, MessageCircle, Send, CheckCircle, ArrowUpRight, UserRound, Plane, Briefcase, X } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
+import { useTheme } from '../hooks/useTheme'
 
 const MAP_EMBED = 'https://maps.google.com/maps?q=-34.907382,-56.188793&z=15&output=embed'
 const MAP_FULL  = 'https://maps.google.com/maps?q=-34.907382,-56.188793&z=16&output=embed'
@@ -53,7 +53,7 @@ const DOCS = [
 const SUBJECTS = [
   'Consulta general',
   'Cotización de envío',
-  'Casillero Internacional',
+  'Casillero Internacional (próximamente)',
   'Distribución nacional (Uruguay)',
   'Envío internacional',
   'Rastreo de paquete',
@@ -308,10 +308,11 @@ export default function Docs() {
                 </Field>
                 <button type="submit" disabled={sending}
                   className="flex items-center justify-center gap-2 rounded-xl mx-auto
+                             w-full max-w-[280px]
                              bg-[#527ED8] hover:bg-[#6B90DC] text-white text-[14px] font-semibold
                              transition-[background-color,box-shadow] duration-200 disabled:opacity-60 tracking-wide
                              hover:shadow-[0_0_24px_rgba(59,126,248,0.30)]"
-                  style={{ width: 280, height: 49 }}>
+                  style={{ height: 49 }}>
                   {sending ? (
                     <span className="flex items-center gap-2">
                       <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -348,7 +349,7 @@ export default function Docs() {
                   ¿Necesitás asesoramiento?
                 </h3>
                 <p className="text-[12px] text-[var(--fg-2)] leading-relaxed">
-                  Courier, casillero o distribución te guiamos en cada paso.
+                  Courier o distribución, te guiamos en cada paso.
                 </p>
               </div>
             </div>

@@ -4,45 +4,7 @@ import {
   Package, FileText, CheckCircle, MapPin, Weight, Ruler,
   ChevronDown, X, Search, Loader2, AlertTriangle, Tag,
 } from 'lucide-react'
-
-/* ── Zone labels ────────────────────────────────────────────────────────────── */
-const ZONE_LABELS = {
-  A: 'Zona A — Miami',
-  B: 'Zona B — Centro América',
-  C: 'Zona C — Caribe Sur / CUBA',
-  D: 'Zona D — Caribe Sur / CUBA',
-  E: 'Zona E — Sudamérica',
-  F: 'Zona F — Caribe / Canadá',
-  G: 'Zona G — Europa Occidental',
-  H: 'Zona H — Europa Oriental / Asia',
-  I: 'Zona I — Resto del Mundo',
-}
-
-/* ── Country → Zone ─────────────────────────────────────────────────────────── */
-const COUNTRY_ZONE = {
-  'Estados Unidos': 'A',
-  'México': 'B', 'Guatemala': 'B', 'Belice': 'B', 'Honduras': 'B',
-  'El Salvador': 'B', 'Nicaragua': 'B', 'Costa Rica': 'B', 'Panamá': 'B',
-  'Colombia': 'C', 'República Dominicana': 'C', 'Puerto Rico': 'C', 'Venezuela': 'C',
-  'Cuba': 'D', 'Jamaica': 'D', 'Haití': 'D', 'Trinidad y Tobago': 'D',
-  'Aruba': 'D', 'Curazao': 'D', 'Barbados': 'D',
-  'Ecuador': 'E', 'Perú': 'E', 'Bolivia': 'E', 'Argentina': 'E',
-  'Chile': 'E', 'Brasil': 'E', 'Paraguay': 'E', 'Guyana': 'E', 'Surinam': 'E',
-  'Canadá': 'F', 'Bahamas': 'F',
-  'España': 'G', 'Portugal': 'G', 'Francia': 'G', 'Alemania': 'G',
-  'Italia': 'G', 'Reino Unido': 'G', 'Países Bajos': 'G', 'Bélgica': 'G',
-  'Suiza': 'G', 'Austria': 'G', 'Irlanda': 'G', 'Suecia': 'G',
-  'Noruega': 'G', 'Dinamarca': 'G', 'Finlandia': 'G', 'Grecia': 'G',
-  'Polonia': 'G', 'República Checa': 'G', 'Hungría': 'G', 'Rumanía': 'G', 'Croacia': 'G',
-  'Ucrania': 'H', 'Turquía': 'H', 'Israel': 'H',
-  'China': 'H', 'Japón': 'H', 'India': 'H', 'Corea del Sur': 'H',
-  'Tailandia': 'H', 'Vietnam': 'H', 'Indonesia': 'H', 'Malasia': 'H',
-  'Filipinas': 'H', 'Singapur': 'H', 'Taiwán': 'H',
-  'Emiratos Árabes Unidos': 'H', 'Arabia Saudita': 'H', 'Qatar': 'H',
-  'Australia': 'I', 'Nueva Zelanda': 'I',
-  'Sudáfrica': 'I', 'Nigeria': 'I', 'Kenia': 'I', 'Egipto': 'I',
-  'Marruecos': 'I', 'Tanzania': 'I', 'Ghana': 'I',
-}
+import { ZONE_LABELS, COUNTRY_ZONE } from '../lib/zones'
 
 /* ── Regions for CountrySelect ──────────────────────────────────────────────── */
 const REGIONS = {
@@ -467,8 +429,18 @@ export default function Cotizacion({ onClose }) {
     setCountry(''); setDescuento(''); setResult(null); setApiError('')
   }
 
-  /* Reset result when inputs change */
-  useEffect(() => { setResult(null); setApiError('') }, [weight, largo, ancho, alto, country, tipo])
+  /* Reset result when inputs change.
+   * Se compara contra el valor previo DURANTE el render (patrón recomendado
+   * por React para "ajustar estado cuando cambian las entradas") en vez de
+   * usar un efecto: el efecto pintaba un render intermedio con el resultado
+   * viejo — ya inválido para los nuevos datos — antes de limpiarlo. */
+  const inputsKey = JSON.stringify([weight, largo, ancho, alto, country, tipo])
+  const [prevInputsKey, setPrevInputsKey] = useState(inputsKey)
+  if (prevInputsKey !== inputsKey) {
+    setPrevInputsKey(inputsKey)
+    setResult(null)
+    setApiError('')
+  }
 
   return (
     <div className="bg-[var(--bg-alt)] border border-[var(--bd-1)] rounded-2xl shadow-[var(--shadow-modal)]">

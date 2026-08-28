@@ -1,6 +1,10 @@
 ﻿Options -MultiViews
 RewriteEngine On
 
+# Sin esto Apache sirve los .md como octet-stream (el navegador los descarga).
+AddType text/markdown .md
+AddDefaultCharset UTF-8
+
 # ── Preservar rutas del sistema existente ──────────────────────────────────────
 RewriteRule ^pack-sistema(/.*)?$  - [L]
 RewriteRule ^pages(/.*)?$         - [L]
@@ -8,14 +12,33 @@ RewriteRule ^PHPMailer(/.*)?$     - [L]
 RewriteRule ^tienda(/.*)?$        - [L]
 RewriteRule ^assets(/.*)?$        - [L]
 
+# ── Negociación de contenido de la home (acceptmarkdown.com) ──────────────────
+# La home pasa por un negociador PHP que sirve text/markdown a quien lo pida por
+# Accept, HTML al resto, 406 si no acepta ninguno de los dos, y SIEMPRE emite
+# `Vary: Accept` para que un CDN no cruce las variantes cacheadas.
+# Va antes de la regla de archivos físicos porque "/" resuelve a index.html, que
+# es un archivo físico y saldría por [L] sin llegar acá.
+RewriteRule ^$  /_agent/negotiate.php  [E=PE_MODE:home,L]
+
 # ── Archivos y carpetas físicas pasan directo ─────────────────────────────────
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
 # ── Sin catch-all: Apache genera 404 natural para rutas desconocidas ──────────
-# ErrorDocument lo captura y sirve el SPA manteniendo el status HTTP 404 real.
-ErrorDocument 404 /index.html
+# El 404 también se negocia: un navegador sigue viendo la SPA (con status 404
+# real), y un agente recibe un cuerpo markdown con adónde ir. Ver negotiate.php.
+ErrorDocument 404 /_agent/404.php
+
+# ── Vary: Accept en las respuestas estáticas ──────────────────────────────────
+# mod_deflate ya agrega `Vary: Accept-Encoding`; acá se AÑADE Accept (append, no
+# set, para no pisarlo). Sin esto un CDN podría servirle la variante equivocada
+# a un agente según cuál cayó primero en caché.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|md)$">
+    Header append Vary "Accept"
+  </FilesMatch>
+</IfModule>
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SECURITY HEADERS
