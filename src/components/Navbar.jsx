@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, MapPin, Search, ChevronRight } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
-import { useTheme } from '../context/ThemeContext'
+import { useTheme } from '../hooks/useTheme'
 
 const LINKS = [
   { label: 'Servicios',   href: '#servicios' },
@@ -30,19 +30,22 @@ export default function Navbar() {
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed top-0 inset-x-0 z-50 transition-[background-color,border-color,box-shadow] duration-150 backdrop-blur-xl ${
+        className={`fixed inset-x-0 z-50 transition-[background-color,border-color,box-shadow,top] duration-150 backdrop-blur-xl ${
           scrolled
             ? 'border-b border-[var(--bd-1)] shadow-[var(--shadow-navbar)]'
             : 'border-b border-transparent'
         }`}
-        style={{ backgroundColor: scrolled ? 'color-mix(in srgb, var(--bg-base) 82%, transparent)' : 'transparent' }}
+        style={{
+          top: 'var(--promo-h, 0px)',
+          backgroundColor: scrolled ? 'color-mix(in srgb, var(--bg-base) 82%, transparent)' : 'transparent',
+        }}
       >
         <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-[68px]">
 
             {/* Logo */}
             <a href="/" className="shrink-0 group opacity-100 hover:opacity-90 transition-opacity duration-200">
-              <img src={logo} alt="Pack Express Uruguay" className="h-12 w-auto block" />
+              <img src={logo} alt="Pack Express Uruguay" width="87" height="29" className="h-12 w-auto block" />
             </a>
 
             {/* Desktop links */}
@@ -107,7 +110,10 @@ export default function Navbar() {
         </div>
       </motion.nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — z-[70] lo pone por encima del PromoBanner (z-60) y
+          del navbar (z-50). Con z-40 el banner promocional quedaba por encima
+          del drawer y su franja superior interceptaba los taps sobre el botón
+          "Cerrar menú", dejando el menú imposible de cerrar desde la X. */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -115,7 +121,7 @@ export default function Navbar() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-40 min-[860px]:hidden flex flex-col"
+            className="fixed inset-0 z-[70] min-[860px]:hidden flex flex-col"
           >
             {/* Backdrop */}
             <div className="absolute inset-0 bg-[var(--bg-alt)]/97 backdrop-blur-2xl -z-10" />

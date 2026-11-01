@@ -1,7 +1,8 @@
-﻿import { useState } from 'react'
+﻿import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, FileText, AlertTriangle, Phone, Mail, MapPin, MessageCircle, Send, CheckCircle, ArrowUpRight, UserRound, Plane, Briefcase, X } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
+import { useTheme } from '../hooks/useTheme'
+import { track } from '../lib/analytics'
 
 const MAP_EMBED = 'https://maps.google.com/maps?q=-34.907382,-56.188793&z=15&output=embed'
 const MAP_FULL  = 'https://maps.google.com/maps?q=-34.907382,-56.188793&z=16&output=embed'
@@ -12,7 +13,7 @@ const DOCS = [
     label:  '01',
     title:  'Declaración Jurada',
     desc:   'Formulario oficial requerido para todos los envíos internacionales',
-    href:   '/declaracion-jurada.xlsx',
+    href:   '/assets/documents/declaracion-jurada.xlsx',
     action: 'Descargar',
   },
   {
@@ -20,12 +21,20 @@ const DOCS = [
     label:  '02',
     title:  'Resolución N° 148/2023',
     desc:   'Normativa oficial de servicios postales en Uruguay — URSEC',
-    href:   '/Gaceta Oficial.pdf',
+    href:   '/assets/documents/Gaceta%20Oficial.pdf',
+    action: 'Ver documento',
+  },
+  {
+    Icon:   FileText,
+    label:  '03',
+    title:  'Reglas de Importación No Comercial',
+    desc:   'Límites de cantidad y valoración por artículo — Aduana General de la República (Res. 175 y 176/2022)',
+    href:   '/assets/documents/Resoluci%C3%B3n%20No.%20175%20y%20No.%20176%20del%202022%20(Aduana%20General%20de%20la%20Rep%C3%BAblica).pdf',
     action: 'Ver documento',
   },
   {
     Icon:   Plane,
-    label:  '03',
+    label:  '04',
     title:  'Requisitos Courier',
     desc:   'Políticas, documentación requerida y tiempos de entrega',
     modal:  'courier',
@@ -33,7 +42,7 @@ const DOCS = [
   },
   {
     Icon:   Briefcase,
-    label:  '04',
+    label:  '05',
     title:  'Equipaje No Acompañado',
     desc:   'Tarifas, condiciones y peso máximo permitido',
     modal:  'equipaje',
@@ -41,7 +50,7 @@ const DOCS = [
   },
   {
     Icon:   AlertTriangle,
-    label:  '05',
+    label:  '06',
     title:  'Artículos Prohibidos',
     desc:   'Lista completa de objetos restringidos para envíos internacionales',
     modal:  'prohibidos',
@@ -53,7 +62,7 @@ const DOCS = [
 const SUBJECTS = [
   'Consulta general',
   'Cotización de envío',
-  'Casillero Internacional',
+  'Casillero Internacional (próximamente)',
   'Distribución nacional (Uruguay)',
   'Envío internacional',
   'Rastreo de paquete',
@@ -146,6 +155,7 @@ export default function Docs() {
   const [errors, setErrors]   = useState({})
   const [sent, setSent]       = useState(false)
   const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState('')
   const [mapOpen, setMapOpen] = useState(false)
 
   const validate = () => {
@@ -163,12 +173,25 @@ export default function Docs() {
     if (errors[k]) setErrors(e => ({ ...e, [k]: undefined }))
   }
 
+  // form_start: una sola vez por montaje del formulario (el focus burbujea desde cualquier campo).
+  const startedRef = useRef(false)
+  const handleFormFocus = () => {
+    if (startedRef.current) return
+    startedRef.current = true
+    track('form_start', { form_type: 'contact' })
+  }
+
   const handleSubmit = async (ev) => {
     ev.preventDefault()
     const e = validate()
-    if (Object.keys(e).length) { setErrors(e); return }
+    if (Object.keys(e).length) {
+      setErrors(e)
+      track('form_error', { form_type: 'contact', error_type: 'validation' })
+      return
+    }
 
     setSending(true)
+    setSendError('')
     try {
       const res = await fetch('/pack-sistema/api/v1/contact.php', {
         method:  'POST',
@@ -178,11 +201,15 @@ export default function Docs() {
       const json = await res.json()
       if (json.ok) {
         setSent(true)
+        // Solo con confirmación real del backend. El asunto es un <select> de lista cerrada.
+        track('generate_lead', { lead_source: 'contact_form', form_topic: form.asunto })
       } else {
-        alert('Error al enviar: ' + (json.error || 'Intentá de nuevo.'))
+        setSendError(json.error || 'No se pudo enviar el mensaje. Intentá de nuevo.')
+        track('form_error', { form_type: 'contact', error_type: 'server' })
       }
     } catch {
-      alert('No se pudo conectar con el servidor. Verificá tu conexión e intentá de nuevo.')
+      setSendError('No se pudo conectar con el servidor. Verificá tu conexión e intentá de nuevo.')
+      track('form_error', { form_type: 'contact', error_type: 'network' })
     } finally {
       setSending(false)
     }
@@ -285,7 +312,11 @@ export default function Docs() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
+              /* noValidate: sin esto la validación nativa del browser
+                 (input type="email") intercepta el submit y muestra su propio
+                 tooltip, por lo que validate() nunca corre y los mensajes de
+                 error propios del formulario no llegan a renderizarse. */
+              <form onSubmit={handleSubmit} onFocus={handleFormFocus} className="space-y-5" noValidate>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <Field label="Nombre completo" error={errors.nombre} htmlFor="nombre">
                     <input id="nombre" value={form.nombre} onChange={e => handleChange('nombre', e.target.value)} placeholder="Juan Pérez" className={inputCls('nombre')} />
@@ -306,12 +337,23 @@ export default function Docs() {
                 <Field label="Mensaje" error={errors.mensaje} htmlFor="mensaje">
                   <textarea id="mensaje" rows={7} value={form.mensaje} onChange={e => handleChange('mensaje', e.target.value)} placeholder="Contanos en qué podemos ayudarte…" className={`${inputCls('mensaje')} resize-none`} />
                 </Field>
+                {sendError && (
+                  <div
+                    role="alert"
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl
+                               bg-[rgba(239,68,68,0.07)] border border-[rgba(239,68,68,0.18)]"
+                  >
+                    <AlertTriangle size={13} className="text-red-400 shrink-0" />
+                    <p className="text-[12px] text-red-400">{sendError}</p>
+                  </div>
+                )}
                 <button type="submit" disabled={sending}
                   className="flex items-center justify-center gap-2 rounded-xl mx-auto
+                             w-full max-w-[280px]
                              bg-[#527ED8] hover:bg-[#6B90DC] text-white text-[14px] font-semibold
                              transition-[background-color,box-shadow] duration-200 disabled:opacity-60 tracking-wide
                              hover:shadow-[0_0_24px_rgba(59,126,248,0.30)]"
-                  style={{ width: 280, height: 49 }}>
+                  style={{ height: 49 }}>
                   {sending ? (
                     <span className="flex items-center gap-2">
                       <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -348,14 +390,14 @@ export default function Docs() {
                   ¿Necesitás asesoramiento?
                 </h3>
                 <p className="text-[12px] text-[var(--fg-2)] leading-relaxed">
-                  Courier, casillero o distribución te guiamos en cada paso.
+                  Courier o distribución, te guiamos en cada paso.
                 </p>
               </div>
             </div>
             <div className="px-7 py-6 space-y-5 flex-1">
               {[
                 { Icon: Phone,  value: '(+598) 93 594 297',         sub: 'Lunes a viernes · 10:00 – 18:00' },
-                { Icon: Mail,   value: 'packexpress2021@gmail.com', sub: 'Respuesta en menos de 24 h' },
+                { Icon: Mail,   value: 'atencion@packexpress.com.uy', sub: 'Respuesta en menos de 24 h' },
                 { Icon: MapPin, value: 'Carlos Quijano 1258',       sub: 'Montevideo, Uruguay' },
               ].map(({ Icon, value, sub }) => (
                 <div key={value} className="flex items-start gap-3.5">
@@ -407,7 +449,7 @@ export default function Docs() {
               </div>
             </div>
             <div className="px-5 pb-5">
-              <a href="https://wa.me/59893594297" target="_blank" rel="noopener noreferrer"
+              <a href="https://wa.me/59893594297" data-ga-placement="docs" target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2.5 w-full py-3.5
                            border border-[#527ED8]/40 hover:border-[#527ED8]/70
                            text-[#527ED8] hover:text-[#6B90DC] text-[13px] font-semibold
@@ -484,7 +526,7 @@ export default function Docs() {
                     className="text-[11px] font-semibold text-white bg-[#F07232] hover:bg-[#E8823C]
                                px-3 py-1.5 rounded-lg transition-colors duration-200 whitespace-nowrap"
                   >
-                    Cómo llegar â†—
+                    Cómo llegar ↗
                   </a>
                   <a
                     href="https://maps.google.com/maps?q=-34.907382,-56.188793"
@@ -492,7 +534,7 @@ export default function Docs() {
                     rel="noopener noreferrer"
                     className="text-[11px] text-[#F07232] hover:text-[#E8823C] transition-colors duration-200 whitespace-nowrap"
                   >
-                    Abrir en Google Maps â†—
+                    Abrir en Google Maps ↗
                   </a>
                 </div>
               </div>

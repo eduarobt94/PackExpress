@@ -7,11 +7,32 @@
   <!-- Agregar páginas reales a medida que se creen (blog, servicios, etc.) -->
   <url>
     <loc>https://packexpress.com.uy/</loc>
-    <lastmod>2026-07-08</lastmod>
+    <lastmod>2026-08-27</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="es-UY" href="https://packexpress.com.uy/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://packexpress.com.uy/"/>
+  </url>
+
+  <url>
+    <loc>https://packexpress.com.uy/about/</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://packexpress.com.uy/contact/</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+  <url>
+    <loc>https://packexpress.com.uy/privacy/</loc>
+    <lastmod>2026-08-27</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 
 </urlset>

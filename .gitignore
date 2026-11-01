@@ -27,3 +27,14 @@ pnpm-debug.log*
 
 # Vite cache
 .vite/
+
+# QA / E2E test artifacts
+reports/
+screenshots/
+videos/
+traces/
+test-results/
+playwright-report/
+.playwright-cache/
+tests/.features-gen/
+tests/data/*.local.json

@@ -19,9 +19,12 @@ const SERVICES = [
     id:    'casillero',
     Icon:  ShoppingBag,
     title: 'Casillero Internacional',
-    desc:  'Comprás en tiendas de EE.UU. nosotros recibimos, consolidamos y te lo enviamos a Uruguay con aduanas incluidas.',
+    // Servicio en preparación, todavía no operativo (ver `proximamente`):
+    // la descripción va en futuro para no anunciarlo como disponible.
+    desc:  'Vas a poder comprar en tiendas de EE.UU.: nosotros recibimos, consolidamos y te lo enviamos a Uruguay con aduanas incluidas.',
     tag:   'Compras en el exterior',
     blue:  true,
+    proximamente: true,
   },
   {
     id:    'equipaje',
@@ -80,7 +83,7 @@ const item = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] } },
 }
 
-function FeaturedCard({ service, inView }) {
+function FeaturedCard({ service }) {
   const { Icon, title, desc, tag, stats } = service
   return (
     <motion.div
@@ -141,7 +144,7 @@ function FeaturedCard({ service, inView }) {
 }
 
 function ServiceCard({ service }) {
-  const { Icon, title, desc, tag, blue } = service
+  const { Icon, title, desc, tag, blue, proximamente } = service
 
   const accent = blue
     ? { bg: 'bg-[#527ED8]/[0.08]', border: 'border-[#527ED8]/[0.15]', hoverBg: 'group-hover:bg-[#527ED8]/[0.12]', color: '#527ED8', dot: 'bg-[#527ED8]/50', line: 'rgba(59,126,248,0.4)', hoverCard: '0_0_30px_rgba(59,126,248,0.08)', hoverBorder: 'hover:border-[#527ED8]/20' }
@@ -170,9 +173,17 @@ function ServiceCard({ service }) {
         <Icon size={19} color={accent.color} />
       </div>
 
-      <h3 className="font-display font-semibold text-[var(--fg-1)] text-[15px] leading-snug mb-2.5">
-        {title}
-      </h3>
+      <div className="flex items-start gap-2 mb-2.5 flex-wrap">
+        <h3 className="font-display font-semibold text-[var(--fg-1)] text-[15px] leading-snug">
+          {title}
+        </h3>
+        {proximamente && (
+          <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.08em]
+                           bg-[#527ED8]/[0.12] border border-[#527ED8]/30 text-[#6B90DC]">
+            Próximamente
+          </span>
+        )}
+      </div>
       <p className="text-[var(--fg-3)] text-[13px] leading-relaxed mb-6">
         {desc}
       </p>
@@ -244,7 +255,7 @@ export default function Services() {
           animate={inView ? 'visible' : 'hidden'}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          <FeaturedCard service={featured} inView={inView} />
+          <FeaturedCard service={featured} />
           {rest.map(s => <ServiceCard key={s.id} service={s} />)}
         </motion.div>
 

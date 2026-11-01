@@ -15,6 +15,19 @@
 import { useState, useCallback, useRef } from 'react'
 import { parseGuiaInput, fetchGuiaData, runTrackSync } from '../lib/tracking/api'
 import { buildTrackingState } from '../lib/tracking/normalizer'
+import { track } from '../lib/analytics'
+
+// Consultas de rastreo en esta sesión (para `tracking_repeat`). Nunca se envía la guía.
+let consultasSesion = 0
+
+/** Un único evento terminal por consulta; sin número de guía. */
+function reportarConsulta(result) {
+  track('track_shipment', { result, origin: 'section' })
+  consultasSesion += 1
+  if (result === 'found' && consultasSesion >= 2) {
+    track('tracking_repeat', { count_bucket: consultasSesion === 2 ? '2' : '3+' })
+  }
+}
 
 /* ── Fase de la máquina de estados ─────────────────────────────── */
 export const TRACK_PHASE = {
@@ -77,6 +90,7 @@ export function useTracking() {
       // Sin manifiesto → no hay TrackSync posible
       if (!guiaData.manifiesto) {
         setPhase(TRACK_PHASE.COMPLETE)
+        reportarConsulta('found')
         return
       }
 
@@ -129,10 +143,12 @@ export function useTracking() {
         setRawSync(syncData)
         setTrackingState(enriched)
         setPhase(TRACK_PHASE.COMPLETE)
+        reportarConsulta('found')
       }
 
     } catch (err) {
       if (ctrl.signal.aborted) return
+      reportarConsulta(err.message === 'NOT_FOUND' ? 'not_found' : 'error')
       setError(err.message)
       setPhase(TRACK_PHASE.ERROR)
     }

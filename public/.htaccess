@@ -1,6 +1,30 @@
 ﻿Options -MultiViews
 RewriteEngine On
 
+# Sin esto Apache sirve los .md como octet-stream (el navegador los descarga).
+AddType text/markdown .md
+AddDefaultCharset UTF-8
+
+# ── MIME types de documentos descargables ─────────────────────────────────────
+# El Apache de Hostinger NO tiene registrados los tipos de Office: servía
+# /assets/documents/declaracion-jurada.xlsx como "text/plain; charset=UTF-8" y,
+# combinado con el X-Content-Type-Options: nosniff de más abajo (que le prohíbe
+# al navegador deducir el tipo real), Chrome mostraba el binario del ZIP como
+# texto en pantalla en vez de descargarlo. Los .pdf sí venían correctos.
+AddType application/vnd.openxmlformats-officedocument.spreadsheetml.sheet   .xlsx
+AddType application/vnd.ms-excel                                            .xls
+AddType application/vnd.openxmlformats-officedocument.wordprocessingml.document .docx
+AddType application/msword                                                  .doc
+
+# Un Excel no se puede "ver" en el navegador: siempre es una descarga. Se fuerza
+# el attachment para que el nombre del archivo sea explícito y no dependa de
+# cómo cada navegador interprete el tipo.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(xlsx|xls|docx|doc)$">
+    Header set Content-Disposition "attachment"
+  </FilesMatch>
+</IfModule>
+
 # ── Preservar rutas del sistema existente ──────────────────────────────────────
 RewriteRule ^pack-sistema(/.*)?$  - [L]
 RewriteRule ^pages(/.*)?$         - [L]
@@ -8,14 +32,33 @@ RewriteRule ^PHPMailer(/.*)?$     - [L]
 RewriteRule ^tienda(/.*)?$        - [L]
 RewriteRule ^assets(/.*)?$        - [L]
 
+# ── Negociación de contenido de la home (acceptmarkdown.com) ──────────────────
+# La home pasa por un negociador PHP que sirve text/markdown a quien lo pida por
+# Accept, HTML al resto, 406 si no acepta ninguno de los dos, y SIEMPRE emite
+# `Vary: Accept` para que un CDN no cruce las variantes cacheadas.
+# Va antes de la regla de archivos físicos porque "/" resuelve a index.html, que
+# es un archivo físico y saldría por [L] sin llegar acá.
+RewriteRule ^$  /_agent/negotiate.php  [E=PE_MODE:home,L]
+
 # ── Archivos y carpetas físicas pasan directo ─────────────────────────────────
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
 # ── Sin catch-all: Apache genera 404 natural para rutas desconocidas ──────────
-# ErrorDocument lo captura y sirve el SPA manteniendo el status HTTP 404 real.
-ErrorDocument 404 /index.html
+# El 404 también se negocia: un navegador sigue viendo la SPA (con status 404
+# real), y un agente recibe un cuerpo markdown con adónde ir. Ver negotiate.php.
+ErrorDocument 404 /_agent/404.php
+
+# ── Vary: Accept en las respuestas estáticas ──────────────────────────────────
+# mod_deflate ya agrega `Vary: Accept-Encoding`; acá se AÑADE Accept (append, no
+# set, para no pisarlo). Sin esto un CDN podría servirle la variante equivocada
+# a un agente según cuál cayó primero en caché.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|md)$">
+    Header append Vary "Accept"
+  </FilesMatch>
+</IfModule>
 
 # ══════════════════════════════════════════════════════════════════════════════
 # SECURITY HEADERS
@@ -37,11 +80,11 @@ ErrorDocument 404 /index.html
     # Three.js texture auto-hospedada en /textures/worldMap.png
     Header always set Content-Security-Policy "\
       default-src 'self'; \
-      script-src 'self'; \
-      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; \
-      font-src 'self' https://fonts.gstatic.com; \
+      script-src 'self' https://www.googletagmanager.com; \
+      style-src 'self' 'unsafe-inline'; \
+      font-src 'self'; \
       img-src 'self' data: https: blob:; \
-      connect-src 'self' https://maps.googleapis.com; \
+      connect-src 'self' https://maps.googleapis.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com; \
       frame-src https://maps.google.com https://www.google.com; \
       object-src 'none'; \
       base-uri 'self'; \

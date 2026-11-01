@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { MapPin, Search, Globe, Zap, Shield } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
+import { MapPin, Globe, Zap, Shield } from 'lucide-react'
+import { useTheme } from '../hooks/useTheme'
+import { CASILLERO_WHATSAPP_URL } from '../lib/whatsapp'
 
 /* â”€â”€ Three.js dot-map canvas "” Three.js se carga dinámicamente â”€â”€â”€â”€ */
 function DotMap({ onReady }) {
@@ -46,19 +47,33 @@ function DotMap({ onReady }) {
     }
 
     const SNAP = 0.4 // umbral para snap limpio — evita arrastre infinito al final
+
+    // El loop se auto-detiene cuando todas las partículas llegaron a destino:
+    // sin esto seguía renderizando a 60fps para siempre aunque nada cambiara,
+    // compitiendo por el hilo principal con el resto de la página (scroll,
+    // animaciones, interacciones) y gastando batería sin ningún efecto visual.
+    // startLoop() lo reanuda cuando algo vuelve a mover las partículas (resize).
+    let running = false
+
     const render = () => {
-      animId = requestAnimationFrame(render)
-      if (!points) return
+      if (!points) {
+        animId = requestAnimationFrame(render)
+        return
+      }
 
       const posAttr = points.geometry.getAttribute('position')
+      let moving = false
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i]
         const dx = p.destX - p.x
         const dy = p.destY - p.y
         const dz = p.destZ - p.z
-        p.x = Math.abs(dx) < SNAP ? p.destX : p.x + dx * p.speed
-        p.y = Math.abs(dy) < SNAP ? p.destY : p.y + dy * p.speed
-        p.z = Math.abs(dz) < SNAP ? p.destZ : p.z + dz * p.speed
+        if (Math.abs(dx) < SNAP) p.x = p.destX
+        else { p.x += dx * p.speed; moving = true }
+        if (Math.abs(dy) < SNAP) p.y = p.destY
+        else { p.y += dy * p.speed; moving = true }
+        if (Math.abs(dz) < SNAP) p.z = p.destZ
+        else { p.z += dz * p.speed; moving = true }
         positions[i * 3]     = p.x
         positions[i * 3 + 1] = p.y
         positions[i * 3 + 2] = p.z
@@ -66,6 +81,19 @@ function DotMap({ onReady }) {
 
       posAttr.needsUpdate = true
       renderer.render(scene, camera)
+
+      if (moving) {
+        animId = requestAnimationFrame(render)
+      } else {
+        // Convergió: se pinta este último frame y el loop queda inactivo.
+        running = false
+      }
+    }
+
+    const startLoop = () => {
+      if (running) return
+      running = true
+      animId = requestAnimationFrame(render)
     }
 
     const drawTheMap = (imagedata) => {
@@ -113,7 +141,7 @@ function DotMap({ onReady }) {
 
       points = new THREE.Points(geometry, material)
       scene.add(points)
-      animId = requestAnimationFrame(render)
+      startLoop()
     }
 
     const loader = new THREE.TextureLoader()
@@ -148,6 +176,10 @@ function DotMap({ onReady }) {
           particles[i].destY = particles[i].normY * yVisR * factorR
         }
       }
+
+      // Los destinos cambiaron: reanudar el loop (si ya había convergido y se
+      // detuvo) para que las partículas se reacomoden al nuevo aspect ratio.
+      startLoop()
     }
     window.addEventListener('resize', onResize)
 
@@ -294,16 +326,31 @@ function RoutesOverlay({ visible, isDark }) {
 }
 
 /* â”€â”€ Hero â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/** Debe calzar con el breakpoint `min-[1100px]` usado más abajo para mostrar el mapa. */
+const MAPA_MIN_ANCHO = 1100
+
 export default function Hero() {
   const ref = useRef(null)
   const [mapReady, setMapReady] = useState(false)
   const [trackingValue, setTrackingValue] = useState('')
+  // Lazy init: en SSR/primer render sin window no hay forma de saber el
+  // ancho real, así que se asume angosto (mobile-first) — se corrige solo
+  // en el primer resize si hiciera falta.
+  const [mapaVisible, setMapaVisible] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth >= MAPA_MIN_ANCHO)
 
+  // Bajo MAPA_MIN_ANCHO, el mapa de Three.js/WebGL NI SIQUIERA se monta (no
+  // alcanza con ocultarlo por CSS): un <canvas> con un contexto WebGL activo
+  // sigue corriendo su loop de render aunque el contenedor tenga
+  // `display:none` — en navegadores con aceleración por GPU real (a
+  // diferencia de este entorno de pruebas, que no la tiene) eso puede
+  // filtrarse como una franja/artefacto visual sobre el resto de la página.
   // Al redimensionar: ocultar overlay → partículas se reposicionan →
   // re-mostrar overlay cuando el mapa ya está re-formado (~1500 ms).
   useEffect(() => {
     let timer = null
     const handleResize = () => {
+      setMapaVisible(window.innerWidth >= MAPA_MIN_ANCHO)
       setMapReady(false)
       clearTimeout(timer)
       timer = setTimeout(() => setMapReady(true), 1500)
@@ -338,7 +385,10 @@ export default function Hero() {
   return (
     <section
       ref={ref}
-      className="relative min-h-screen flex items-center overflow-hidden bg-[var(--bg-base)]"
+      /* flex-col (no items-center) para que el indicador "Scroll" viva en el
+         FLUJO, después del contenido, en vez de flotar en absolute sobre él:
+         asi nunca puede superponerse, sea cual sea el alto del viewport. */
+      className="relative min-h-screen flex flex-col overflow-hidden bg-[var(--bg-base)]"
     >
       <div
         className="absolute inset-0 pointer-events-none"
@@ -360,13 +410,15 @@ export default function Hero() {
         <rect width="100%" height="100%" fill="url(#bg-dots)" />
       </svg>
 
-      <motion.div
-        className="absolute inset-0 pointer-events-none hidden min-[1100px]:block"
-        style={{ y}}
-      >
-        <DotMap onReady={() => setMapReady(true)} />
-        <RoutesOverlay visible={mapReady} isDark={isDark} />
-      </motion.div>
+      {mapaVisible && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          style={{ y}}
+        >
+          <DotMap onReady={() => setMapReady(true)} />
+          <RoutesOverlay visible={mapReady} isDark={isDark} />
+        </motion.div>
+      )}
 
       {/* Vignette "” fades only left/right/bottom edges */}
       <div
@@ -380,8 +432,11 @@ export default function Hero() {
       />
 
       <motion.div
+        /* flex-1 + items-center: ocupa el alto sobrante y mantiene el bloque
+           centrado como antes cuando la pantalla es alta; cuando es baja se
+           encoge a su alto natural y el indicador queda debajo, no encima. */
         className="relative z-10 max-w-7xl mx-auto px-6 md:px-10 lg:px-8 pt-20 sm:pt-24 lg:pt-32 pb-14 sm:pb-20 w-full
-                   flex justify-end"
+                   flex flex-1 items-center justify-end"
         style={{ opacity }}
       >
         <div className="w-full lg:w-[55%] text-left">
@@ -390,15 +445,21 @@ export default function Hero() {
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full mb-8
+            className="inline-flex items-center gap-2.5 max-[480px]:flex-wrap max-[480px]:gap-y-1.5 px-3 py-1.5 max-[480px]:rounded-2xl rounded-full mb-8
                        border border-[#F07232]/30 bg-[#F07232]/[0.06]
                        text-[9px] sm:text-[12px] font-semibold max-[430px]:tracking-[-0.06em] tracking-[0.06em] sm:tracking-[0.10em] uppercase"
           >
             <span className="text-[#E8823C] whitespace-nowrap">Courier</span>
-            <span className="text-[var(--fg-5)]">·</span>
-            <span className="text-[#6B90DC] whitespace-nowrap">Casillero Internacional</span>
-            <span className="text-[var(--fg-5)]">·</span>
-            <span className="text-[var(--fg-2)] whitespace-nowrap">Distribución Nacional</span>
+            {/* separador + frase agrupados: al hacer wrap en pantallas muy
+                angostas, el "·" nunca queda solo al final de una línea */}
+            <span className="inline-flex items-center gap-2.5 whitespace-nowrap">
+              <span className="text-[var(--fg-5)]">·</span>
+              <span className="text-[#6B90DC]">Casillero Internacional (pronto)</span>
+            </span>
+            <span className="inline-flex items-center gap-2.5 whitespace-nowrap">
+              <span className="text-[var(--fg-5)]">·</span>
+              <span className="text-[var(--fg-2)]">Distribución Nacional</span>
+            </span>
           </motion.div>
 
           <motion.h1
@@ -421,9 +482,9 @@ export default function Hero() {
             transition={{ duration: 0.7, delay: 0.38 }}
             className="text-[15px] sm:text-lg text-[var(--fg-2)] leading-relaxed max-w-[480px] mb-10"
           >
-            Distribución en todo Uruguay, envíos internacionales a +50 países
-            y tu casillero personal para comprar donde quieras y recibir
-            en tu puerta. Todo desde un solo lugar.
+            Distribución en todo Uruguay y envíos internacionales a +50 países.
+            Muy pronto, además: tu casillero personal para comprar donde
+            quieras y recibir en tu puerta.
           </motion.p>
 
           <motion.div
@@ -435,6 +496,11 @@ export default function Hero() {
             <button
               onMouseEnter={() => import('./Cotizacion')}
               onFocus={() => import('./Cotizacion')}
+              // onTouchStart: en mobile no hay mouseenter antes del tap — sin
+              // esto, el precargado de arriba nunca corre en un touchscreen y
+              // el chunk de Cotizacion (formulario grande, con el selector de
+              // país) recién empieza a bajar cuando ya se disparó el click.
+              onTouchStart={() => import('./Cotizacion')}
               onClick={() => window.dispatchEvent(new CustomEvent('openCotizar'))}
               className="px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
                          bg-[#F07232] hover:bg-[#E8823C] text-white font-semibold text-sm
@@ -443,8 +509,13 @@ export default function Hero() {
             >
               Cotizar envío
             </button>
+            {/* El casillero todavía no está operativo: el CTA capta interesados
+                por WhatsApp en vez de prometer una cuenta que aún no existe. */}
             <a
-              href="#servicios"
+              href={CASILLERO_WHATSAPP_URL}
+              data-ga-placement="hero_casillero"
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
                          border border-[#527ED8]/25 hover:border-[#527ED8]/55
                          text-[var(--fg-2)] hover:text-[#6B90DC] font-semibold text-sm
@@ -452,7 +523,7 @@ export default function Hero() {
                          bg-[#527ED8]/[0.06] backdrop-blur-2xl hover:bg-[#527ED8]/[0.12]
                          hover:shadow-[0_0_24px_rgba(59,126,248,0.18)]"
             >
-              Abrir mi casillero
+              Me interesa el casillero
             </a>
           </motion.div>
 
@@ -499,7 +570,7 @@ export default function Hero() {
             {[
               { Icon: Globe,  label: '+50 países destino',     blue: false },
               { Icon: Zap,    label: 'Todo Uruguay',           blue: false },
-              { Icon: Shield, label: 'Casillero Internacional', blue: true  },
+              { Icon: Shield, label: 'Casillero Internacional · Pronto', blue: true  },
             ].map(({ Icon, label, blue }) => (
               <div
                 key={label}
@@ -521,7 +592,10 @@ export default function Hero() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.8 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+        /* En flujo (ya no absolute): shrink-0 para que nunca se comprima y
+           self-center para centrarlo horizontalmente dentro del section
+           flex-col. pb-8 conserva la separación que daba bottom-8. */
+        className="relative z-10 shrink-0 self-center pb-8 flex flex-col items-center gap-2"
       >
         <span className="text-[10px] tracking-[0.22em] text-[var(--fg-5)] uppercase">Scroll</span>
         <motion.div
