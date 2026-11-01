@@ -98,6 +98,44 @@ export const GOODBYE_RESPONSES = [
 /** Respuesta de tiempos_entrega cuando el destino resuelto es Uruguay (nacional) — ver 'tiempos_entrega' en FAQ para la internacional. */
 export const RESPUESTA_TIEMPOS_NACIONAL = 'Para envíos nacionales dentro de Uruguay tenemos entrega express en 24 h.'
 
+/**
+ * Categorías de artículos prohibidos, para responder directo a una pregunta
+ * sobre UN producto puntual ("¿puedo enviar baterías?") — mismo contenido que
+ * la FAQ 'articulos_prohibidos' de abajo, agrupado por las palabras con las
+ * que el usuario puede nombrar cada categoría. Usado por intentEngine.js
+ * (clasificarProductoEnvio) para la intención 'producto_prohibido'.
+ */
+export const PRODUCTOS_PROHIBIDOS = [
+  { palabras: ['bateria', 'baterias', 'pila', 'pilas', 'litio'], categoria: 'las baterías de litio' },
+  { palabras: ['fuego artificial', 'fuegos artificiales', 'polvora', 'pirotecnia'], categoria: 'los fuegos artificiales' },
+  { palabras: ['gasolina', 'nafta', 'combustible', 'inflamable', 'inflamables'], categoria: 'los materiales inflamables' },
+  { palabras: ['arma', 'armas', 'pistola', 'pistolas', 'municion', 'municiones', 'bala', 'balas'], categoria: 'las armas y municiones' },
+  { palabras: ['explosivo', 'explosivos'], categoria: 'los explosivos' },
+  { palabras: ['aerosol', 'aerosoles'], categoria: 'los aerosoles' },
+  { palabras: ['toxico', 'toxica', 'toxicas', 'toxicos', 'corrosivo', 'corrosiva', 'radiactivo', 'radiactiva'], categoria: 'las sustancias tóxicas, corrosivas o radiactivas' },
+  { palabras: ['efectivo', 'dinero en efectivo', 'billetes'], categoria: 'el dinero en efectivo' },
+  { palabras: ['tarjeta bancaria', 'tarjetas bancarias', 'tarjeta de credito', 'tarjeta de debito'], categoria: 'las tarjetas bancarias' },
+  { palabras: ['joya', 'joyas', 'antiguedad', 'antiguedades'], categoria: 'las joyas y antigüedades' },
+  { palabras: ['animal vivo', 'animales vivos', 'mascota', 'mascotas', 'perro', 'gato'], categoria: 'los animales vivos' },
+  { palabras: ['droga', 'drogas', 'estupefaciente', 'estupefacientes', 'marihuana', 'cocaina'], categoria: 'las sustancias ilegales' },
+]
+
+/** Medicamentos: NO están prohibidos, pero sí requieren comprobante de compra
+ * (ver 'articulos_prohibidos' arriba) — se responde distinto a un producto
+ * lisa y llanamente prohibido. */
+export const PALABRAS_PRODUCTO_MEDICAMENTO = [
+  'medicamento', 'medicamentos', 'anestesia', 'anestesias', 'remedio', 'remedios',
+  'pastilla', 'pastillas', 'farmaco', 'farmacos', 'antibiotico', 'antibioticos',
+]
+
+export const RESPUESTA_PRODUCTO_MEDICAMENTO = 'Los medicamentos sí se pueden enviar, pero necesitás el comprobante de compra correspondiente — sin eso no se puede incluir en el envío.'
+
+/** Producto puntual mencionado que NO está en la lista de prohibidos ni es un
+ * medicamento — no hay forma de saber con certeza si se puede enviar sin
+ * inventar una respuesta, así que se deriva a WhatsApp en vez de arriesgar
+ * un "sí" o "no" sin base real. */
+export const RESPUESTA_PRODUCTO_DESCONOCIDO = 'No tengo información específica sobre si eso se puede enviar o no. Para confirmarlo con seguridad, te recomiendo escribirnos por WhatsApp.'
+
 export const FAQ = [
   {
     id: 'horarios',
@@ -163,6 +201,10 @@ export const FAQ = [
       'cosas prohibidas', 'que no puedo mandar', 'hay una lista de articulos prohibidos',
       'que cosas no se pueden enviar', 'que no se puede enviar al exterior',
       'que puedo mandar en el paquete', 'que no puedo enviar en el paquete',
+      // 'restricciones' a secas: forma muy común de preguntar por lo mismo
+      // sin usar "prohibido" ("restricciones de lo que se puede enviar").
+      'restricciones', 'que restricciones hay', 'restricciones de envio',
+      'restricciones para enviar', 'que restricciones tienen',
     ],
     respuesta: 'No podés enviar: materiales peligrosos o inflamables (baterías de litio, fuegos artificiales, municiones, gasolina, aerosoles), armas y sustancias tóxicas, corrosivas o radiactivas, dinero en efectivo o tarjetas bancarias, joyas y antigüedades, animales vivos, medicamentos sin comprobante de compra, y cualquier objeto cuya importación o exportación esté prohibida por la ley uruguaya. Podés ver el detalle completo acá.',
     chips: ['Ver lista completa'],
@@ -220,7 +262,7 @@ export const FAQ = [
       'a que correo escribo', 'donde los puedo contactar',
       'quiero hablar con ustedes', 'me pasan un telefono', 'me pasan un correo',
     ],
-    respuesta: 'Podés contactarnos al (+598) 93 594 297 (Lunes a viernes 10:00-18:00) o por correo a packexpress2021@gmail.com (respuesta en menos de 24 h).',
+    respuesta: 'Podés contactarnos al (+598) 93 594 297 (Lunes a viernes 10:00-18:00) o por correo a atencion@packexpress.com.uy (respuesta en menos de 24 h).',
   },
   {
     id: 'ubicacion',

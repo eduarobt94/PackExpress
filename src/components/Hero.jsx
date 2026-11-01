@@ -47,19 +47,33 @@ function DotMap({ onReady }) {
     }
 
     const SNAP = 0.4 // umbral para snap limpio — evita arrastre infinito al final
+
+    // El loop se auto-detiene cuando todas las partículas llegaron a destino:
+    // sin esto seguía renderizando a 60fps para siempre aunque nada cambiara,
+    // compitiendo por el hilo principal con el resto de la página (scroll,
+    // animaciones, interacciones) y gastando batería sin ningún efecto visual.
+    // startLoop() lo reanuda cuando algo vuelve a mover las partículas (resize).
+    let running = false
+
     const render = () => {
-      animId = requestAnimationFrame(render)
-      if (!points) return
+      if (!points) {
+        animId = requestAnimationFrame(render)
+        return
+      }
 
       const posAttr = points.geometry.getAttribute('position')
+      let moving = false
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i]
         const dx = p.destX - p.x
         const dy = p.destY - p.y
         const dz = p.destZ - p.z
-        p.x = Math.abs(dx) < SNAP ? p.destX : p.x + dx * p.speed
-        p.y = Math.abs(dy) < SNAP ? p.destY : p.y + dy * p.speed
-        p.z = Math.abs(dz) < SNAP ? p.destZ : p.z + dz * p.speed
+        if (Math.abs(dx) < SNAP) p.x = p.destX
+        else { p.x += dx * p.speed; moving = true }
+        if (Math.abs(dy) < SNAP) p.y = p.destY
+        else { p.y += dy * p.speed; moving = true }
+        if (Math.abs(dz) < SNAP) p.z = p.destZ
+        else { p.z += dz * p.speed; moving = true }
         positions[i * 3]     = p.x
         positions[i * 3 + 1] = p.y
         positions[i * 3 + 2] = p.z
@@ -67,6 +81,19 @@ function DotMap({ onReady }) {
 
       posAttr.needsUpdate = true
       renderer.render(scene, camera)
+
+      if (moving) {
+        animId = requestAnimationFrame(render)
+      } else {
+        // Convergió: se pinta este último frame y el loop queda inactivo.
+        running = false
+      }
+    }
+
+    const startLoop = () => {
+      if (running) return
+      running = true
+      animId = requestAnimationFrame(render)
     }
 
     const drawTheMap = (imagedata) => {
@@ -114,7 +141,7 @@ function DotMap({ onReady }) {
 
       points = new THREE.Points(geometry, material)
       scene.add(points)
-      animId = requestAnimationFrame(render)
+      startLoop()
     }
 
     const loader = new THREE.TextureLoader()
@@ -149,6 +176,10 @@ function DotMap({ onReady }) {
           particles[i].destY = particles[i].normY * yVisR * factorR
         }
       }
+
+      // Los destinos cambiaron: reanudar el loop (si ya había convergido y se
+      // detuvo) para que las partículas se reacomoden al nuevo aspect ratio.
+      startLoop()
     }
     window.addEventListener('resize', onResize)
 
@@ -465,6 +496,11 @@ export default function Hero() {
             <button
               onMouseEnter={() => import('./Cotizacion')}
               onFocus={() => import('./Cotizacion')}
+              // onTouchStart: en mobile no hay mouseenter antes del tap — sin
+              // esto, el precargado de arriba nunca corre en un touchscreen y
+              // el chunk de Cotizacion (formulario grande, con el selector de
+              // país) recién empieza a bajar cuando ya se disparó el click.
+              onTouchStart={() => import('./Cotizacion')}
               onClick={() => window.dispatchEvent(new CustomEvent('openCotizar'))}
               className="px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center
                          bg-[#F07232] hover:bg-[#E8823C] text-white font-semibold text-sm
@@ -477,6 +513,7 @@ export default function Hero() {
                 por WhatsApp en vez de prometer una cuenta que aún no existe. */}
             <a
               href={CASILLERO_WHATSAPP_URL}
+              data-ga-placement="hero_casillero"
               target="_blank"
               rel="noopener noreferrer"
               className="px-6 py-3.5 rounded-xl w-full sm:w-auto justify-center

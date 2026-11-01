@@ -1,9 +1,20 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
+/* Fuentes autohospedadas — reemplaza el <link> a fonts.googleapis.com, que
+   era render-blocking (fetch cross-origin extra en el critical path del
+   FCP). Mismo peso/subsets que se pedían antes (variable 100-900 + opsz
+   para Inter, pesos 400-900 estáticos para Plus Jakarta Sans); al vivir en
+   el mismo bundle CSS que ya carga la página, no agrega una request nueva. */
+@import "@fontsource-variable/inter/standard.css";
+@import "@fontsource/plus-jakarta-sans/latin-400.css";
+@import "@fontsource/plus-jakarta-sans/latin-500.css";
+@import "@fontsource/plus-jakarta-sans/latin-600.css";
+@import "@fontsource/plus-jakarta-sans/latin-700.css";
+@import "@fontsource/plus-jakarta-sans/latin-800.css";
+
 @theme {
-  --font-sans:    'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, sans-serif;
+  --font-sans:    'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Inter Variable', ui-sans-serif, sans-serif;
 
   /* ── Brand orange — national, action, courier ── */
   --color-brand:       #F07232;
@@ -55,8 +66,8 @@
   --fg-1: #F8F8F8;
   --fg-2: #94A3B8;
   --fg-3: #64748B;
-  --fg-4: #64748B;
-  --fg-5: #475569;
+  --fg-4: #8493A8;
+  --fg-5: #75839A;
 
   --bd-1: rgba(255,255,255,0.055);
   --bd-2: rgba(255,255,255,0.08);
@@ -95,8 +106,8 @@
   --fg-1: #0D0F14;
   --fg-2: #374151;
   --fg-3: #536070;
-  --fg-4: #6B7A8D;
-  --fg-5: #8694A4;
+  --fg-4: #4B5768;
+  --fg-5: #5B6675;
 
   --bd-1: rgba(0,0,0,0.07);
   --bd-2: rgba(0,0,0,0.11);

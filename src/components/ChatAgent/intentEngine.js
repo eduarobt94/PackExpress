@@ -4,6 +4,7 @@
  */
 import {
   FAQ, SMALL_TALK, GREETING_PALABRAS, GREETING_RESPONSES, GOODBYE_PALABRAS,
+  PRODUCTOS_PROHIBIDOS, PALABRAS_PRODUCTO_MEDICAMENTO,
 } from './chatKnowledge.js'
 
 const PALABRAS_COTIZAR = [
@@ -640,6 +641,17 @@ const PATRON_PAGO = /\b(como|de que forma|de que manera|cual es la forma|que med
 const PATRON_PROHIBIDOS = /\b(que|cual(es)?)\b[\s\S]{0,25}\bno\s+(?:se\s+)?pued\w*\b[\s\S]{0,20}\b(envi\w*|mand\w*|llev\w*)\b/
 
 /**
+ * "¿Qué documentos/información necesito llevar para enviar?" generalizado
+ * por patrón — cubre la familia documento(s)/información/requisito(s) sin
+ * necesitar una frase exacta por cada orden de palabras posible. Antes solo
+ * matcheaba la frase EXACTA "que documentos necesito" (palabrasClave de
+ * 'documentacion'); "que documentos O INFORMACION necesito llevar" no
+ * calzaba por las palabras de más en el medio. Mismo mecanismo que
+ * PATRON_TIEMPOS_ENTREGA/PATRON_PAGO/PATRON_PROHIBIDOS de arriba.
+ */
+const PATRON_DOCUMENTACION = /\b(que|cual(es)?)\b[\s\S]{0,15}\b(document\w*|informacion|requisit\w*|papel(es)?)\b[\s\S]{0,30}\b(necesit\w*|llev\w*|pid\w*|requier\w*)\b/
+
+/**
  * Frases de confirmación de cobertura hacia un país puntual ("¿envían a
  * Cuba?", "¿llegan a España?"). El país SOLO (sin ninguna de estas frases)
  * no alcanza — evita que cualquier mensaje que mencione un país de pasada
@@ -657,10 +669,71 @@ const PATRONES_COBERTURA_PAIS = [
   'como se puede mandar', 'como se puede enviar',
 ]
 
+/** Si la primera palabra de contenido tras el verbo de envío es una de
+ * estas, el mensaje pregunta por cobertura hacia un país ("puedo enviar A
+ * Cuba"), no por un producto puntual — usado por esPreguntaDeProducto. */
+const PREPOSICION_DESTINO = new Set(['a', 'al', 'para', 'hacia'])
+
+/** Relleno que puede aparecer entre el verbo de envío y el producto real
+ * ("puedo enviar EN EL PAQUETE baterías") — se salta al buscar la primera
+ * palabra de contenido real después del verbo. */
+const RELLENO_ENTRE_VERBO_Y_PRODUCTO = new Set([
+  'en', 'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas',
+  'mi', 'mis', 'su', 'sus', 'paquete', 'paquetes', 'envio', 'caja', 'esta',
+])
+
+/**
+ * true si el mensaje pregunta "¿puedo enviar/mandar/llevar [PRODUCTO]...?"
+ * mencionando un producto concreto — a diferencia de una pregunta de
+ * cobertura pura ("¿puedo enviar A Cuba?", sin producto — ver
+ * PATRONES_COBERTURA_PAIS) o de la pregunta genérica "¿qué NO puedo enviar?"
+ * (ver PATRON_PROHIBIDOS, que se evalúa antes en el loop de FAQ). Camina
+ * palabra por palabra después del verbo: si es relleno la salta, si es una
+ * preposición de destino ANTES de encontrar contenido real devuelve false
+ * (es cobertura, no producto), si encuentra una palabra de contenido real
+ * devuelve true. Los números pegados a una unidad ("10kg") también se
+ * saltan — son peso, no producto.
+ */
+function esPreguntaDeProducto(textoOriginal) {
+  const texto = normalizeText(textoOriginal)
+  const match = texto.match(/\b(?:puedo|podria|se puede|es posible)\b[\s\S]{0,15}\b(?:enviar|mandar|llevar)\b\s+([\s\S]+)/)
+  if (!match) return false
+  const palabras = tokenizar(match[1])
+  for (const palabra of palabras) {
+    if (RELLENO_ENTRE_VERBO_Y_PRODUCTO.has(palabra)) continue
+    if (PREPOSICION_DESTINO.has(palabra)) return false
+    if (/^\d/.test(palabra)) continue
+    if (palabra.length < 3) continue
+    return true
+  }
+  return false
+}
+
+/**
+ * Clasifica una pregunta de producto ya detectada (ver esPreguntaDeProducto)
+ * contra la lista de artículos prohibidos y medicamentos condicionales. Si no
+ * matchea ninguna de las dos, no hay forma de responder con certeza desde la
+ * base de conocimiento — se deriva a WhatsApp en vez de inventar un sí/no.
+ */
+function clasificarProductoEnvio(texto) {
+  for (const { palabras, categoria } of PRODUCTOS_PROHIBIDOS) {
+    if (contieneAlguna(texto, palabras)) return { tipo: 'producto_prohibido', categoria }
+  }
+  if (contieneAlguna(texto, PALABRAS_PRODUCTO_MEDICAMENTO)) {
+    return { tipo: 'producto_medicamento' }
+  }
+  return { tipo: 'producto_desconocido' }
+}
+
 /** Devuelve el país si el mensaje pregunta por cobertura hacia ese país puntual, o null. */
 export function detectarCoberturaPais(textoOriginal, countryZone) {
   const texto = normalizeText(textoOriginal)
-  if (!PATRONES_COBERTURA_PAIS.some(p => texto.includes(p))) return null
+  // contieneSubstringConLimite (con límite de palabra), no un .includes() a
+  // secas: sin el límite, "puedo enviar a" matcheaba como substring crudo
+  // dentro de "puedo enviar Anestesias" (la "a" de "anestesias" cerraba la
+  // frase por pura coincidencia de caracteres) — confundía una pregunta sobre
+  // un producto puntual con una de cobertura hacia un país.
+  if (!PATRONES_COBERTURA_PAIS.some(p => contieneSubstringConLimite(texto, p))) return null
   // Tolerante por consistencia con el resto: "¿mandan a cuab?" es el mismo
   // typo que ya se acepta al cotizar, y acá ni siquiera se decide un precio.
   return matchPaisTolerante(textoOriginal, countryZone)
@@ -715,7 +788,8 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
     const matchTiemposGeneralizado = entrada.id === 'tiempos_entrega' && PATRON_TIEMPOS_ENTREGA.test(texto)
     const matchPagoGeneralizado = entrada.id === 'sin_info_pago' && PATRON_PAGO.test(texto)
     const matchProhibidosGeneralizado = entrada.id === 'articulos_prohibidos' && PATRON_PROHIBIDOS.test(texto)
-    if (matchTiemposGeneralizado || matchPagoGeneralizado || matchProhibidosGeneralizado || contieneAlguna(texto, entrada.palabrasClave)) {
+    const matchDocumentacionGeneralizado = entrada.id === 'documentacion' && PATRON_DOCUMENTACION.test(texto)
+    if (matchTiemposGeneralizado || matchPagoGeneralizado || matchProhibidosGeneralizado || matchDocumentacionGeneralizado || contieneAlguna(texto, entrada.palabrasClave)) {
       // tiempos_entrega sin país mencionado: preguntamos el destino antes de
       // responder — el tiempo real (nacional 24h vs internacional con
       // escala) depende de eso, y así se evita responder a ciegas.
@@ -741,6 +815,16 @@ export function buscarIntencionDeNegocio(texto, textoOriginal, countryZone) {
     const paisPrellenado = countryZone ? matchPaisTolerante(textoOriginal, countryZone) : null
     const pesoPrellenado = extraerPesoConUnidad(textoOriginal)
     return { tipo: 'cotizar_iniciar', paisPrellenado, pesoPrellenado }
+  }
+  // "¿Puedo enviar [producto]...?" con un producto puntual mencionado — se
+  // chequea ANTES de cobertura_pais a propósito: "puedo enviar baterías para
+  // Cuba" tiene la misma forma superficial que "puedo enviar a Cuba", pero
+  // acá SÍ hay un producto real de por medio (esPreguntaDeProducto filtra
+  // uno del otro). Después de PALABRAS_COTIZAR y del loop de FAQ (incluido
+  // PATRON_PROHIBIDOS, que ya cubre la pregunta genérica "¿qué NO puedo
+  // enviar?") para no competir con esos casos.
+  if (esPreguntaDeProducto(textoOriginal)) {
+    return clasificarProductoEnvio(texto)
   }
   if (countryZone) {
     const paisCobertura = detectarCoberturaPais(textoOriginal, countryZone)

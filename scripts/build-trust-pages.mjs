@@ -148,7 +148,7 @@ const contact = layout({
     <div class="card">
       <address>
         <p style="margin-bottom:.5rem"><strong>Teléfono / WhatsApp:</strong> <a href="tel:+59893594297">+598 93 594 297</a> — <a href="https://wa.me/59893594297">wa.me/59893594297</a></p>
-        <p style="margin-bottom:.5rem"><strong>Email:</strong> <a href="mailto:packexpress2021@gmail.com">packexpress2021@gmail.com</a></p>
+        <p style="margin-bottom:.5rem"><strong>Email:</strong> <a href="mailto:atencion@packexpress.com.uy">atencion@packexpress.com.uy</a></p>
         <p style="margin-bottom:.5rem"><strong>Dirección:</strong> Carlos Quijano 1258, Montevideo, Uruguay</p>
         <p style="margin-bottom:0"><strong>Horario:</strong> Lunes a viernes 10:00–18:00 · Sábados 10:00–14:00</p>
       </address>
@@ -187,6 +187,9 @@ const privacy = layout({
     <h2>Uso de la información</h2>
     <p>La información recopilada se utiliza exclusivamente para gestionar sus envíos, responder consultas, mejorar nuestros servicios y, con su autorización, enviarle comunicaciones relevantes sobre nuestros servicios. Nos reservamos el derecho de utilizar la información de forma agregada y anónima para fines estadísticos internos.</p>
 
+    <h2>Cookies y analítica</h2>
+    <p>Con su consentimiento, usamos Google Analytics 4 para conocer de forma agregada cómo se utiliza el sitio (páginas vistas, uso del cotizador y del rastreo, clics en los canales de contacto) y mejorarlo. Esto instala cookies de analítica (_ga y _ga_*) y envía a Google datos de uso del navegador. No enviamos a Google su nombre, correo, teléfono, mensajes ni números de guía, y no usamos estas cookies con fines publicitarios. Puede aceptar o rechazar la analítica en el aviso que se muestra al ingresar el sitio y cambiar su decisión en cualquier momento desde "Preferencias de cookies" al pie de la página principal; el sitio funciona igual si la rechaza.</p>
+
     <h2>Comentarios y sugerencias</h2>
     <p>Agradecemos sus comentarios y sugerencias; sin embargo, no nos es posible responder a todos los comentarios de forma individual. Al enviar información, usted acepta que la empresa puede utilizar dicha información libremente, sin obligación de confidencialidad, compensación ni restricción de uso.</p>
 
@@ -197,7 +200,7 @@ const privacy = layout({
     <p>Pack Express Uruguay S.A.S advierte sobre posibles estafas que utilizan fraudulentamente nuestro nombre o imagen de marca. Aclaramos que únicamente cobramos pagos oficiales por servicios de envío debidamente contratados. No solicitamos pagos anticipados por productos, ni realizamos cobros a través de canales no oficiales. La empresa no se responsabiliza por pérdidas económicas derivadas de transacciones fraudulentas realizadas en nombre de Pack Express por personas o entidades no autorizadas.</p>
 
     <h2>Contacto</h2>
-    <p>Consultas sobre esta política: <a href="mailto:packexpress2021@gmail.com">packexpress2021@gmail.com</a> — ver también nuestros <a href="/about/">datos de identidad legal</a>.</p>
+    <p>Consultas sobre esta política: <a href="mailto:atencion@packexpress.com.uy">atencion@packexpress.com.uy</a> — ver también nuestros <a href="/about/">datos de identidad legal</a>.</p>
   `,
 })
 

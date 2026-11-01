@@ -45,7 +45,7 @@ export default function Navbar() {
 
             {/* Logo */}
             <a href="/" className="shrink-0 group opacity-100 hover:opacity-90 transition-opacity duration-200">
-              <img src={logo} alt="Pack Express Uruguay" className="h-12 w-auto block" />
+              <img src={logo} alt="Pack Express Uruguay" width="87" height="29" className="h-12 w-auto block" />
             </a>
 
             {/* Desktop links */}
@@ -110,7 +110,10 @@ export default function Navbar() {
         </div>
       </motion.nav>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — z-[70] lo pone por encima del PromoBanner (z-60) y
+          del navbar (z-50). Con z-40 el banner promocional quedaba por encima
+          del drawer y su franja superior interceptaba los taps sobre el botón
+          "Cerrar menú", dejando el menú imposible de cerrar desde la X. */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -118,7 +121,7 @@ export default function Navbar() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-40 min-[860px]:hidden flex flex-col"
+            className="fixed inset-0 z-[70] min-[860px]:hidden flex flex-col"
           >
             {/* Backdrop */}
             <div className="absolute inset-0 bg-[var(--bg-alt)]/97 backdrop-blur-2xl -z-10" />

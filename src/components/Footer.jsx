@@ -26,7 +26,7 @@ const COLS = [
     links: [
       { label: 'Términos y Condiciones', modal: 'terminos'   },
       { label: 'Política de Privacidad', modal: 'privacidad' },
-      { label: 'Resolución N°148/2023',  href: '#', external: true },
+      { label: 'Resolución N°148/2023',  href: '/assets/documents/Gaceta%20Oficial.pdf', external: true },
       { label: 'Artículos Prohibidos',   modal: 'prohibidos', danger: true },
     ],
   },
@@ -64,6 +64,7 @@ export default function Footer() {
       {/* WhatsApp floating button */}
       <a
         href={WHATSAPP_URL}
+        data-ga-placement="floating"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Contactar por WhatsApp (abre en nueva pestaña)"
@@ -111,11 +112,12 @@ export default function Footer() {
               {/* Casillero todavía no operativo: el CTA capta interesados. */}
               <a
                 href={CASILLERO_WHATSAPP_URL}
+                data-ga-placement="footer_casillero"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl w-full sm:w-auto
                            border border-[#527ED8]/30 hover:border-[#527ED8]/55
-                           text-[#527ED8] hover:text-[#6B90DC] text-[13px] font-semibold
+                           text-[var(--color-blue)] hover:text-[var(--color-blue-hover)] text-[13px] font-semibold
                            transition-[color,background-color,border-color,box-shadow] duration-200 tracking-wide whitespace-nowrap
                            hover:bg-[#527ED8]/[0.07] hover:shadow-[0_0_24px_rgba(59,126,248,0.18)]"
               >
@@ -126,8 +128,11 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* â”€â”€ Footer grid â”€â”€ */}
-      <footer className="bg-[var(--bg-deep)] border-t border-[var(--bd-1)]">
+      {/* â”€â”€ Footer grid â”€â”€
+          <div> y no <footer>: App.jsx ya envuelve este componente en un
+          <footer role="contentinfo">, y un <footer> anidado dentro de otro
+          es HTML inválido y duplica el landmark para lectores de pantalla. */}
+      <div className="bg-[var(--bg-deep)] border-t border-[var(--bd-1)]">
         <div className="max-w-7xl mx-auto px-6 md:px-10 lg:px-8">
 
           <div className="py-10 lg:py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-8">
@@ -135,7 +140,7 @@ export default function Footer() {
             {/* Brand column */}
             <div className="lg:col-span-2">
               <a href="/" className="inline-block mb-6 opacity-100 hover:opacity-85 transition-opacity duration-200">
-                <img src={logo} alt="Pack Express Uruguay" className="h-14 w-auto block" />
+                <img src={logo} alt="Pack Express Uruguay" width="101" height="34" className="h-14 w-auto block" />
               </a>
 
               <p className="text-[12px] text-[var(--fg-4)] leading-relaxed mb-7 max-w-[260px]">
@@ -147,7 +152,7 @@ export default function Footer() {
                 {[
                   { Icon: MapPin, text: 'Carlos Quijano 1258, Montevideo', href: null },
                   { Icon: Phone,  text: '(+598) 93 594 297',                href: 'tel:+59893594297' },
-                  { Icon: Mail,   text: 'packexpress2021@gmail.com',        href: 'mailto:packexpress2021@gmail.com' },
+                  { Icon: Mail,   text: 'atencion@packexpress.com.uy',        href: 'mailto:atencion@packexpress.com.uy' },
                 ].map(({ Icon, text, href }) => {
                   const cls = 'text-[11px] text-[var(--fg-4)] hover:text-[var(--fg-2)] transition-colors duration-200'
                   return (
@@ -198,15 +203,15 @@ export default function Footer() {
                           onClick={() => window.dispatchEvent(new CustomEvent('openLegal', { detail: link.modal }))}
                           className="text-[12px] transition-colors duration-200 whitespace-nowrap text-left"
                           style={link.danger
-                            ? { color: 'rgba(229,53,53,0.65)' }
+                            ? { color: theme === 'dark' ? '#E53535' : '#B91C1C' }
                             : undefined
                           }
                           onMouseEnter={e => {
-                            if (link.danger) e.currentTarget.style.color = '#E53535'
+                            if (link.danger) e.currentTarget.style.color = theme === 'dark' ? '#F87171' : '#DC2626'
                             else e.currentTarget.style.color = 'var(--fg-1)'
                           }}
                           onMouseLeave={e => {
-                            if (link.danger) e.currentTarget.style.color = 'rgba(229,53,53,0.65)'
+                            if (link.danger) e.currentTarget.style.color = theme === 'dark' ? '#E53535' : '#B91C1C'
                             else e.currentTarget.style.color = 'var(--fg-4)'
                           }}
                         >
@@ -218,13 +223,13 @@ export default function Footer() {
                           target={link.external ? '_blank' : undefined}
                           rel={link.external ? 'noopener noreferrer' : undefined}
                           className="inline-flex items-center gap-1 text-[12px] transition-colors duration-200 group whitespace-nowrap"
-                          style={link.blue ? { color: 'rgba(59,126,248,0.70)' } : { color: 'var(--fg-4)' }}
+                          style={link.blue ? { color: 'var(--color-blue)' } : { color: 'var(--fg-4)' }}
                           onMouseEnter={e => {
-                            if (link.blue) e.currentTarget.style.color = '#6B90DC'
+                            if (link.blue) e.currentTarget.style.color = 'var(--color-blue-hover)'
                             else e.currentTarget.style.color = 'var(--fg-1)'
                           }}
                           onMouseLeave={e => {
-                            if (link.blue) e.currentTarget.style.color = 'rgba(59,126,248,0.70)'
+                            if (link.blue) e.currentTarget.style.color = 'var(--color-blue)'
                             else e.currentTarget.style.color = 'var(--fg-4)'
                           }}
                         >
@@ -252,11 +257,19 @@ export default function Footer() {
             </p>
             <p className="text-[11px] text-[var(--fg-5)]">
               Resolución N°148/2023 &middot; URSEC Uruguay &middot; Montevideo
+              {' '}&middot;{' '}
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event('openConsent'))}
+                className="underline underline-offset-2 hover:text-[var(--fg-2)] transition-colors duration-200"
+              >
+                Preferencias de cookies
+              </button>
             </p>
           </div>
 
         </div>
-      </footer>
+      </div>
     </>
   )
 }

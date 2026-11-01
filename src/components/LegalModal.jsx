@@ -111,6 +111,10 @@ const CONTENT = {
         body: 'La información recopilada se utiliza exclusivamente para gestionar sus envíos, responder consultas, mejorar nuestros servicios y, con su autorización, enviarle comunicaciones relevantes sobre nuestros servicios. Nos reservamos el derecho de utilizar la información de forma agregada y anónima para fines estadísticos internos.',
       },
       {
+        heading: 'Cookies y analítica',
+        body: 'Con su consentimiento, usamos Google Analytics 4 para conocer de forma agregada cómo se utiliza el sitio (páginas vistas, uso del cotizador y del rastreo, clics en los canales de contacto) y mejorarlo. Esto instala cookies de analítica (_ga y _ga_*) y envía a Google datos de uso del navegador. No enviamos a Google su nombre, correo, teléfono, mensajes ni números de guía, y no usamos estas cookies con fines publicitarios. Puede aceptar o rechazar la analítica en el aviso que se muestra al ingresar y cambiar su decisión en cualquier momento desde "Preferencias de cookies" al pie del sitio; el sitio funciona igual si la rechaza.',
+      },
+      {
         heading: 'Comentarios y sugerencias',
         body: 'Agradecemos sus comentarios y sugerencias; sin embargo, no nos es posible responder a todos los comentarios de forma individual. Al enviar información, usted acepta que la empresa puede utilizar dicha información libremente, sin obligación de confidencialidad, compensación ni restricción de uso.',
       },
@@ -186,13 +190,16 @@ export default function LegalModal({ type, onClose }) {
             className="fixed inset-0 z-[90]"
           >
             {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-[var(--bg-base)]/55 backdrop-blur-2xl"
-              onClick={onClose}
-            />
+            <div className="absolute inset-0 bg-[var(--bg-base)]/55 backdrop-blur-2xl" />
 
-            {/* Centering container */}
-            <div className="relative h-full flex items-center justify-center p-4 sm:p-6 lg:p-10 z-10">
+            {/* Centering container — el click-para-cerrar vive acá, no en el
+                backdrop: este contenedor cubre el área completa por encima
+                del backdrop (z-10), así que era él quien recibía los clicks
+                de la zona vacía. El panel hace stopPropagation. */}
+            <div
+              className="relative h-full flex items-center justify-center p-4 sm:p-6 lg:p-10 z-10"
+              onClick={onClose}
+            >
               <motion.div
                 key="legal-modal"
                 initial={{ opacity: 0, y: 40, scale: 0.97 }}

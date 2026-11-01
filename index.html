@@ -10,7 +10,13 @@
     <link rel="apple-touch-icon" href="/favicon.png" />
     <link rel="manifest" href="/site.webmanifest" />
 
-    <!-- ── Fallback estático para crawlers sin JS (GPTBot, ClaudeBot, bots sociales) ── -->
+    <!-- ── Fallback estático para crawlers sin JS (GPTBot, ClaudeBot, bots sociales) ──
+         ESTA es la única fuente de verdad de los meta tags de la home.
+         No re-emitir estos mismos tags desde React: con React 19,
+         react-helmet-async delega en el hoisting nativo de React, que NO
+         deduplica contra los tags ya presentes en este HTML — el resultado
+         era un DOM con dos <meta description>, dos <link canonical>, etc.
+         Ver src/components/SEO.jsx y docs/QA_BUGS.md (BUG-APP-001). -->
     <title>Pack Express Uruguay | Courier y Logística Nacional e Internacional</title>
     <meta name="description"
       content="Pack Express: courier y distribución en los 19 departamentos de Uruguay y envíos internacionales a +50 países. Recolección a domicilio en Montevideo. ¡Cotizá ahora!" />
@@ -51,12 +57,8 @@
     <!-- Google Search Console -->
     <meta name="google-site-verification" content="DSdMrPkCYqxFK8sgRS5M9c2ZRYFehKDLqzazy8ZYVsI" />
 
-    <!-- Preconnect — acelera carga de fuentes -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <!-- Preload OG image — reduce tiempo de carga del LCP en desktop -->
-    <link rel="preload" as="image" href="/og-default.jpg" fetchpriority="high" />
+    <!-- Fuentes autohospedadas (@fontsource, ver src/index.css) — ya no hace
+         falta preconnect/link a fonts.googleapis.com. -->
 
     <!-- Three.js texture is self-hosted at /textures/worldMap.png -->
   </head>
@@ -142,7 +144,7 @@
         <p>Pack Express Uruguay S.A.S.</p>
         <p>Carlos Quijano 1258, Montevideo, Uruguay</p>
         <p>Teléfono / WhatsApp: <a href="tel:+59893594297">+598 93 594 297</a></p>
-        <p>Email: <a href="mailto:packexpress2021@gmail.com">packexpress2021@gmail.com</a></p>
+        <p>Email: <a href="mailto:atencion@packexpress.com.uy">atencion@packexpress.com.uy</a></p>
         <p>Web: <a href="https://packexpress.com.uy">packexpress.com.uy</a></p>
         <p>Horario: Lunes a Viernes 10:00–18:00 | Sábados 10:00–14:00</p>
       </address>

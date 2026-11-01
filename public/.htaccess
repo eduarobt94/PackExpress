@@ -5,6 +5,26 @@ RewriteEngine On
 AddType text/markdown .md
 AddDefaultCharset UTF-8
 
+# ── MIME types de documentos descargables ─────────────────────────────────────
+# El Apache de Hostinger NO tiene registrados los tipos de Office: servía
+# /assets/documents/declaracion-jurada.xlsx como "text/plain; charset=UTF-8" y,
+# combinado con el X-Content-Type-Options: nosniff de más abajo (que le prohíbe
+# al navegador deducir el tipo real), Chrome mostraba el binario del ZIP como
+# texto en pantalla en vez de descargarlo. Los .pdf sí venían correctos.
+AddType application/vnd.openxmlformats-officedocument.spreadsheetml.sheet   .xlsx
+AddType application/vnd.ms-excel                                            .xls
+AddType application/vnd.openxmlformats-officedocument.wordprocessingml.document .docx
+AddType application/msword                                                  .doc
+
+# Un Excel no se puede "ver" en el navegador: siempre es una descarga. Se fuerza
+# el attachment para que el nombre del archivo sea explícito y no dependa de
+# cómo cada navegador interprete el tipo.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(xlsx|xls|docx|doc)$">
+    Header set Content-Disposition "attachment"
+  </FilesMatch>
+</IfModule>
+
 # ── Preservar rutas del sistema existente ──────────────────────────────────────
 RewriteRule ^pack-sistema(/.*)?$  - [L]
 RewriteRule ^pages(/.*)?$         - [L]
@@ -60,11 +80,11 @@ ErrorDocument 404 /_agent/404.php
     # Three.js texture auto-hospedada en /textures/worldMap.png
     Header always set Content-Security-Policy "\
       default-src 'self'; \
-      script-src 'self'; \
-      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; \
-      font-src 'self' https://fonts.gstatic.com; \
+      script-src 'self' https://www.googletagmanager.com; \
+      style-src 'self' 'unsafe-inline'; \
+      font-src 'self'; \
       img-src 'self' data: https: blob:; \
-      connect-src 'self' https://maps.googleapis.com; \
+      connect-src 'self' https://maps.googleapis.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com; \
       frame-src https://maps.google.com https://www.google.com; \
       object-src 'none'; \
       base-uri 'self'; \

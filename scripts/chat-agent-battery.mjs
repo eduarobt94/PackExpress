@@ -290,6 +290,31 @@ caso('cobertura_pais: pais SOLO no dispara nada', 'Cuba', conCountryZone, espera
 caso('cobertura_pais: cotizar con precio gana sobre cobertura', 'Cuanto cuesta enviar a Cuba?', conCountryZone, esperarTipo('cotizar_iniciar'))
 caso('cobertura_pais: peso+pais gana sobre cobertura', 'tengo 10 kg para enviar a Cuba', conCountryZone, esperarTipo('cotizar_directo'))
 
+// ── Producto puntual: "¿puedo enviar [producto]?" ────────────────────────
+// Casos reales que se perdían en producción — el bot no reconocía la
+// pregunta en absoluto (caía en 'desconocido' o, peor, confundía "puedo
+// enviar anestesias" con "puedo enviar a Cuba" por un bug de substring sin
+// límite de palabra en detectarCoberturaPais).
+caso('producto: puedo enviar baterias para cuba -> prohibido', 'puedo enviar baterias para cuba', conCountryZone, esperarTipo('producto_prohibido'))
+caso('producto: pilas recargables -> prohibido', 'la pregunta es si puedo enviar pilas recargables para cuba', conCountryZone, esperarTipo('producto_prohibido'))
+caso('producto: en el paquete baterias recargables (relleno en medio)', 'puedo enviar en el paquete baterias recargables?', conCountryZone, esperarTipo('producto_prohibido'))
+caso('producto: armas -> prohibido', 'puedo enviar un arma a España', conCountryZone, esperarTipo('producto_prohibido'))
+caso('producto: anestesias -> medicamento (no prohibido, pide comprobante)', 'puedo enviar anestesias en mi paquete para cuba', conCountryZone, esperarTipo('producto_medicamento'))
+caso('producto: auto -> desconocido, deriva a whatsapp', 'la pregunta es si puedo enviar un auto por esta agencia hacia cuba?', conCountryZone, esperarTipo('producto_desconocido'))
+caso('producto: vehiculos automotores -> desconocido', 'puedo enviar vehiculos automotores hacia cuba por esta via', conCountryZone, esperarTipo('producto_desconocido'))
+// No debe robarle el caso a cobertura_pais (sin producto real de por medio):
+caso('producto: NO cruza — puedo enviar a Cuba sigue siendo cobertura', 'Puedo enviar a Cuba', conCountryZone, esperarTipo('cobertura_pais'))
+caso('producto: NO cruza — puedo enviar a España sigue siendo cobertura', 'puedo enviar a España', conCountryZone, esperarTipo('cobertura_pais'))
+caso('producto: NO cruza — puedo enviar un paquete de 10kg no es producto (numero)', 'puedo enviar un paquete de 10kg', conCountryZone, (_, t) => t[0] !== 'producto_prohibido' && t[0] !== 'producto_medicamento' && t[0] !== 'producto_desconocido')
+
+// ── "Restricciones" como sinónimo de artículos prohibidos ────────────────
+caso('restricciones: no me refiero a restricciones de lo que se puede enviar', 'no, me refiero a restricciones de lo que se puede enviar', sinFlujo, esperarTipo('articulos_prohibidos'))
+caso('restricciones: palabra sola', 'restricciones', sinFlujo, esperarTipo('articulos_prohibidos'))
+
+// ── documentacion generalizada (documento/información/requisito + necesito/llevar, con relleno en medio) ──
+caso('documentacion: que documentos o informacion necesito llevar', 'que documentos o informacion necesito llevar para enviar un paquete', sinFlujo, esperarTipo('documentacion'))
+caso('documentacion: que informacion necesito llevar (sin la palabra "documento")', 'que informacion necesito llevar a la agencia para enviar un paquete', sinFlujo, esperarTipo('documentacion'))
+
 // ── "Cuánto pesa" corto → peso_maximo, no cotizar ────────────────────────
 caso('cuanto pesa corto', 'Cuanto pesa?', sinFlujo, esperarTipo('peso_maximo'))
 

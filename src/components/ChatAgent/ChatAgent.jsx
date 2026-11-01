@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bot, X, Send } from 'lucide-react'
 import { useChatAgent } from './useChatAgent'
+import { track } from '../../lib/analytics'
 
 const TEXTAREA_MIN_HEIGHT = 40 // 1 línea — mismo alto que el input de antes
 const TEXTAREA_MAX_HEIGHT = 104 // ~4 líneas — de ahí en más aparece scroll interno
@@ -20,6 +21,10 @@ export default function ChatAgent() {
       inputRef.current?.focus()
     }
   }, [open, iniciarBienvenida])
+
+  useEffect(() => {
+    if (open) track('chat_open')
+  }, [open])
 
   useEffect(() => {
     if (!open) return

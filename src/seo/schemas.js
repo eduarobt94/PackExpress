@@ -29,13 +29,13 @@ export const organizationSchema = {
     longitude: -56.188793,
   },
   telephone: '+59893594297',
-  email: 'packexpress2021@gmail.com',
+  email: 'atencion@packexpress.com.uy',
   contactPoint: [
     {
       '@type': 'ContactPoint',
       contactType: 'customer service',
       telephone: '+59893594297',
-      email: 'packexpress2021@gmail.com',
+      email: 'atencion@packexpress.com.uy',
       areaServed: 'UY',
       availableLanguage: ['Spanish'],
       hoursAvailable: [
@@ -47,7 +47,7 @@ export const organizationSchema = {
       '@type': 'ContactPoint',
       contactType: 'sales',
       telephone: '+59893594297',
-      email: 'packexpress2021@gmail.com',
+      email: 'atencion@packexpress.com.uy',
       areaServed: 'UY',
       availableLanguage: ['Spanish'],
     },

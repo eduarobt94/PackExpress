@@ -8,9 +8,13 @@ import {
   detectarIntenciones, matchPais, matchTipo, formatFechaHora, elegirSaludo, normalizeText,
   buscarIntencionDeNegocio, extraerEntidadesCotizacion, nombrePaisParaMostrar,
 } from './intentEngine'
-import { GOODBYE_RESPONSES, FAQ, RESPUESTA_TIEMPOS_NACIONAL } from './chatKnowledge'
-import { COUNTRY_ZONE, ZONE_LABELS } from '../../lib/zones'
+import {
+  GOODBYE_RESPONSES, FAQ, RESPUESTA_TIEMPOS_NACIONAL,
+  RESPUESTA_PRODUCTO_MEDICAMENTO, RESPUESTA_PRODUCTO_DESCONOCIDO,
+} from './chatKnowledge'
+import { COUNTRY_ZONE, ZONE_LABELS, isPaisSuspendido, SUSPENDED_MESSAGE } from '../../lib/zones'
 import { WHATSAPP_URL } from '../../lib/whatsapp'
+import { track, weightBucket } from '../../lib/analytics'
 
 const API = '/pack-sistema/api/v1'
 const STORAGE_KEY = 'pe_chat_history'
@@ -88,7 +92,7 @@ function preguntaDeSlot(slot, flujo) {
 
 function noEntendiSlot(slot) {
   if (slot === 'peso') return 'No pude entender el peso, ¿podés escribirlo solo en números? Ej: 2.5'
-  if (slot === 'pais') return 'No reconocí ese país, ¿podés escribirlo de nuevo? Por ejemplo: Estados Unidos, España, Cuba.'
+  if (slot === 'pais') return 'No reconocí ese país, ¿podés escribirlo de nuevo? Por ejemplo: España, Cuba, Argentina.'
   return 'No reconocí ese tipo de envío, ¿podés elegir uno de la lista?'
 }
 
@@ -100,6 +104,23 @@ function resumenEntidades(nuevas) {
   else if (nuevas.pais) partes.push(`destino ${nombrePaisParaMostrar(nuevas.pais)}`)
   if (nuevas.tipo) partes.push(nuevas.tipo.nombre)
   return partes.join(', ')
+}
+
+/** Respuesta de una intención 'producto_*' (ver clasificarProductoEnvio en
+ * intentEngine.js) — centralizado acá porque lo usan dos lugares:
+ * procesarIntencion (mensaje normal) e intentarResponderInterrupcion
+ * (pregunta de producto en medio del flujo de cotización). */
+function textoDeProducto(intencion) {
+  if (intencion.tipo === 'producto_prohibido') {
+    return {
+      texto: `No, no se puede enviar: ${intencion.categoria} están dentro de los artículos prohibidos. Podés ver el detalle completo acá.`,
+      chips: ['Ver lista completa'],
+    }
+  }
+  if (intencion.tipo === 'producto_medicamento') {
+    return { texto: RESPUESTA_PRODUCTO_MEDICAMENTO, chips: null }
+  }
+  return { texto: RESPUESTA_PRODUCTO_DESCONOCIDO, chips: ['Hablar por WhatsApp'] }
 }
 
 /** Texto de tiempos de entrega según el destino: nacional (Uruguay) vs internacional. */
@@ -163,11 +184,14 @@ export function useChatAgent() {
     })
   }, [responderConDelay])
 
-  const ofrecerSalidaWhatsapp = useCallback((mensaje) => {
+  // `reason` (categoría cerrada) explica por qué el bot se rinde y ofrece WhatsApp.
+  const ofrecerSalidaWhatsapp = useCallback((mensaje, reason = 'other') => {
+    track('chat_handoff', { reason })
     return responderConDelay(mensaje, ['Hablar por WhatsApp'])
   }, [responderConDelay])
 
-  const abrirCotizadorCompleto = useCallback((mensaje) => {
+  const abrirCotizadorCompleto = useCallback((mensaje, reason = 'other', step) => {
+    track('chat_quote_abandoned', { reason, step })
     flujoRef.current = flujoVacio()
     window.dispatchEvent(new CustomEvent('openCotizar'))
     return responderConDelay(mensaje)
@@ -179,8 +203,9 @@ export function useChatAgent() {
     try {
       const res  = await fetch(`${API}/rastreo.php?guia_numero=${encodeURIComponent(numero)}`)
       const json = await res.json()
+      track('track_shipment', { result: json.ok ? 'found' : 'not_found', origin: 'chat' })
       if (!json.ok) {
-        return ofrecerSalidaWhatsapp(`No encontré ninguna guía con el número "${numero}". Revisá que esté bien escrito, o escribinos por WhatsApp si preferís que te ayudemos directamente.`)
+        return ofrecerSalidaWhatsapp(`No encontré ninguna guía con el número "${numero}". Revisá que esté bien escrito, o escribinos por WhatsApp si preferís que te ayudemos directamente.`, 'tracking_not_found')
       }
       const { guia, events } = json.data
       // guia.numero es el AWB/manifiesto compartido por todos los paquetes del
@@ -197,7 +222,7 @@ export function useChatAgent() {
       }
       return responderConDelay(`Tu envío ${codigoGuia} está en ${ultimo.hito} desde el ${formatFechaHora(ultimo.fecha_hora)}.${destino}`)
     } catch {
-      return ofrecerSalidaWhatsapp('Tuve un problema para consultar el rastreo. Probá de nuevo en un momento, o escribinos por WhatsApp.')
+      return ofrecerSalidaWhatsapp('Tuve un problema para consultar el rastreo. Probá de nuevo en un momento, o escribinos por WhatsApp.', 'tracking_error')
     } finally {
       procesandoRef.current = false
     }
@@ -226,7 +251,8 @@ export function useChatAgent() {
 
       const zonasJson = await zonasRes.json()
       if (zonasJson.ok && Array.isArray(zonasJson.data)) {
-        flujoRef.current.zonaMap = Object.fromEntries(zonasJson.data.map(p => [p.nombre, p.zona_cod]))
+        // Merge, no reemplazo: ver misma nota en Cotizacion.jsx.
+        flujoRef.current.zonaMap = { ...COUNTRY_ZONE, ...Object.fromEntries(zonasJson.data.map(p => [p.nombre, p.zona_cod])) }
       }
     } catch {
       flujoRef.current.tipos = []
@@ -235,6 +261,12 @@ export function useChatAgent() {
     }
     if (paisPrellenado) {
       const paisFinal = matchPais(paisPrellenado, flujoRef.current.zonaMap) ?? paisPrellenado
+      // Destino suspendido: se corta el wizard antes de pedir más datos — no
+      // tiene sentido preguntar peso/tipo para algo que no se puede enviar.
+      if (isPaisSuspendido(paisFinal)) {
+        flujoRef.current.activo = false
+        return responderConDelay(SUSPENDED_MESSAGE, ['Hablar por WhatsApp'])
+      }
       flujoRef.current.datos.pais = paisFinal
     }
     if (pesoPrellenado != null) {
@@ -242,7 +274,7 @@ export function useChatAgent() {
     }
     if (sinCatalogoDeTipos(flujoRef.current)) {
       flujoRef.current = flujoVacio()
-      return ofrecerSalidaWhatsapp('No pude cargar los tipos de envío en este momento, así que no puedo cotizarte acá. Escribinos por WhatsApp y te pasamos el precio enseguida.')
+      return ofrecerSalidaWhatsapp('No pude cargar los tipos de envío en este momento, así que no puedo cotizarte acá. Escribinos por WhatsApp y te pasamos el precio enseguida.', 'quote_error')
     }
     const faltan = slotsFaltantes(flujoRef.current)
     flujoRef.current.paso = faltan[0]
@@ -282,10 +314,13 @@ export function useChatAgent() {
         if (filas.length === 0) {
           return responderConDelay(`No tengo tarifas disponibles para ${paisMostrado} en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
         }
+        track('chat_quote_completed', {
+          destination_country: paisMostrado, service_type: tipo.codigo, mode: 'table',
+        })
         return responderConDelay(`Precios de referencia para ${paisMostrado} (${ZONE_LABELS[zonaCod]}):\n${filas.join('\n')}\n\nSon precios estimados por peso, se confirman al gestionar el envío. Si me decís tu peso exacto te lo cotizo directo.`)
       } catch {
         flujoRef.current = flujoVacio()
-        return ofrecerSalidaWhatsapp('Tuve un problema calculando las tarifas. Probá de nuevo, o escribinos por WhatsApp.')
+        return ofrecerSalidaWhatsapp('Tuve un problema calculando las tarifas. Probá de nuevo, o escribinos por WhatsApp.', 'quote_error')
       }
     }
     try {
@@ -297,16 +332,20 @@ export function useChatAgent() {
       const json = await res.json()
       flujoRef.current = flujoVacio()
       if (!json.ok) {
-        return abrirCotizadorCompleto('Tuve un problema calculando la cotización. Te abrí el cotizador completo para que puedas intentarlo ahí.')
+        return abrirCotizadorCompleto('Tuve un problema calculando la cotización. Te abrí el cotizador completo para que puedas intentarlo ahí.', 'api_error', 'quote_result')
       }
       const fila = json.data.zonas.find(z => z.zona_cod === zonaCod)
       if (!fila || !fila.disponible) {
         return responderConDelay(`No tengo una tarifa disponible para ${paisMostrado} con ${peso} kg en este momento. Te recomiendo escribirnos por WhatsApp para confirmarlo.`, ['Hablar por WhatsApp'])
       }
+      track('chat_quote_completed', {
+        destination_country: paisMostrado, service_type: tipo.codigo,
+        weight_bucket: weightBucket(peso), mode: 'single',
+      })
       return responderConDelay(`Envío de ${peso} kg a ${paisMostrado} (${ZONE_LABELS[zonaCod]}): USD ${fila.total.toFixed(2)}. Este precio es estimado, se confirma al gestionar el envío.`)
     } catch {
       flujoRef.current = flujoVacio()
-      return ofrecerSalidaWhatsapp('Tuve un problema calculando la cotización. Probá de nuevo, o escribinos por WhatsApp.')
+      return ofrecerSalidaWhatsapp('Tuve un problema calculando la cotización. Probá de nuevo, o escribinos por WhatsApp.', 'quote_error')
     }
   }, [responderConDelay, ofrecerSalidaWhatsapp, abrirCotizadorCompleto])
 
@@ -333,7 +372,8 @@ export function useChatAgent() {
 
       const zonasJson = await zonasRes.json()
       if (zonasJson.ok && Array.isArray(zonasJson.data)) {
-        flujoRef.current.zonaMap = Object.fromEntries(zonasJson.data.map(p => [p.nombre, p.zona_cod]))
+        // Merge, no reemplazo: ver misma nota en Cotizacion.jsx.
+        flujoRef.current.zonaMap = { ...COUNTRY_ZONE, ...Object.fromEntries(zonasJson.data.map(p => [p.nombre, p.zona_cod])) }
       }
     } catch {
       flujoRef.current.tipos = []
@@ -341,6 +381,10 @@ export function useChatAgent() {
       procesandoRef.current = false
     }
     const paisFinal = matchPais(paisDetectado, flujoRef.current.zonaMap) ?? paisDetectado
+    if (isPaisSuspendido(paisFinal)) {
+      flujoRef.current.activo = false
+      return responderConDelay(SUSPENDED_MESSAGE, ['Hablar por WhatsApp'])
+    }
     flujoRef.current.datos.pais = paisFinal
 
     const tipoDetectado = textoOriginal ? matchTipo(textoOriginal, flujoRef.current.tipos) : null
@@ -350,7 +394,7 @@ export function useChatAgent() {
 
     if (sinCatalogoDeTipos(flujoRef.current)) {
       flujoRef.current = flujoVacio()
-      return ofrecerSalidaWhatsapp('No pude cargar los tipos de envío en este momento, así que no puedo cotizarte acá. Escribinos por WhatsApp y te pasamos el precio enseguida.')
+      return ofrecerSalidaWhatsapp('No pude cargar los tipos de envío en este momento, así que no puedo cotizarte acá. Escribinos por WhatsApp y te pasamos el precio enseguida.', 'quote_error')
     }
     return responderConDelay(`¡Perfecto! ${peso} kg a ${nombrePaisParaMostrar(paisFinal)}. ¿Qué tipo de envío es? (${nombresTiposDe(flujoRef.current)})`)
   }, [responderConDelay, cotizarYResponder, ofrecerSalidaWhatsapp])
@@ -384,8 +428,15 @@ export function useChatAgent() {
       return true
     }
     if (negocio?.tipo === 'human_handoff') {
+      track('chat_handoff', { reason: 'human_requested' })
       await responderConDelay('¡Dale! Te paso directo con nuestro equipo para que te ayuden mejor.', ['Hablar por WhatsApp'])
       await responderConDelay(`Cuando quieras seguimos: ${promptReintento}`)
+      return true
+    }
+    if (negocio?.tipo === 'producto_prohibido' || negocio?.tipo === 'producto_medicamento' || negocio?.tipo === 'producto_desconocido') {
+      const { texto, chips } = textoDeProducto(negocio)
+      await responderConDelay(texto, chips)
+      await responderConDelay(promptReintento)
       return true
     }
     return false
@@ -416,11 +467,20 @@ export function useChatAgent() {
       })
       Object.assign(flujo.datos, nuevas)
 
+      // Destino suspendido: se corta acá, antes de completar el resto de los
+      // slots o de calcular precio. Cubre tanto darlo como respuesta al paso
+      // "país" como corregir un país válido por uno suspendido más adelante.
+      if (isPaisSuspendido(flujo.datos.pais)) {
+        flujo.activo = false
+        return responderConDelay(SUSPENDED_MESSAGE, ['Hablar por WhatsApp'])
+      }
+
       if (!pideTabla && Object.keys(nuevas).length === 0) {
         if (await intentarResponderInterrupcion(valor, preguntaDeSlot(pasoActual, flujo))) return
         flujo.intentosFallidos += 1
+        track('chat_unrecognized', { step: `quote_${pasoActual}`, level: flujo.intentosFallidos })
         if (flujo.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
-          return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.')
+          return abrirCotizadorCompleto('Para cotizar con más detalle, te abrí el cotizador completo.', 'too_many_failures', pasoActual)
         }
         return responderConDelay(noEntendiSlot(pasoActual))
       }
@@ -444,6 +504,12 @@ export function useChatAgent() {
 
   /** Procesa UNA intención ya detectada (puede haber varias por mensaje, ver enviarMensaje). */
   const procesarIntencion = useCallback(async (intencion) => {
+    // Solo la categoría detectada (y el tema de FAQ / país del catálogo): nunca el texto escrito.
+    track('chat_intent', {
+      intent:    intencion.tipo,
+      faq_topic: intencion.temaId,
+      country:   intencion.tipo === 'cobertura_pais' ? nombrePaisParaMostrar(intencion.pais) : undefined,
+    })
     if (intencion.tipo !== 'desconocido') {
       contextoRef.current.nivelFallback = 0
     }
@@ -469,19 +535,30 @@ export function useChatAgent() {
         // que lo limpia), hasta el mismo tope de intentos que usa el wizard
         // de cotización, para no insistir para siempre.
         contextoRef.current.intentosPaisTiempos += 1
+        track('chat_unrecognized', { step: 'country_times', level: contextoRef.current.intentosPaisTiempos })
         if (contextoRef.current.intentosPaisTiempos > MAX_INTENTOS_FALLIDOS) {
           contextoRef.current.esperandoPaisTiempos = false
           contextoRef.current.intentosPaisTiempos = 0
           return responderConDelay('No logré reconocer el país. Te recomiendo escribirnos por WhatsApp y te confirmamos los tiempos ahí.', ['Hablar por WhatsApp'])
         }
-        return responderConDelay('No reconocí ese país, ¿podés escribirlo de nuevo? Por ejemplo: Cuba, España, Estados Unidos.')
+        return responderConDelay('No reconocí ese país, ¿podés escribirlo de nuevo? Por ejemplo: Cuba, España, Argentina.')
       }
       case 'cotizar_iniciar':
         return iniciarCotizacion(intencion.paisPrellenado, intencion.pesoPrellenado)
       case 'cotizar_directo':
         return iniciarCotizacionDirecta(intencion.peso, intencion.pais, intencion.textoOriginal)
       case 'cobertura_pais':
+        // Un destino suspendido no debe responderse con "sí, hacemos envíos".
+        if (isPaisSuspendido(intencion.pais)) {
+          return responderConDelay(SUSPENDED_MESSAGE, ['Hablar por WhatsApp'])
+        }
         return responderConDelay(`Sí, hacemos envíos a ${nombrePaisParaMostrar(intencion.pais)}. En total llegamos a más de 50 países en América, Europa, Asia y Oceanía.`)
+      case 'producto_prohibido':
+      case 'producto_medicamento':
+      case 'producto_desconocido': {
+        const { texto, chips } = textoDeProducto(intencion)
+        return responderConDelay(texto, chips)
+      }
       case 'cotizar_respuesta':
         return manejarRespuestaCotizacion(intencion.valor)
       case 'ambiguo_precio':
@@ -494,6 +571,7 @@ export function useChatAgent() {
       case 'thanks':
         return responderConDelay(intencion.respuestas[Math.floor(Math.random() * intencion.respuestas.length)])
       case 'human_handoff':
+        track('chat_handoff', { reason: 'human_requested' })
         return responderConDelay('¡Dale! Te paso directo con nuestro equipo para que te ayuden mejor.', ['Hablar por WhatsApp'])
       case 'faq':
         contextoRef.current.ultimoTema = intencion.temaId
@@ -506,6 +584,7 @@ export function useChatAgent() {
       default: {
         contextoRef.current.nivelFallback += 1
         const nivel = contextoRef.current.nivelFallback
+        track('chat_unrecognized', { step: 'free_text', level: nivel })
         if (nivel === 1) {
           return responderConDelay('Disculpá, no estoy seguro de haber entendido tu consulta. ¿Podés explicarme un poco más qué necesitás?')
         }
@@ -516,7 +595,7 @@ export function useChatAgent() {
           )
         }
         contextoRef.current.nivelFallback = 0
-        return ofrecerSalidaWhatsapp('Para esta consulta necesito la ayuda de una persona de nuestro equipo. Podés contactarnos por WhatsApp y te ayudamos directamente.')
+        return ofrecerSalidaWhatsapp('Para esta consulta necesito la ayuda de una persona de nuestro equipo. Podés contactarnos por WhatsApp y te ayudamos directamente.', 'no_answer')
       }
     }
   }, [responderConDelay, ofrecerSalidaWhatsapp, manejarRastreo, iniciarCotizacion, iniciarCotizacionDirecta, manejarRespuestaCotizacion])
@@ -528,6 +607,7 @@ export function useChatAgent() {
    */
   const despachar = useCallback((texto) => {
     if (texto === 'Hablar por WhatsApp') {
+      track('whatsapp_click', { placement: 'chat_handoff', topic: 'quote' })
       window.open(WHATSAPP_URL, '_blank', 'noopener')
       return
     }
@@ -559,7 +639,7 @@ export function useChatAgent() {
       return
     }
     if (texto === 'Equipaje') {
-      ofrecerSalidaWhatsapp('Para el costo del Equipaje No Acompañado te conecto con nuestro equipo por WhatsApp.')
+      ofrecerSalidaWhatsapp('Para el costo del Equipaje No Acompañado te conecto con nuestro equipo por WhatsApp.', 'out_of_scope')
       return
     }
     if (texto === 'Ver lista completa') {

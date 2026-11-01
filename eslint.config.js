@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // Artefactos generados: specs que genera playwright-bdd desde los .feature
+  // y el reporte HTML de Playwright (trae su propio bundle minificado).
+  globalIgnores(['dist', 'tests/.features-gen', 'reports', 'test-results', 'playwright-report']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

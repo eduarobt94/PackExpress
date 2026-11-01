@@ -4,7 +4,8 @@ import {
   Package, FileText, CheckCircle, MapPin, Weight, Ruler,
   ChevronDown, X, Search, Loader2, AlertTriangle, Tag,
 } from 'lucide-react'
-import { ZONE_LABELS, COUNTRY_ZONE } from '../lib/zones'
+import { ZONE_LABELS, COUNTRY_ZONE, isPaisSuspendido } from '../lib/zones'
+import { track, weightBucket } from '../lib/analytics'
 
 /* ── Regions for CountrySelect ──────────────────────────────────────────────── */
 const REGIONS = {
@@ -117,15 +118,28 @@ function CountrySelect({ value, onChange }) {
     }
   }, [open])
 
+  // Los destinos suspendidos (ver SUSPENDED_COUNTRIES en lib/zones.js) se
+  // excluyen del selector: si no se puede enviar, tampoco se debe poder
+  // cotizar. Una región que quede vacía al filtrarlos se omite entera.
+  const disponibles = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(REGIONS)
+          .map(([r, d]) => [r, { ...d, countries: d.countries.filter(c => !isPaisSuspendido(c)) }])
+          .filter(([, d]) => d.countries.length > 0)
+      ),
+    []
+  )
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
-    if (!q) return REGIONS
+    if (!q) return disponibles
     return Object.fromEntries(
-      Object.entries(REGIONS)
+      Object.entries(disponibles)
         .map(([r, d]) => [r, { ...d, countries: d.countries.filter(c => c.toLowerCase().includes(q)) }])
         .filter(([, d]) => d.countries.length > 0)
     )
-  }, [search])
+  }, [search, disponibles])
 
   return (
     <div data-country-select>
@@ -367,7 +381,10 @@ export default function Cotizacion({ onClose }) {
   useEffect(() => {
     apiGetTipos().then(setTipos)
     apiGetZonas().then(dynamic => {
-      if (Object.keys(dynamic).length > 0) setZonaMap(dynamic)
+      // Merge, no reemplazo: si el backend omite o desconoce algún país
+      // (ej. quedó fuera de la tabla de zonas en pack-sistema), sigue
+      // resolviendo por el fallback estático en vez de perder la zona.
+      if (Object.keys(dynamic).length > 0) setZonaMap({ ...COUNTRY_ZONE, ...dynamic })
     })
   }, [])
 
@@ -410,12 +427,20 @@ export default function Cotizacion({ onClose }) {
     try {
       const data = await apiCotizarTodas({ peso: pesoEfectivo, tipo_servicio_id: tipoId })
       setResult(data)
+      // Solo con respuesta correcta de la API. País destino, tipo y rango de peso: sin datos personales.
+      track('quote_calculated', {
+        destination_country: country,
+        service_type:        tipo,
+        zone:                typeof zona === 'string' ? zona : undefined,
+        weight_bucket:       weightBucket(pesoEfectivo),
+        source:              'modal',
+      })
     } catch (err) {
       setApiError(err.message)
     } finally {
       setLoading(false)
     }
-  }, [isValid, loading, pesoEfectivo, tipoId])
+  }, [isValid, loading, pesoEfectivo, tipoId, country, tipo, zona])
 
   const handleSubmit = e => {
     e?.preventDefault()

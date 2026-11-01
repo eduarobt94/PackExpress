@@ -7,7 +7,7 @@
 - **Sitio:** https://packexpress.com.uy
 - **Dirección:** Carlos Quijano 1258, Montevideo, Uruguay
 - **Teléfono / WhatsApp:** +598 93 594 297 — https://wa.me/59893594297
-- **Email:** packexpress2021@gmail.com
+- **Email:** atencion@packexpress.com.uy
 - **Horario:** Lunes a Viernes 10:00–18:00 · Sábados 10:00–14:00
 
 ## Cuándo usar Pack Express
